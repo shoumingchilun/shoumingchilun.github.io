@@ -1,14 +1,58 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
-    <title>《区块链：技术驱动金融》摘录</title>
+    <title>《区块链：技术驱动金融》摘录（概念目录）</title>
     <url>/2024/03/03/Web3/readingNotes/%E5%8C%BA%E5%9D%97%E9%93%BE%EF%BC%9A%E6%8A%80%E6%9C%AF%E9%A9%B1%E5%8A%A8%E9%87%91%E8%9E%8D/</url>
-    <content><![CDATA[]]></content>
+    <content><![CDATA[<p>本文将介绍一些区块链领域的技术概念，充当一份技术目录以供备用。</p>
+<h1 id="哈希函数"><a href="#哈希函数" class="headerlink" title="哈希函数"></a>哈希函数</h1><h2 id="特性"><a href="#特性" class="headerlink" title="特性"></a>特性</h2><p>哈希函数具有以下特性：</p>
+<ul>
+<li><strong>碰撞阻力（Collision Resistance）</strong>：避免存在x，y，使H(x)&#x3D;H(y)<ul>
+<li>对于任意两个不同的输入x和y，找到满足H(x) &#x3D; H(y)的x和y在计算上应该是非常困难的。理想的哈希函数应保证对于所有可能的输入，其输出的哈希值都各不相同，但实际上因为输出空间有限而输入空间无限，理论上总是存在碰撞的可能，但在实际应用中，一个好的哈希函数设计应当使寻找碰撞的概率变得极低。</li>
+<li>特性应用：<strong>信息摘要（Message Digests）</strong>——在数据完整性校验中，哈希函数被用来生成一段数据的“数字指纹”，如MD5或SHA系列算法。当文件传输后，接收方可以通过重新计算哈希值并与发送方提供的摘要对比，确认数据在传输过程中是否被篡改。若摘要匹配，则说明数据未变；如果不匹配，则可能存在数据损坏或被恶意篡改。</li>
+</ul>
+</li>
+<li><strong>隐秘性（Pre-image Resistance &#x2F; One-wayness）</strong>：y&#x3D;H(x)，不可通过y推出x<ul>
+<li>隐秘性是指给定一个哈希值y，找到任何原输入x使得y &#x3D; H(x)在计算上是不可能或极其困难的。这体现了哈希函数的单向性，即从输出反推输入几乎不可能。</li>
+<li>特性应用：<strong>承诺（Commitment Schemes）</strong> ——在密码学中，哈希函数可用于构建承诺方案，一方可以在不暴露具体值的情况下对某个秘密值做出承诺，并在以后揭示该值时证明承诺的有效性。例如，在零知识证明中，一个参与者可以提前提交一个哈希值作为承诺，后续再公开原始数据，其他人可以通过计算哈希验证其一致性，但在此之前无法猜出原始数据。</li>
+</ul>
+</li>
+<li><strong>谜题友好（Puzzle-Friendliness 或 Puzzle-freeness）</strong>：使H(k||x)&#x3D;y成立的x无法在比2^n小很多时间内找到<ul>
+<li>（该特性主要应用于比特币挖矿中）</li>
+<li>谜题友好通常指的是哈希函数在特定条件下能够生成难以预先计算但易于验证结果的问题，即所谓的“工作量证明（Proof of Work, PoW）”。这种情况下，要求找到一个输入x（通常带有额外的随机数k）使得H(k || x) &#x3D; y成立的x在计算资源受限的情况下（比如在比穷举搜索所需时间小很多的时间内）是难以找到的。</li>
+<li>特性应用：<strong>搜索谜题（Cryptographic Puzzles or Hashcash）</strong>——在比特币挖矿中，矿工竞相解决一个基于哈希难题的PoW问题，寻找一个nonce（k）使得区块头的哈希值小于某个目标阈值。这一特性确保了挖矿过程需要大量计算资源投入，从而达到区块链系统的去中心化共识机制的安全性。只有成功解决谜题的矿工才能添加新区块并获得奖励。</li>
+</ul>
+</li>
+</ul>
+<blockquote>
+<p>谜题友好可以通俗地理解为——我很难找到符合要求的hash输入来发布一个区块并获得奖励（需要大量枚举），但是我可以很方便地验证一个新发布区块对应的hash是否是合理的，并以此判定对方是否应该获得奖励。</p>
+</blockquote>
+<p>目前主流使用的哈希函数：<strong>SHA-256</strong>。</p>
+<h2 id="哈希指针"><a href="#哈希指针" class="headerlink" title="哈希指针"></a>哈希指针</h2><p><strong>概念：哈希指针是一种数据结构。</strong><br>简单来说，哈希指针是一个指向数据存储位置及其位置数据的哈希值的指针。一个普通的指针可以告诉你数据存储的位置，哈希指针不但可以告诉你数据存储的位置，并且还可以给你一种方式，让你<strong>验证数据没有被篡改过</strong>。</p>
+<p><strong>常用应用：</strong></p>
+<ul>
+<li><strong>区块链</strong>：在区块链中，每个区块包含了区块头和区块体两部分。区块头包含了一个哈希指针，它指向的是前一个区块的哈希值。这样形成的链式结构确保了区块之间的<strong>顺序性和历史不可篡改性</strong>。<strong>如果有人试图修改某个过去的区块数据，那么该区块的哈希值会变化，并因此导致后续所有区块的哈希值都需要相应改变，因为它们都包含了前一个区块的哈希指针。</strong>这要求攻击者必须重新计算整个链条的哈希值，而这在比特币等具有足够工作量证明机制的区块链中几乎是不可能的。<br><img src="/2024/03/03/Web3/readingNotes/%E5%8C%BA%E5%9D%97%E9%93%BE%EF%BC%9A%E6%8A%80%E6%9C%AF%E9%A9%B1%E5%8A%A8%E9%87%91%E8%9E%8D/%E5%93%88%E5%B8%8C%E6%8C%87%E9%92%88_%E5%8C%BA%E5%9D%97%E9%93%BE.png"></li>
+<li><strong>梅克尔树</strong>：当任意一笔交易数据发生变化时，该交易所在叶子节点的哈希值会变，进而影响到整棵树的根哈希值。由于区块头包含了这一梅克尔根，所以<strong>任何对交易数据的篡改都会立刻反映在区块哈希值的变化</strong>上，从而<strong>保护了整个区块链账本的完整性和一致性</strong>。另外梅克尔树还应用在轻客户端验证等场景中。<br><img src="/2024/03/03/Web3/readingNotes/%E5%8C%BA%E5%9D%97%E9%93%BE%EF%BC%9A%E6%8A%80%E6%9C%AF%E9%A9%B1%E5%8A%A8%E9%87%91%E8%9E%8D/%E5%93%88%E5%B8%8C%E6%8C%87%E9%92%88_%E6%A2%85%E5%85%8B%E5%B0%94%E6%A0%91.png"></li>
+</ul>
+]]></content>
+      <categories>
+        <category>Web3</category>
+        <category>区块链</category>
+        <category>阅读摘录</category>
+      </categories>
+      <tags>
+        <tag>区块链</tag>
+        <tag>哈希</tag>
+        <tag>去中心化</tag>
+        <tag>比特币</tag>
+        <tag>工作量证明</tag>
+        <tag>零币</tag>
+        <tag>虚拟挖矿</tag>
+      </tags>
   </entry>
   <entry>
     <title>Spring入门篇（IOC、AOP）</title>
     <url>/2024/03/03/backend/Spring/</url>
-    <content><![CDATA[<p>本文包含：</p>
+    <content><![CDATA[<p>本文<sup id="fnref:1" class="footnote-ref"><a href="#fn:1" rel="footnote"><span class="hint--top hint--rounded" aria-label="本文写于2023年初，经修正后发布于个人博客。">[1]</span></a></sup>包含：</p>
 <ol>
 <li>核心功能：IOC容器</li>
 <li>核心功能：AOP面向切面编程</li>
@@ -361,7 +405,8 @@ newProxyInstance方法的三个参数：</li>
 <blockquote>
 <p>Before……<br>add…….</p>
 </blockquote>
-]]></content>
+<section class="footnotes"><div class="footnote-list"><ol><li><span id="fn:1" class="footnote-text"><span>本文写于2023年初，经修正后发布于个人博客。
+<a href="#fnref:1" rev="footnote" class="footnote-backref"> ↩</a></span></span></li></ol></div></section>]]></content>
       <categories>
         <category>后端开发框架</category>
         <category>SSM</category>
