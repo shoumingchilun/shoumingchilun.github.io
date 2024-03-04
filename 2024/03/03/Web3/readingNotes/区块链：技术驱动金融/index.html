@@ -26,11 +26,12 @@
 <meta property="og:image" content="http://shoumingchilun.github.io/2024/03/03/Web3/readingNotes/%E5%8C%BA%E5%9D%97%E9%93%BE%EF%BC%9A%E6%8A%80%E6%9C%AF%E9%A9%B1%E5%8A%A8%E9%87%91%E8%9E%8D/%E5%93%88%E5%B8%8C%E6%8C%87%E9%92%88_%E5%8C%BA%E5%9D%97%E9%93%BE.png">
 <meta property="og:image" content="http://shoumingchilun.github.io/2024/03/03/Web3/readingNotes/%E5%8C%BA%E5%9D%97%E9%93%BE%EF%BC%9A%E6%8A%80%E6%9C%AF%E9%A9%B1%E5%8A%A8%E9%87%91%E8%9E%8D/%E5%93%88%E5%B8%8C%E6%8C%87%E9%92%88_%E6%A2%85%E5%85%8B%E5%B0%94%E6%A0%91.png">
 <meta property="article:published_time" content="2024-03-03T05:59:50.000Z">
-<meta property="article:modified_time" content="2024-03-03T17:31:29.454Z">
+<meta property="article:modified_time" content="2024-03-04T04:53:24.286Z">
 <meta property="article:author" content="寿命齿轮">
 <meta property="article:tag" content="区块链">
 <meta property="article:tag" content="哈希">
 <meta property="article:tag" content="去中心化">
+<meta property="article:tag" content="分布式共识">
 <meta property="article:tag" content="比特币">
 <meta property="article:tag" content="工作量证明">
 <meta property="article:tag" content="零币">
@@ -229,7 +230,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          1.4k 字
+          2.9k 字
         
       </span>
     
@@ -240,7 +241,7 @@
         
         
         
-          12 分钟
+          24 分钟
         
       </span>
     
@@ -295,7 +296,7 @@
               <p id="updated-time" class="note note-info" style="display: none">
                 
                   
-                    本文最后更新于 2024-03-04T01:31:29+08:00
+                    本文最后更新于 2024-03-04T12:53:24+08:00
                   
                   
 
@@ -335,7 +336,43 @@
 <li><strong>区块链</strong>：在区块链中，每个区块包含了区块头和区块体两部分。区块头包含了一个哈希指针，它指向的是前一个区块的哈希值。这样形成的链式结构确保了区块之间的<strong>顺序性和历史不可篡改性</strong>。<strong>如果有人试图修改某个过去的区块数据，那么该区块的哈希值会变化，并因此导致后续所有区块的哈希值都需要相应改变，因为它们都包含了前一个区块的哈希指针。</strong>这要求攻击者必须重新计算整个链条的哈希值，而这在比特币等具有足够工作量证明机制的区块链中几乎是不可能的。<br><img src="/2024/03/03/Web3/readingNotes/%E5%8C%BA%E5%9D%97%E9%93%BE%EF%BC%9A%E6%8A%80%E6%9C%AF%E9%A9%B1%E5%8A%A8%E9%87%91%E8%9E%8D/%E5%93%88%E5%B8%8C%E6%8C%87%E9%92%88_%E5%8C%BA%E5%9D%97%E9%93%BE.png" srcset="/img/loading.gif" lazyload></li>
 <li><strong>梅克尔树</strong>：当任意一笔交易数据发生变化时，该交易所在叶子节点的哈希值会变，进而影响到整棵树的根哈希值。由于区块头包含了这一梅克尔根，所以<strong>任何对交易数据的篡改都会立刻反映在区块哈希值的变化</strong>上，从而<strong>保护了整个区块链账本的完整性和一致性</strong>。另外梅克尔树还应用在轻客户端验证等场景中。<br><img src="/2024/03/03/Web3/readingNotes/%E5%8C%BA%E5%9D%97%E9%93%BE%EF%BC%9A%E6%8A%80%E6%9C%AF%E9%A9%B1%E5%8A%A8%E9%87%91%E8%9E%8D/%E5%93%88%E5%B8%8C%E6%8C%87%E9%92%88_%E6%A2%85%E5%85%8B%E5%B0%94%E6%A0%91.png" srcset="/img/loading.gif" lazyload></li>
 </ul>
-
+<h1 id="数字签名"><a href="#数字签名" class="headerlink" title="数字签名"></a>数字签名</h1><p>数字签名方案由以下三个算法构成:</p>
+<ol>
+<li>$(sk,pk):&#x3D;generateKeys(keysize)$<br><code>generateKeys</code>方法把<code>keysize</code>作为输入，来产生一对公钥和私钥。私钥<code>sk</code>被安全保存，并用来签名一段消息；公钥<code>pk</code>是人人都可以找到的，拿到它，就可以用来验证你的签名。</li>
+<li>$sig:&#x3D;sign(sk,message)$<br>签名过程是把一段消息和私钥作为一个输入，对于消息输出是签名。</li>
+<li>$isValid:&#x3D;verify(pk,message, sig)$<br>验证过程是通过把一段消息和签名消息与公钥作为输入，如果返回的结果是真，证明签名属实；如果返回的结果为假，证明签名消息为假。</li>
+</ol>
+<p>我们要求以下两个性质有效:</p>
+<ul>
+<li>有效签名可以通过验证，即<br>$$verify(pk,message,sign(sk,message))&#x3D;&#x3D;true$$</li>
+<li>签名不可伪造</li>
+</ul>
+<p>解释：</p>
+<ul>
+<li>发送方（签名者）拥有一个公钥和一个私钥。<strong>公钥任何人都可以知道，私钥则保密不公开。</strong></li>
+<li>当发送方要签署一个文档时，首先使用单向散列函数（如SHA-256）将文档转换成固定长度的<strong>摘要</strong>。</li>
+<li>发送方接着<strong>使用自己的私钥对该摘要进行加密</strong>，生成的密文就是<strong>数字签名</strong>。</li>
+<li>接收方收到原始文档和数字签名后，<strong>使用发送方的公钥来解密签名</strong>，得到摘要A。</li>
+<li>同时，接收方也会计算接收到的文档本身的散列值，得到另一个摘要B。</li>
+<li>如果摘要A与摘要B匹配，则说明文档在传输过程中<strong>未被篡改</strong>，并且确实是<strong>由拥有对应私钥的人签署</strong>的。</li>
+</ul>
+<p>流程：</p>
+<ol>
+<li>对消息生成一个唯一且不变的摘要。</li>
+<li>使用私钥对摘要进行加密形成签名。</li>
+<li>收件人使用公钥解密签名并重新计算消息摘要。</li>
+<li>比较两次计算出的摘要，如果相同，则确认签名有效，消息未被篡改且确信来自于拥有相应私钥的发送方。</li>
+</ol>
+<h1 id="去中心化"><a href="#去中心化" class="headerlink" title="去中心化"></a>去中心化</h1><p><strong>去中心化</strong>：去中心化是一种网络架构或系统<strong>设计原则</strong>，其中权力、功能和数据不在单一的中心点或权威机构手中，而是分散在网络中的各个节点之间。<strong>在去中心化的系统中，每个节点都可以作为网络的一部分参与到数据的处理、存储和验证过程中，而不是依赖单一的中心服务器。</strong>去中心化的目的是为了提高系统的鲁棒性、透明度和防篡改能力，减少单点故障的可能性，并增强用户的数据自主权和隐私保护。</p>
+<p><strong>分布式共识</strong>： 分布式共识则是去中心化系统中用于<strong>保证所有参与节点对于系统状态达成一致同意的关键机制</strong>。在区块链技术中，分布式共识算法确保了<strong>即便在网络中存在不可靠或者恶意的节点，其余的节点依然可以通过特定的规则和算法就交易的有效性、区块的顺序以及其他关键状态达成一致意见。</strong>这种共识机制是去中心化系统能够正常运作并保持数据完整性的基石。</p>
+<p>一个去中心化网络，通常需要借助分布式共识机制来确保网络中所有参与者能基于同样的规则正确地更新和验证系统状态，共同维护一个可靠的、无需信任中介的公共账本。</p>
+<h2 id="分布式共识协议"><a href="#分布式共识协议" class="headerlink" title="分布式共识协议"></a>分布式共识协议</h2><p>在一个<strong>分布式共识协议</strong>中，特别是在面对有潜在故障或恶意节点的环境（比如拜占庭将军问题的场景），有两个核心属性是用来保证系统正确性和安全性的：</p>
+<ul>
+<li><strong>输入值的中止须经所有诚实节点来确定</strong>： 这意味着在分布式系统中的决策过程不是任意节点单方面决定的，即使是有故障或恶意节点试图干扰系统，最终是否接受一个特定的输入值作为共识结果，必须经过所有“诚实”（也称为“正确”或“非拜占庭”）节点的确认或认可。换句话说，<strong>只有当大多数（通常是超过半数）诚实节点达成一致同意的情况下，一个输入值才能被认为是被系统接受了</strong>，并且这个共识过程将在有限时间内结束，即达成可终止性。</li>
+<li><strong>这个输入值必须由诚实节点来生成</strong>： 这条属性指出，最终被选为共识输出的那个输入值，应当来源于系统中诚实节点的提议或计算。在实际的分布式共识算法中，这可能意味着<strong>诚实节点提交的提案将优先被处理，或者通过某种机制确保即使在恶意节点的存在下，最终被采纳的也是诚实节点提供的有效信息</strong>。这样设计的目的在于防止恶意节点通过伪造信息影响系统共识结果的真实性。</li>
+</ul>
+<p>这两个属性结合在一起，旨在构建一个即使在部分节点出现故障或有意作恶情况下，仍能确保所有诚实节点对某一特定状态达成一致的分布式系统。这样的系统能够在各种不利条件下保持稳定运行，并确保其记录的数据或状态更新是可靠和安全的。在区块链技术中，这类分布式共识协议尤为重要，例如PoW（工作量证明）、PoS（权益证明）以及BFT（拜占庭容错）类算法都是用来实现这一目标的不同方式。</p>
+<h2 id="比特币共识算法"><a href="#比特币共识算法" class="headerlink" title="比特币共识算法"></a>比特币共识算法</h2>
                 
               </div>
             
@@ -387,6 +424,8 @@
         <a href="/tags/%E5%93%88%E5%B8%8C/" class="print-no-link">#哈希</a>
       
         <a href="/tags/%E5%8E%BB%E4%B8%AD%E5%BF%83%E5%8C%96/" class="print-no-link">#去中心化</a>
+      
+        <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E5%85%B1%E8%AF%86/" class="print-no-link">#分布式共识</a>
       
         <a href="/tags/%E6%AF%94%E7%89%B9%E5%B8%81/" class="print-no-link">#比特币</a>
       
@@ -609,6 +648,12 @@
 
 
   
+
+
+  
+  
+
+
 
 
 
@@ -857,6 +902,49 @@
 
 
   <script>Fluid.plugins.imageCaption();</script>
+
+  
+      <script>
+        if (!window.MathJax) {
+          window.MathJax = {
+            tex    : {
+              inlineMath: { '[+]': [['$', '$']] }
+            },
+            loader : {
+              load: ['ui/lazy']
+            },
+            options: {
+              renderActions: {
+                insertedScript: [200, () => {
+                  document.querySelectorAll('mjx-container').forEach(node => {
+                    let target = node.parentNode;
+                    if (target.nodeName.toLowerCase() === 'li') {
+                      target.parentNode.classList.add('has-jax');
+                    }
+                  });
+                }, '', false]
+              }
+            }
+          };
+        } else {
+          MathJax.startup.document.state(0);
+          MathJax.texReset();
+          MathJax.typeset();
+          MathJax.typesetPromise();
+        }
+
+        Fluid.events.registerRefreshCallback(function() {
+          if ('MathJax' in window && MathJax.startup.document && typeof MathJax.startup.document.state === 'function') {
+            MathJax.startup.document.state(0);
+            MathJax.texReset();
+            MathJax.typeset();
+            MathJax.typesetPromise();
+          }
+        });
+      </script>
+    
+
+  <script  src="https://lib.baomitu.com/mathjax/3.2.2/es5/tex-mml-chtml.js" ></script>
 
   <script  src="/js/local-search.js" ></script>
 
