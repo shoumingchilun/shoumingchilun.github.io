@@ -5,7 +5,6 @@
     <url>/2024/03/06/backend/canal_MySQL&amp;Redis/</url>
     <content><![CDATA[]]></content>
       <categories>
-        <category>后端</category>
         <category>分布式</category>
         <category>中间件</category>
         <category>canal</category>
@@ -483,7 +482,6 @@ newProxyInstance方法的三个参数：</li>
 <section class="footnotes"><div class="footnote-list"><ol><li><span id="fn:1" class="footnote-text"><span>本文基于canalv1.1.7版本。
 <a href="#fnref:1" rev="footnote" class="footnote-backref"> ↩</a></span></span></li></ol></div></section>]]></content>
       <categories>
-        <category>后端</category>
         <category>分布式</category>
         <category>中间件</category>
         <category>canal</category>
