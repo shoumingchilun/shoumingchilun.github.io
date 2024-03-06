@@ -387,7 +387,17 @@ newProxyInstance方法的三个参数：</li>
   <entry>
     <title>canal入门篇：介绍&amp;配置</title>
     <url>/2024/03/06/backend/canal_config/</url>
-    <content><![CDATA[<h1 id="介绍-1"><a href="#介绍-1" class="headerlink" title="介绍[1]"></a>介绍<sup id="fnref:1" class="footnote-ref"><a href="#fn:1" rel="footnote"><span class="hint--top hint--rounded" aria-label="本文基于canalv1.1.7版本。">[1]</span></a></sup></h1><p><strong>中间件功能：基于数据库增量日志解析，提供增量数据的订阅&amp;消费。</strong>（目前主要支持了mysql）</p>
+    <content><![CDATA[<p>本文将讲述canal的安装、配置、启动以及验证监听是否成功。</p>
+<h1 id="介绍-1"><a href="#介绍-1" class="headerlink" title="介绍[1]"></a>介绍<sup id="fnref:1" class="footnote-ref"><a href="#fn:1" rel="footnote"><span class="hint--top hint--rounded" aria-label="本文基于canalv1.1.7版本。">[1]</span></a></sup></h1><p><strong>中间件功能：基于数据库增量日志解析，提供增量数据的订阅&amp;消费。</strong>（目前主要支持了mysql）</p>
+<p>使用canal的优点：</p>
+<ul>
+<li><strong>实时性</strong>：Canal 直接对接 MySQL 的二进制日志（Binlog），实现了近乎实时的数据同步，可以实现实时数据流处理和近实时的数据集成。</li>
+<li><strong>轻量级</strong>：作为一个开源组件，Canal 采用 Java 编写，具有较好的跨平台性和扩展性，部署相对简单，资源占用较小，适合大规模分布式环境下的部署与使用。</li>
+<li><strong>可靠性</strong>：基于 MySQL 的 Binlog 记录机制，Canal 可以确保数据的完整性，不会丢失任何有效的数据库更改操作。</li>
+<li><strong>灵活性</strong>：Canal 提供了丰富的过滤和路由策略，允许用户根据需求精确配置需要同步的数据库、表甚至是字段级别的数据变更。</li>
+<li><strong>低侵入性</strong>：无需在业务代码中插入额外逻辑，就能实现数据的实时抓取，业务代码与数据同步逻辑完全解耦。</li>
+<li><strong>易用性</strong>：提供了简洁易懂的配置方式，支持多种输出方式，如消息队列、HTTP API 推送等，方便与其他系统进行集成。</li>
+</ul>
 <h2 id="工作原理"><a href="#工作原理" class="headerlink" title="工作原理"></a>工作原理</h2><h3 id="1-MySQL主从复制原理"><a href="#1-MySQL主从复制原理" class="headerlink" title="1. MySQL主从复制原理"></a>1. MySQL主从复制原理</h3><ol>
 <li><strong>主库 Binlog 日志</strong>：在主数据库（Master）中，所有对数据库的更改操作都被记录在<strong>二进制日志（Binary Log，即binlog）</strong>中。这个日志包含了所有数据修改语句（如INSERT、UPDATE、DELETE），或者更底层的事件，如行格式的二进制日志。</li>
 <li><strong>日志传输</strong>：从数据库（Slave）连接到主数据库，请求主数据库发送 binlog 中的更新事件。主数据库有一个名为 <strong>Binlog Dump Thread</strong> 的线程，它负责读取 binlog 并将这些事件传送给从数据库。</li>
@@ -479,8 +489,8 @@ newProxyInstance方法的三个参数：</li>
 <blockquote>
 <p>我是canal，每秒一次正在监听:0d7700c0-0117-4a28-8d82-0a6ccbafadfd<br>我是canal，每秒一次正在监听:a658edf6-e56c-458e-bf13-25a64bffa7ec<br>我是canal，每秒一次正在监听:a6896fce-8f48-4478-983e-cf4bb05c1393<br>我是canal，每秒一次正在监听:e180a475-8a4a-44ee-84fa-096c2f44db16<br>我是canal，每秒一次正在监听:0fd10344-7eb1-412d-90fc-185e3ec69c51<br>&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;binlog[mysql-bin.000353:54296] , name[api_open_platform,interface_access] , eventType : INSERT<br>accesskey : a7e4c3c9-90be-434f-a201-1fb0c9c6921f    update&#x3D;true<br>verify_type : 1    update&#x3D;true<br>secretkey : 41ee07aa-bd35-45f0-aa6f-b39351d8db0c    update&#x3D;true<br>remaining_amount :     update&#x3D;true<br>remaining_times :     update&#x3D;true<br>interface_id : 10    update&#x3D;true<br>userid : 28    update&#x3D;true<br>call_times : 0    update&#x3D;true<br>failed_call_times : 0    update&#x3D;true<br>create_time : 2024-03-06 22:42:25    update&#x3D;true<br>update_time : 2024-03-06 22:42:25    update&#x3D;true<br>is_deleted : 0    update&#x3D;true<br>我是canal，每秒一次正在监听:1b80e597-9976-430a-b6f7-4fcaac936776<br>我是canal，每秒一次正在监听:9e89f0f4-0dfe-4f53-88c7-5731dbf0ebdf<br>我是canal，每秒一次正在监听:19322e19-0924-400d-a85b-bba58beb1a53<br>我是canal，每秒一次正在监听:0febf37a-df93-40b8-8c23-d0b89a1a1576</p>
 </blockquote>
-<section class="footnotes"><div class="footnote-list"><ol><li><span id="fn:1" class="footnote-text"><span>本文基于canalv1.1.7版本。
-<a href="#fnref:1" rev="footnote" class="footnote-backref"> ↩</a></span></span></li></ol></div></section>]]></content>
+<p>至此，canal启动完成。<section class="footnotes"><div class="footnote-list"><ol><li><span id="fn:1" class="footnote-text"><span>本文基于canalv1.1.7版本。<br><a href="#fnref:1" rev="footnote" class="footnote-backref"> ↩</a></span></span></li></ol></div></section></p>
+]]></content>
       <categories>
         <category>分布式</category>
         <category>中间件</category>
