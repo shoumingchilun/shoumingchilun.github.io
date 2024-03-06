@@ -1,8 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
+    <title>canal入门篇：实现MySQL&amp;Redis双写一致性</title>
+    <url>/2024/03/06/backend/canal_MySQL&amp;Redis/</url>
+    <content><![CDATA[]]></content>
+      <categories>
+        <category>后端</category>
+        <category>分布式</category>
+        <category>中间件</category>
+        <category>canal</category>
+      </categories>
+      <tags>
+        <tag>canal</tag>
+        <tag>双写一致性</tag>
+        <tag>redis</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Spring入门篇：IOC、AOP</title>
-    <url>/2024/03/03/backend/Spring/</url>
+    <url>/2024/03/03/backend/Spring_IOC&amp;AOP/</url>
     <content><![CDATA[<p>本文<sup id="fnref:1" class="footnote-ref"><a href="#fn:1" rel="footnote"><span class="hint--top hint--rounded" aria-label="本文写于2023年初，经修正后发布于个人博客。">[1]</span></a></sup>包含：</p>
 <ol>
 <li>核心功能：IOC容器</li>
@@ -25,8 +41,8 @@
 <blockquote>
 <p>这边我使用的是Spring5，spring6的新特性主要体现在云原生方面，基础功能都是一样的。</p>
 </blockquote>
-<p><img src="/2024/03/03/backend/Spring/lib%E4%BE%9D%E8%B5%96.png"></p>
-<h2 id="方式2：使用maven安装依赖"><a href="#方式2：使用maven安装依赖" class="headerlink" title="方式2：使用maven安装依赖"></a>方式2：使用maven安装依赖</h2><p>先进入这个网站<a href="https://mvnrepository.com/">mvnrepository</a>。查看spring的依赖，和上面直接下载的jar包一样。<br><img src="/2024/03/03/backend/Spring/rep%E4%B8%AD%E4%BE%9D%E8%B5%96.png"><br>点击对应条目，选择依赖版本，将依赖复制到pom.xml中。<br>pom.xml中最终添加：</p>
+<p><img src="/2024/03/03/backend/Spring_IOC&AOP/lib%E4%BE%9D%E8%B5%96.png"></p>
+<h2 id="方式2：使用maven安装依赖"><a href="#方式2：使用maven安装依赖" class="headerlink" title="方式2：使用maven安装依赖"></a>方式2：使用maven安装依赖</h2><p>先进入这个网站<a href="https://mvnrepository.com/">mvnrepository</a>。查看spring的依赖，和上面直接下载的jar包一样。<br><img src="/2024/03/03/backend/Spring_IOC&AOP/rep%E4%B8%AD%E4%BE%9D%E8%B5%96.png"><br>点击对应条目，选择依赖版本，将依赖复制到pom.xml中。<br>pom.xml中最终添加：</p>
 <figure class="highlight xml"><table><tr><td class="code"><pre><code class="hljs xml"><span class="hljs-tag">&lt;<span class="hljs-name">dependencies</span>&gt;</span><br>    <span class="hljs-tag">&lt;<span class="hljs-name">dependency</span>&gt;</span><br>        <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>org.springframework<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span><br>        <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>spring-core<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span><br>        <span class="hljs-tag">&lt;<span class="hljs-name">version</span>&gt;</span>6.1.3<span class="hljs-tag">&lt;/<span class="hljs-name">version</span>&gt;</span><br>    <span class="hljs-tag">&lt;/<span class="hljs-name">dependency</span>&gt;</span><br>    <span class="hljs-tag">&lt;<span class="hljs-name">dependency</span>&gt;</span><br>        <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>org.springframework<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span><br>        <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>spring-beans<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span><br>        <span class="hljs-tag">&lt;<span class="hljs-name">version</span>&gt;</span>6.1.3<span class="hljs-tag">&lt;/<span class="hljs-name">version</span>&gt;</span><br>    <span class="hljs-tag">&lt;/<span class="hljs-name">dependency</span>&gt;</span><br>    <span class="hljs-tag">&lt;<span class="hljs-name">dependency</span>&gt;</span><br>        <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>org.springframework<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span><br>        <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>spring-context<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span><br>        <span class="hljs-tag">&lt;<span class="hljs-name">version</span>&gt;</span>6.1.3<span class="hljs-tag">&lt;/<span class="hljs-name">version</span>&gt;</span><br>    <span class="hljs-tag">&lt;/<span class="hljs-name">dependency</span>&gt;</span><br><span class="hljs-tag">&lt;/<span class="hljs-name">dependencies</span>&gt;</span><br></code></pre></td></tr></table></figure>
 
 <h1 id="IOC容器"><a href="#IOC容器" class="headerlink" title="IOC容器"></a>IOC容器</h1><p>什么是IOC：<br>在传统的编程模式中，<strong>一个对象负责创建和管理它所依赖的其他对象</strong>；而采用IOC之后，对象不再自行创建或查找其所依赖的对象，而是<strong>由外部容器（如Spring框架的ApplicationContext）负责创建和管理这些依赖对象，并将它们注入到需要它们的对象中</strong>。</p>
@@ -142,7 +158,7 @@
 在bean中引入配置文件：<figure class="highlight xml"><table><tr><td class="code"><pre><code class="hljs xml"><span class="hljs-comment">&lt;!---引入context名称空间--&gt;</span><br><span class="hljs-tag">&lt;<span class="hljs-name">beans</span> <span class="hljs-attr">xmlns</span>=<span class="hljs-string">&quot;http://www.springframework.org/schema/beans&quot;</span></span><br><span class="hljs-tag">    <span class="hljs-attr">xmlns:xsi</span>=<span class="hljs-string">&quot;http://www.w3.org/2001/XMLSchema-instance&quot;</span></span><br><span class="hljs-tag">    <span class="hljs-attr">xmlns:p</span>=<span class="hljs-string">&quot;http://www.springframework.org/schema/p&quot;</span></span><br><span class="hljs-tag">    <span class="hljs-attr">xmlns:util</span>=<span class="hljs-string">&quot;http://www.springframework.org/schema/util&quot;</span></span><br><span class="hljs-tag">    <span class="hljs-attr">xmlns:context</span>=<span class="hljs-string">&quot;http://www.springframework.org/schema/context&quot;</span></span><br><span class="hljs-tag">    <span class="hljs-attr">xsi:schemaLocation</span>=<span class="hljs-string">&quot;http://www.springframework.org/schema/beans </span></span><br><span class="hljs-string"><span class="hljs-tag">     http://www.springframework.org/schema/beans/spring-beans.xsd </span></span><br><span class="hljs-string"><span class="hljs-tag">     http://www.springframework.org/schema/util </span></span><br><span class="hljs-string"><span class="hljs-tag">     http://www.springframework.org/schema/util/spring-util.xsd</span></span><br><span class="hljs-string"><span class="hljs-tag">     http://www.springframework.org/schema/context </span></span><br><span class="hljs-string"><span class="hljs-tag">     http://www.springframework.org/schema/context/spring-context.xsd&quot;</span>&gt;</span><br>     <span class="hljs-comment">&lt;!--引入外部属性文件--&gt;</span><br>     <span class="hljs-tag">&lt;<span class="hljs-name">context:property-placeholder</span> <span class="hljs-attr">location</span>=<span class="hljs-string">&quot;classpath:jdbc.properties&quot;</span>/&gt;</span><br>     <span class="hljs-comment">&lt;!--配置连接池--&gt;</span><br>     <span class="hljs-tag">&lt;<span class="hljs-name">bean</span> <span class="hljs-attr">id</span>=<span class="hljs-string">&quot;dataSource&quot;</span> <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;com.alibaba.druid.pool.DruidDataSource&quot;</span>&gt;</span><br>         <span class="hljs-comment">&lt;!-- 获取properties文件内容，根据key获取，使用spring表达式获取 --&gt;</span><br>         <span class="hljs-tag">&lt;<span class="hljs-name">property</span> <span class="hljs-attr">name</span>=<span class="hljs-string">&quot;driverClassName&quot;</span> <span class="hljs-attr">value</span>=<span class="hljs-string">&quot;$&#123;prop.driverClass&#125;&quot;</span>/&gt;</span><br>         <span class="hljs-tag">&lt;<span class="hljs-name">property</span> <span class="hljs-attr">name</span>=<span class="hljs-string">&quot;url&quot;</span> <span class="hljs-attr">value</span>=<span class="hljs-string">&quot;$&#123;prop.url&#125;&quot;</span>/&gt;</span><br>         <span class="hljs-tag">&lt;<span class="hljs-name">property</span> <span class="hljs-attr">name</span>=<span class="hljs-string">&quot;username&quot;</span> <span class="hljs-attr">value</span>=<span class="hljs-string">&quot;$&#123;prop.username&#125;&quot;</span>/&gt;</span><br>         <span class="hljs-tag">&lt;<span class="hljs-name">property</span> <span class="hljs-attr">name</span>=<span class="hljs-string">&quot;password&quot;</span> <span class="hljs-attr">value</span>=<span class="hljs-string">&quot;$&#123;prop.password&#125;&quot;</span>/&gt;</span><br>     <span class="hljs-tag">&lt;/<span class="hljs-name">bean</span>&gt;</span><br><span class="hljs-tag">&lt;/<span class="hljs-name">beans</span>&gt;</span><br></code></pre></td></tr></table></figure></li>
 </ol>
 <h3 id="基于注解方式"><a href="#基于注解方式" class="headerlink" title="基于注解方式"></a>基于注解方式</h3><p>使用注解的目的：简化xml配置。<br>注解格式：@注解名称(属性名称&#x3D;属性值, 属性名称&#x3D;属性值…)。<br>注解位置：类、方法、属性等上方。</p>
-<h4 id="创建对象-1"><a href="#创建对象-1" class="headerlink" title="创建对象"></a>创建对象</h4><h5 id="补充spring-aop依赖"><a href="#补充spring-aop依赖" class="headerlink" title="补充spring-aop依赖"></a>补充spring-aop依赖</h5><p>下载jar包：<img src="/2024/03/03/backend/Spring/lib-aop.png"></p>
+<h4 id="创建对象-1"><a href="#创建对象-1" class="headerlink" title="创建对象"></a>创建对象</h4><h5 id="补充spring-aop依赖"><a href="#补充spring-aop依赖" class="headerlink" title="补充spring-aop依赖"></a>补充spring-aop依赖</h5><p>下载jar包：<img src="/2024/03/03/backend/Spring_IOC&AOP/lib-aop.png"></p>
 <p>Maven：</p>
 <figure class="highlight xml"><table><tr><td class="code"><pre><code class="hljs xml"><span class="hljs-tag">&lt;<span class="hljs-name">dependency</span>&gt;</span><br>    <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>org.springframework<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span><br>    <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>spring-aop<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span><br>    <span class="hljs-tag">&lt;<span class="hljs-name">version</span>&gt;</span>6.1.3<span class="hljs-tag">&lt;/<span class="hljs-name">version</span>&gt;</span><br><span class="hljs-tag">&lt;/<span class="hljs-name">dependency</span>&gt;</span><br></code></pre></td></tr></table></figure>
 <h5 id="Spring针对Bean管理中创建对象提供的注解："><a href="#Spring针对Bean管理中创建对象提供的注解：" class="headerlink" title="Spring针对Bean管理中创建对象提供的注解："></a>Spring针对Bean管理中创建对象提供的注解：</h5><ul>
@@ -257,12 +273,12 @@
 <li><strong>Bean使用</strong>。</li>
 <li><strong>销毁</strong>：如果 Bean 实现了 DisposableBean 接口，或者在配置中通过 destroy-method 属性指定了销毁方法，容器会在 Bean 销毁阶段调用相应的方法，执行 Bean 的销毁逻辑。这一过程由 DisposableBean 接口的 destroy 方法或在 BeanDefinition 中指定的 destroy-method 属性负责。</li>
 </ol>
-<h1 id="AOP面向切面编程"><a href="#AOP面向切面编程" class="headerlink" title="AOP面向切面编程"></a>AOP面向切面编程</h1><h2 id="AOP概念"><a href="#AOP概念" class="headerlink" title="AOP概念"></a>AOP概念</h2><h3 id="面向切面编程"><a href="#面向切面编程" class="headerlink" title="面向切面编程"></a>面向切面编程</h3><p>AOP(Aspect-Oriented Programming的简称)，也就是面向切面编程的意思，它是一种编程思想，在Spring的官方文档中描述: <strong>面向切面编程(AOP)提供了另一种思考程序结构的方式来对面向对象编程(OOP)的进行补充和完善，面向对象编程(OOP)中关键的是对象，而面向切面编程(AOP)中关键的是切面。</strong><br>AOP中切面可以实现关注点的模块化(即统一抽取，提高复用)，例如跨越多种类型和对象的事务管理，这种关注点在 AOP 文献中通常被称为横切关注点。<br><img src="/2024/03/03/backend/Spring/aop_introduction.png"></p>
-<p>单单看文字描述可能比较抽象，下面我们通过具体例子结合图片来形象化这些概念。<br>假如有两个洗澡函数：<br>男函数： 脱衣服、唱歌、洗脸、洗头、洗身体、擦干身体、穿衣服<br>女函数： 脱衣服、洗脸、洗头、护发、洗身体、擦干身体、护肤、穿衣服<br>发现问题： 通过上面的例子，我们会发现无论男女，<strong>脱衣服、穿衣服是洗澡不可缺少的步骤，而且这两个步骤在“洗澡”这个业务不是核心，它只是一个关注点</strong>，因为脱衣服和穿衣服的场景并不只是在洗澡中存在，就比如: 天气热我们需要脱衣服，天气冷我们需要穿衣服，所以，<strong>将衣服的管理定义成一个模块，然后在需要的地方调用才是是一个更加合理的设计</strong>，具体如下图：<br><img src="/2024/03/03/backend/Spring/aop_%E6%B4%97%E6%BE%A1.png"></p>
+<h1 id="AOP面向切面编程"><a href="#AOP面向切面编程" class="headerlink" title="AOP面向切面编程"></a>AOP面向切面编程</h1><h2 id="AOP概念"><a href="#AOP概念" class="headerlink" title="AOP概念"></a>AOP概念</h2><h3 id="面向切面编程"><a href="#面向切面编程" class="headerlink" title="面向切面编程"></a>面向切面编程</h3><p>AOP(Aspect-Oriented Programming的简称)，也就是面向切面编程的意思，它是一种编程思想，在Spring的官方文档中描述: <strong>面向切面编程(AOP)提供了另一种思考程序结构的方式来对面向对象编程(OOP)的进行补充和完善，面向对象编程(OOP)中关键的是对象，而面向切面编程(AOP)中关键的是切面。</strong><br>AOP中切面可以实现关注点的模块化(即统一抽取，提高复用)，例如跨越多种类型和对象的事务管理，这种关注点在 AOP 文献中通常被称为横切关注点。<br><img src="/2024/03/03/backend/Spring_IOC&AOP/aop_introduction.png"></p>
+<p>单单看文字描述可能比较抽象，下面我们通过具体例子结合图片来形象化这些概念。<br>假如有两个洗澡函数：<br>男函数： 脱衣服、唱歌、洗脸、洗头、洗身体、擦干身体、穿衣服<br>女函数： 脱衣服、洗脸、洗头、护发、洗身体、擦干身体、护肤、穿衣服<br>发现问题： 通过上面的例子，我们会发现无论男女，<strong>脱衣服、穿衣服是洗澡不可缺少的步骤，而且这两个步骤在“洗澡”这个业务不是核心，它只是一个关注点</strong>，因为脱衣服和穿衣服的场景并不只是在洗澡中存在，就比如: 天气热我们需要脱衣服，天气冷我们需要穿衣服，所以，<strong>将衣服的管理定义成一个模块，然后在需要的地方调用才是是一个更加合理的设计</strong>，具体如下图：<br><img src="/2024/03/03/backend/Spring_IOC&AOP/aop_%E6%B4%97%E6%BE%A1.png"></p>
 <p>如最常用的日志以及事务功能，它们都可能是横向的分布在不通的业务层级(对象层级)中，但是又和具体的核心业务无直接关系，诸如这样类型的代码，在程序中被称作**横切(cross cutting)**，我们应该考虑将这一类代码进行统一管理，提高复用性。</p>
 <p><strong>面向切面编程(AOP)就是将这类与核心业务无关的，但又影响着多个类的公共行为抽取、封装到一个可重用模块，从而实现代码复用和模块解耦的目的，这种开发思想则被称为面向切面编程。</strong></p>
 <blockquote>
-<p>通俗解释：不通过修改源代码方式，在主干功能里面添加新功能：<br><img src="/2024/03/03/backend/Spring/aop_%E6%9D%83%E9%99%90%E5%88%A4%E6%96%AD.png"></p>
+<p>通俗解释：不通过修改源代码方式，在主干功能里面添加新功能：<br><img src="/2024/03/03/backend/Spring_IOC&AOP/aop_%E6%9D%83%E9%99%90%E5%88%A4%E6%96%AD.png"></p>
 </blockquote>
 <h2 id="AOP底层原理"><a href="#AOP底层原理" class="headerlink" title="AOP底层原理"></a>AOP底层原理</h2><p>Spring AOP底层使用动态代理实现：</p>
 <ol>
@@ -312,7 +328,7 @@ newProxyInstance方法的三个参数：</li>
 <li>最终通知@After</li>
 </ul>
 <h2 id="AOP操作"><a href="#AOP操作" class="headerlink" title="AOP操作"></a>AOP操作</h2><p>Spring 自身提供了 AOP 支持，但若要利用 AspectJ 的注解驱动风格（如 @Aspect、@Before、@After、@Around 等）进行更复杂、更强大的切面编程，则通常需要添加 AspectJ 相关的依赖项。</p>
-<h3 id="AspectJ介绍"><a href="#AspectJ介绍" class="headerlink" title="AspectJ介绍"></a>AspectJ介绍</h3><p>AspectJ不是Spring组成部分，是独立的AOP框架，一般将AspectJ和Spring框架一起使用，进行AOP操作。<br>准备工作：引入AspectJ相关依赖。<br><img src="/2024/03/03/backend/Spring/aop_%E4%BE%9D%E8%B5%961.png"><br><img src="/2024/03/03/backend/Spring/aop_%E4%BE%9D%E8%B5%962.png"></p>
+<h3 id="AspectJ介绍"><a href="#AspectJ介绍" class="headerlink" title="AspectJ介绍"></a>AspectJ介绍</h3><p>AspectJ不是Spring组成部分，是独立的AOP框架，一般将AspectJ和Spring框架一起使用，进行AOP操作。<br>准备工作：引入AspectJ相关依赖。<br><img src="/2024/03/03/backend/Spring_IOC&AOP/aop_%E4%BE%9D%E8%B5%961.png"><br><img src="/2024/03/03/backend/Spring_IOC&AOP/aop_%E4%BE%9D%E8%B5%962.png"></p>
 <p>或使用Maven导入依赖：</p>
 <figure class="highlight xml"><table><tr><td class="code"><pre><code class="hljs xml"><span class="hljs-tag">&lt;<span class="hljs-name">dependency</span>&gt;</span><br>    <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>org.springframework<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span><br>    <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>spring-aop<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span><br>    <span class="hljs-tag">&lt;<span class="hljs-name">version</span>&gt;</span>6.1.3<span class="hljs-tag">&lt;/<span class="hljs-name">version</span>&gt;</span><br><span class="hljs-tag">&lt;/<span class="hljs-name">dependency</span>&gt;</span><br><span class="hljs-tag">&lt;<span class="hljs-name">dependency</span>&gt;</span><br>    <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>org.aspectj<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span><br>    <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>aspectjrt<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span><br>    <span class="hljs-tag">&lt;<span class="hljs-name">version</span>&gt;</span>1.6.12<span class="hljs-tag">&lt;/<span class="hljs-name">version</span>&gt;</span><br><span class="hljs-tag">&lt;/<span class="hljs-name">dependency</span>&gt;</span><br><span class="hljs-tag">&lt;<span class="hljs-name">dependency</span>&gt;</span><br>    <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>org.aspectj<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span><br>    <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>aspectjweaver<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span><br>    <span class="hljs-tag">&lt;<span class="hljs-name">version</span>&gt;</span>1.6.12<span class="hljs-tag">&lt;/<span class="hljs-name">version</span>&gt;</span><br><span class="hljs-tag">&lt;/<span class="hljs-name">dependency</span>&gt;</span><br><span class="hljs-tag">&lt;<span class="hljs-name">dependency</span>&gt;</span><br>    <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>cglib<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span><br>    <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>cglib<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span><br>    <span class="hljs-tag">&lt;<span class="hljs-name">version</span>&gt;</span>2.2<span class="hljs-tag">&lt;/<span class="hljs-name">version</span>&gt;</span><br><span class="hljs-tag">&lt;/<span class="hljs-name">dependency</span>&gt;</span><br></code></pre></td></tr></table></figure>
 
@@ -359,14 +375,125 @@ newProxyInstance方法的三个参数：</li>
 <section class="footnotes"><div class="footnote-list"><ol><li><span id="fn:1" class="footnote-text"><span>本文写于2023年初，经修正后发布于个人博客。
 <a href="#fnref:1" rev="footnote" class="footnote-backref"> ↩</a></span></span></li></ol></div></section>]]></content>
       <categories>
-        <category>后端开发框架</category>
-        <category>SSM</category>
+        <category>后端开发</category>
+        <category>框架</category>
         <category>Spring</category>
       </categories>
       <tags>
         <tag>Spring</tag>
         <tag>IOC</tag>
         <tag>AOP</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>canal入门篇：介绍&amp;配置</title>
+    <url>/2024/03/06/backend/canal_config/</url>
+    <content><![CDATA[<h1 id="介绍-1"><a href="#介绍-1" class="headerlink" title="介绍[1]"></a>介绍<sup id="fnref:1" class="footnote-ref"><a href="#fn:1" rel="footnote"><span class="hint--top hint--rounded" aria-label="本文基于canalv1.1.7版本。">[1]</span></a></sup></h1><p><strong>中间件功能：基于数据库增量日志解析，提供增量数据的订阅&amp;消费。</strong>（目前主要支持了mysql）</p>
+<h2 id="工作原理"><a href="#工作原理" class="headerlink" title="工作原理"></a>工作原理</h2><h3 id="1-MySQL主从复制原理"><a href="#1-MySQL主从复制原理" class="headerlink" title="1. MySQL主从复制原理"></a>1. MySQL主从复制原理</h3><ol>
+<li><strong>主库 Binlog 日志</strong>：在主数据库（Master）中，所有对数据库的更改操作都被记录在<strong>二进制日志（Binary Log，即binlog）</strong>中。这个日志包含了所有数据修改语句（如INSERT、UPDATE、DELETE），或者更底层的事件，如行格式的二进制日志。</li>
+<li><strong>日志传输</strong>：从数据库（Slave）连接到主数据库，请求主数据库发送 binlog 中的更新事件。主数据库有一个名为 <strong>Binlog Dump Thread</strong> 的线程，它负责读取 binlog 并将这些事件传送给从数据库。</li>
+<li><strong>中继日志 Relay Log</strong>：从数据库接收到主数据库的更新事件后，将它们存储在自己的中继日志（Relay Log）中。</li>
+<li><strong>事件重放</strong>：从数据库有自己的** SQL 线程（也称 I&#x2F;O 线程和 SQL 线程）**，I&#x2F;O 线程负责接收并写入 relay log，而 SQL 线程则负责读取 relay log 中的事件并在从数据库上重新执行（即重放）这些事件。</li>
+</ol>
+<p><img src="/2024/03/06/backend/canal_config/MySQL%E4%B8%BB%E4%BB%8E%E5%A4%8D%E5%88%B6.png"></p>
+<p>这个过程保证了主数据库的每一次更新操作都能在从数据库上按照同样的顺序执行一次，从而让从数据库的数据与主数据库保持一致。</p>
+<blockquote>
+<p>复制模式(MySQL 支持多种复制模式)：</p>
+<ul>
+<li>异步复制是最常见的模式，主库不等待从库确认就继续处理新的事务，因此可能存在一定的数据延迟。</li>
+<li>半同步复制在主库提交事务之前至少需要一个从库确认已接收事件，提供了一定程度的数据一致性保障。</li>
+<li>全同步复制要求所有从库都确认事务后，主库才提交事务，提供了最强的数据一致性，但可能会影响性能。</li>
+</ul>
+</blockquote>
+<h3 id="2-canal工作原理"><a href="#2-canal工作原理" class="headerlink" title="2. canal工作原理"></a>2. canal工作原理</h3><p><img src="/2024/03/06/backend/canal_config/canal%E5%B7%A5%E4%BD%9C%E5%8E%9F%E7%90%86.png"></p>
+<ol>
+<li><strong>模拟MySQL Slave</strong>： Canal通过模拟MySQL的Slave节点行为，连接到MySQL Master节点，并遵循MySQL的复制协议。它会像真正的MySQL slave那样，向MySQL master发送dump binlog的请求。</li>
+<li><strong>获取Binary Log</strong>： 当MySQL Master接收到这个dump请求后，它会开始将自身的二进制日志（Binary Log）推送给Canal。Binary Log中记录了所有对数据库的更改操作，如INSERT、UPDATE、DELETE等。</li>
+<li><strong>解析Binary Log</strong>： Canal接收并解析Master推送过来的Binary Log数据流，将其转换成结构化的事件（event）。这些事件包含了数据库变更的具体内容，如变更前后的行数据、执行的SQL语句等。</li>
+</ol>
+<h2 id="架构"><a href="#架构" class="headerlink" title="架构"></a>架构</h2><p><img src="/2024/03/06/backend/canal_config/canal%E6%9E%B6%E6%9E%84.png"></p>
+<ol>
+<li>server：一个canal运行实例，对应于一个jvm</li>
+<li>instance：对应于一个数据队列（1个server对应1..n个instance）<ol>
+<li>eventParser：数据源接入，模拟slave协议和master进行交互，协议解析。</li>
+<li>eventSink：Parser和Store链接器，进行数据过滤，加工，分发的工作。</li>
+<li>eventStore：数据存储。</li>
+<li>metaManager：增量订阅&amp;消费信息管理器。</li>
+</ol>
+</li>
+</ol>
+<blockquote>
+<p>具体各个模块的功能请参考<a href="https://github.com/alibaba/canal/wiki/%E7%AE%80%E4%BB%8B">canal仓库</a></p>
+</blockquote>
+<h1 id="配置（快速启动canal）"><a href="#配置（快速启动canal）" class="headerlink" title="配置（快速启动canal）"></a>配置（快速启动canal）</h1><h2 id="1-更改MySQL配置"><a href="#1-更改MySQL配置" class="headerlink" title="1. 更改MySQL配置"></a>1. 更改MySQL配置</h2><p>修改MySQL配置文件my.ini，开启 Binlog 写入功能，并配置 binlog-format 为 ROW 模式：</p>
+<figure class="highlight ini"><table><tr><td class="code"><pre><code class="hljs ini"><span class="hljs-attr">log-bin</span>=mysql-bin <span class="hljs-comment"># 开启 binlog</span><br><span class="hljs-attr">binlog-format</span>=ROW <span class="hljs-comment"># 选择 ROW 模式</span><br><span class="hljs-attr">server-id</span>=<span class="hljs-number">1</span> <span class="hljs-comment"># 配置 MySQL replaction 需要定义，不要和 canal 的 slaveId 重复</span><br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p>Windows修改MySQL配置文件的方式：</p>
+<ol>
+<li><code>Win+R</code>打开<strong>运行</strong>，输入<code>services.msc</code>，进入服务页面。</li>
+<li>找到对应的MySQL服务，双击查看<strong>可执行文件的路径：</strong>条目下的<code>--default-file=</code>后的my.ini文件位置。</li>
+<li>修改该文件。</li>
+<li>右键MySQL服务条目，点击<strong>重新启动</strong>，重启MySQL服务。</li>
+</ol>
+</blockquote>
+<h2 id="2-安装canal"><a href="#2-安装canal" class="headerlink" title="2. 安装canal"></a>2. 安装canal</h2><p>进入Ubuntu安装canal：</p>
+<ol>
+<li>进入canal的<a href="https://github.com/alibaba/canal/releases">release页面</a>，选择对应版本的压缩包。（我下载的是canal.deployer-1.1.7.tar.gz<br>）</li>
+<li>在ubuntu中拉取该压缩包：<code>wget https://github.com/alibaba/canal/releases/download/canal-1.1.7/canal.deployer-1.1.7.tar.gz</code></li>
+<li>解压该压缩包<code>tar -zxf canal.deployer-1.1.7.tar.gz</code></li>
+<li>修改配置文件<code>vim conf/example/instance.properties</code></li>
+</ol>
+<p>修改配置：</p>
+<figure class="highlight routeros"><table><tr><td class="code"><pre><code class="hljs routeros">canal.instance.master.<span class="hljs-attribute">address</span>=192.168.112.1:3306<br>canal.instance.master.journal.<span class="hljs-attribute">name</span>=mysql-bin.000353<br>canal.instance.master.<span class="hljs-attribute">position</span>=1<br><span class="hljs-built_in">..</span>.<br>canal.instance.<span class="hljs-attribute">dbUsername</span>=canal<br>canal.instance.<span class="hljs-attribute">dbPassword</span>=canal<br><span class="hljs-built_in">..</span>.<br>canal.instance.filter.<span class="hljs-attribute">regex</span>=api_open_platform\\..*<br></code></pre></td></tr></table></figure>
+<ul>
+<li>address: 数据库地址</li>
+<li>journal.name: 日志文件名，去MySQL运行文件目录旁边找一下就能找到了</li>
+<li>position: 从日志的第几个字节开始读取</li>
+<li>dbUsername: 用户名</li>
+<li>dbPassword: 用户密码</li>
+<li>filter.regex：使用正则表达式选择数据库表（我设置的是监听api_open_platform数据库下所有的表）</li>
+</ul>
+<ol>
+<li><strong>开启命令</strong>：<code>bash bin/startup.sh</code>。</li>
+<li><strong>查看日志命令</strong>：<code>vim logs/canal/canal.log</code>、<code>vim logs/example/example.log</code>。</li>
+<li><strong>关闭命令</strong>：<code>bash bin/stop.sh</code>。</li>
+</ol>
+<p>成功后的运行日志：</p>
+<ul>
+<li>canal.log：<blockquote>
+<p>2024-03-06 22:16:46.110 [main] INFO  com.alibaba.otter.canal.deployer.CanalLauncher - ## set default uncaught exception handler<br>2024-03-06 22:16:46.117 [main] INFO  com.alibaba.otter.canal.deployer.CanalLauncher - ## load canal configurations<br>2024-03-06 22:16:46.126 [main] INFO  com.alibaba.otter.canal.deployer.CanalStarter - ## start the canal server.<br>2024-03-06 22:16:46.152 [main] INFO  com.alibaba.otter.canal.deployer.CanalController - ## start the canal server[172.20.0.1(172.20.0.1):11111]<br>2024-03-06 22:16:47.076 [main] INFO  com.alibaba.otter.canal.deployer.CanalStarter - ## the canal server is running now ……</p>
+</blockquote>
+</li>
+<li>example.log：<blockquote>
+<p>2024-03-06 22:16:46.589 [main] INFO  c.a.otter.canal.instance.spring.CanalInstanceWithSpring - start CannalInstance for 1-example<br>2024-03-06 22:16:47.044 [main] WARN  c.a.o.canal.parse.inbound.mysql.dbsync.LogEventConvert - –&gt; init table filter : ^api_open_platform..<em>$<br>2024-03-06 22:16:47.044 [main] WARN  c.a.o.canal.parse.inbound.mysql.dbsync.LogEventConvert - –&gt; init table black filter : ^mysql.slave_.</em>$<br>2024-03-06 22:16:47.048 [main] INFO  c.a.otter.canal.instance.core.AbstractCanalInstance - start successful….<br>2024-03-06 22:16:47.116 [destination &#x3D; example , address &#x3D; &#x2F;192.168.112.1:3306 , EventParser] WARN  c.a.o.c.p.inbound.mysql.rds.RdsBinlogEventParserProxy - —&gt; begin to find start position, it will be long time for reset or first position<br>2024-03-06 22:16:47.132 [destination &#x3D; example , address &#x3D; &#x2F;192.168.112.1:3306 , EventParser] WARN  c.a.o.c.p.inbound.mysql.rds.RdsBinlogEventParserProxy - prepare to find start position mysql-bin.000353:4:1709690365000<br>2024-03-06 22:16:47.437 [destination &#x3D; example , address &#x3D; &#x2F;192.168.112.1:3306 , EventParser] WARN  c.a.o.c.p.inbound.mysql.rds.RdsBinlogEventParserProxy - —&gt; find start position successfully, EntryPosition[included&#x3D;false,journalName&#x3D;mysql-bin.000353,position&#x3D;4,serverId&#x3D;1,gtid&#x3D;<null>,timestamp&#x3D;1709690365000] cost : 292ms , the next step is binlog dump</p>
+</blockquote>
+</li>
+</ul>
+<h1 id="java连接canal"><a href="#java连接canal" class="headerlink" title="java连接canal"></a>java连接canal</h1><h2 id="添加maven依赖"><a href="#添加maven依赖" class="headerlink" title="添加maven依赖"></a>添加maven依赖</h2><figure class="highlight xml"><table><tr><td class="code"><pre><code class="hljs xml"><span class="hljs-tag">&lt;<span class="hljs-name">dependency</span>&gt;</span><br>        <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>com.alibaba.otter<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span><br>        <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>canal.client<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span><br>        <span class="hljs-tag">&lt;<span class="hljs-name">version</span>&gt;</span>1.1.0<span class="hljs-tag">&lt;/<span class="hljs-name">version</span>&gt;</span><br><span class="hljs-tag">&lt;/<span class="hljs-name">dependency</span>&gt;</span><br></code></pre></td></tr></table></figure>
+<h2 id="main函数"><a href="#main函数" class="headerlink" title="main函数"></a>main函数</h2><blockquote>
+<p>注：该函数仅用于测试能否连接。</p>
+</blockquote>
+<figure class="highlight java"><table><tr><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">main</span><span class="hljs-params">(String[] args)</span>&#123;<br>    System.out.println(<span class="hljs-string">&quot;---------O(∩_∩)O哈哈~ initCanal() main方法-----------&quot;</span>);<br>    <span class="hljs-comment">//=================================</span><br>    <span class="hljs-comment">// 创建链接canal服务端</span><br>    <span class="hljs-type">CanalConnector</span> <span class="hljs-variable">connector</span> <span class="hljs-operator">=</span> CanalConnectors.newSingleConnector(<span class="hljs-keyword">new</span> <span class="hljs-title class_">InetSocketAddress</span>(<span class="hljs-string">&quot;192.168.146.132&quot;</span>,<span class="hljs-number">11111</span>), <span class="hljs-string">&quot;example&quot;</span>, <span class="hljs-string">&quot;&quot;</span>, <span class="hljs-string">&quot;&quot;</span>);<br>    <span class="hljs-type">int</span> <span class="hljs-variable">batchSize</span> <span class="hljs-operator">=</span> <span class="hljs-number">1000</span>;<br>    <span class="hljs-comment">//空闲空转计数器</span><br>    <span class="hljs-type">int</span> <span class="hljs-variable">emptyCount</span> <span class="hljs-operator">=</span> <span class="hljs-number">0</span>;<br>    System.out.println(<span class="hljs-string">&quot;---------------------canal init OK，开始监听mysql变化------&quot;</span>);<br>    <span class="hljs-keyword">try</span> &#123;<br>        connector.connect();<br>        connector.subscribe(<span class="hljs-string">&quot;.*\\..*&quot;</span>);<br>        <span class="hljs-comment">//connector.subscribe(&quot;petstoredb.pets&quot;);</span><br>        connector.rollback();<br>        <span class="hljs-type">int</span> <span class="hljs-variable">totalEmptyCount</span> <span class="hljs-operator">=</span> <span class="hljs-number">600</span>;<br>        <span class="hljs-keyword">while</span> (emptyCount &lt; totalEmptyCount) &#123;<br>            System.out.println(<span class="hljs-string">&quot;我是canal，每秒一次正在监听:&quot;</span>+ UUID.randomUUID().toString());<br>            <span class="hljs-type">Message</span> <span class="hljs-variable">message</span> <span class="hljs-operator">=</span> connector.getWithoutAck(batchSize); <span class="hljs-comment">// 获取指定数量的数据</span><br>            <span class="hljs-type">long</span> <span class="hljs-variable">batchId</span> <span class="hljs-operator">=</span> message.getId();<br>            <span class="hljs-type">int</span> <span class="hljs-variable">size</span> <span class="hljs-operator">=</span> message.getEntries().size();<br>            <span class="hljs-keyword">if</span> (batchId == -<span class="hljs-number">1</span> || size == <span class="hljs-number">0</span>) &#123;<br>                emptyCount++;<br>                <span class="hljs-keyword">try</span> &#123; TimeUnit.SECONDS.sleep(<span class="hljs-number">1</span>); &#125; <span class="hljs-keyword">catch</span> (InterruptedException e) &#123; e.printStackTrace(); &#125;<br>            &#125; <span class="hljs-keyword">else</span> &#123;<br>                <span class="hljs-comment">//计数器重新置零</span><br>                emptyCount = <span class="hljs-number">0</span>;<br>                printEntry(message.getEntries());<br>            &#125;<br>            connector.ack(batchId); <span class="hljs-comment">// 提交确认</span><br>            <span class="hljs-comment">// connector.rollback(batchId); // 处理失败, 回滚数据</span><br>        &#125;<br>        System.out.println(<span class="hljs-string">&quot;已经监听了&quot;</span>+totalEmptyCount+<span class="hljs-string">&quot;秒，无任何消息，请重启重试......&quot;</span>);<br>    &#125; <span class="hljs-keyword">finally</span> &#123;<br>        connector.disconnect();<br>    &#125;<br>&#125;<br><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">printEntry</span><span class="hljs-params">(List&lt;Entry&gt; entrys)</span> &#123;<br>    <span class="hljs-keyword">for</span> (Entry entry : entrys) &#123;<br>        <span class="hljs-keyword">if</span> (entry.getEntryType() == EntryType.TRANSACTIONBEGIN || entry.getEntryType() == EntryType.TRANSACTIONEND) &#123;<br>            <span class="hljs-keyword">continue</span>;<br>        &#125;<br>        <span class="hljs-type">RowChange</span> <span class="hljs-variable">rowChage</span> <span class="hljs-operator">=</span> <span class="hljs-literal">null</span>;<br>        <span class="hljs-keyword">try</span> &#123;<br>            <span class="hljs-comment">//获取变更的row数据</span><br>            rowChage = RowChange.parseFrom(entry.getStoreValue());<br>        &#125; <span class="hljs-keyword">catch</span> (Exception e) &#123;<br>            <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">RuntimeException</span>(<span class="hljs-string">&quot;ERROR ## parser of eromanga-event has an error,data:&quot;</span> + entry.toString(),e);<br>        &#125;<br>        <span class="hljs-comment">//获取变动类型</span><br>        <span class="hljs-type">EventType</span> <span class="hljs-variable">eventType</span> <span class="hljs-operator">=</span> rowChage.getEventType();<br>        System.out.println(String.format(<span class="hljs-string">&quot;================binlog[%s:%s] , name[%s,%s] , eventType : %s&quot;</span>,<br>                entry.getHeader().getLogfileName(), entry.getHeader().getLogfileOffset(),<br>                entry.getHeader().getSchemaName(), entry.getHeader().getTableName(), eventType));<br>        <span class="hljs-keyword">for</span> (RowData rowData : rowChage.getRowDatasList()) &#123;<br>            <span class="hljs-keyword">if</span> (eventType == EventType.INSERT) &#123;<br>                rowData.getAfterColumnsList().forEach(column-&gt;System.out.println(column.getName() + <span class="hljs-string">&quot; : &quot;</span> + column.getValue() + <span class="hljs-string">&quot;    update=&quot;</span> + column.getUpdated()));<br>                <span class="hljs-comment">//redisInsert(rowData.getAfterColumnsList());</span><br>            &#125; <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (eventType == EventType.DELETE) &#123;<br>                rowData.getAfterColumnsList().forEach(column-&gt;System.out.println(column.getName() + <span class="hljs-string">&quot; : &quot;</span> + column.getValue() + <span class="hljs-string">&quot;    update=&quot;</span> + column.getUpdated()));<br>                <span class="hljs-comment">//redisDelete(rowData.getBeforeColumnsList());</span><br>            &#125; <span class="hljs-keyword">else</span> &#123;<span class="hljs-comment">//EventType.UPDATE</span><br>                rowData.getAfterColumnsList().forEach(column-&gt;System.out.println(column.getName() + <span class="hljs-string">&quot; : &quot;</span> + column.getValue() + <span class="hljs-string">&quot;    update=&quot;</span> + column.getUpdated()));<br>                <span class="hljs-comment">//redisUpdate(rowData.getAfterColumnsList());</span><br>            &#125;<br>        &#125;<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>输出为：</p>
+<blockquote>
+<p>我是canal，每秒一次正在监听:0d7700c0-0117-4a28-8d82-0a6ccbafadfd<br>我是canal，每秒一次正在监听:a658edf6-e56c-458e-bf13-25a64bffa7ec<br>我是canal，每秒一次正在监听:a6896fce-8f48-4478-983e-cf4bb05c1393<br>我是canal，每秒一次正在监听:e180a475-8a4a-44ee-84fa-096c2f44db16<br>我是canal，每秒一次正在监听:0fd10344-7eb1-412d-90fc-185e3ec69c51<br>&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;binlog[mysql-bin.000353:54296] , name[api_open_platform,interface_access] , eventType : INSERT<br>accesskey : a7e4c3c9-90be-434f-a201-1fb0c9c6921f    update&#x3D;true<br>verify_type : 1    update&#x3D;true<br>secretkey : 41ee07aa-bd35-45f0-aa6f-b39351d8db0c    update&#x3D;true<br>remaining_amount :     update&#x3D;true<br>remaining_times :     update&#x3D;true<br>interface_id : 10    update&#x3D;true<br>userid : 28    update&#x3D;true<br>call_times : 0    update&#x3D;true<br>failed_call_times : 0    update&#x3D;true<br>create_time : 2024-03-06 22:42:25    update&#x3D;true<br>update_time : 2024-03-06 22:42:25    update&#x3D;true<br>is_deleted : 0    update&#x3D;true<br>我是canal，每秒一次正在监听:1b80e597-9976-430a-b6f7-4fcaac936776<br>我是canal，每秒一次正在监听:9e89f0f4-0dfe-4f53-88c7-5731dbf0ebdf<br>我是canal，每秒一次正在监听:19322e19-0924-400d-a85b-bba58beb1a53<br>我是canal，每秒一次正在监听:0febf37a-df93-40b8-8c23-d0b89a1a1576</p>
+</blockquote>
+<section class="footnotes"><div class="footnote-list"><ol><li><span id="fn:1" class="footnote-text"><span>本文基于canalv1.1.7版本。
+<a href="#fnref:1" rev="footnote" class="footnote-backref"> ↩</a></span></span></li></ol></div></section>]]></content>
+      <categories>
+        <category>后端</category>
+        <category>分布式</category>
+        <category>中间件</category>
+        <category>canal</category>
+      </categories>
+      <tags>
+        <tag>canal</tag>
+        <tag>双写一致性</tag>
+        <tag>Dump</tag>
+        <tag>Binary log</tag>
+        <tag>mysql slave</tag>
       </tags>
   </entry>
   <entry>
