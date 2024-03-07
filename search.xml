@@ -172,7 +172,7 @@
 <li>dbPassword: 用户密码</li>
 <li>filter.regex：使用正则表达式选择数据库表（我设置的是监听api_open_platform数据库下所有的表）</li>
 </ul>
-<h2 id="启动canal"><a href="#启动canal" class="headerlink" title="启动canal"></a>启动canal</h2><ol>
+<h2 id="3-启动canal"><a href="#3-启动canal" class="headerlink" title="3. 启动canal"></a>3. 启动canal</h2><ol>
 <li><strong>开启命令</strong>：<code>bash bin/startup.sh</code>。</li>
 <li><strong>查看日志命令</strong>：<code>vim logs/canal/canal.log</code>、<code>vim logs/example/example.log</code>。</li>
 <li><strong>关闭命令</strong>：<code>bash bin/stop.sh</code>。</li>
