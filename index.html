@@ -12,6 +12,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
   <meta http-equiv="x-ua-compatible" content="ie=edge">
   
+    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+  
   <meta name="theme-color" content="#161f24">
   <meta name="author" content="寿命齿轮">
   <meta name="keywords" content="">
@@ -223,7 +225,7 @@
       <h2 class="index-header">
         
         <a href="/2024/03/06/backend/canal_config/" target="_self">
-          canal入门篇：介绍&amp;配置
+          canal入门篇：介绍&amp;配置&amp;开启
         </a>
       </h2>
 
@@ -313,7 +315,7 @@
       
       <a class="index-excerpt index-excerpt__noimg" href="/2024/03/06/backend/canal_MySQL&amp;Redis/" target="_self">
         <div>
-          
+          本文将介绍如何使用canal实现MySQl和Redis的双写一致性。前文为：canal入门篇：介绍&amp;配置&amp;开启 说明本文将使用SpringBoot框架搭建一个应用，通过canal获得数据库的更改消息，并将发生变更的实体同步更新到Redis中。 使用canal的好处：  透明性与低侵入：使用 Canal 通常不需要对既有业务逻辑进行大规模改造，因为它作为独立的服务组件，可以透明地监听
         </div>
       </a>
 

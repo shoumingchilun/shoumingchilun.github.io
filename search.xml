@@ -3,7 +3,19 @@
   <entry>
     <title>canal入门篇：实现MySQL&amp;Redis双写一致性</title>
     <url>/2024/03/06/backend/canal_MySQL&amp;Redis/</url>
-    <content><![CDATA[]]></content>
+    <content><![CDATA[<p>本文将介绍如何使用canal实现MySQl和Redis的双写一致性。前文为：<a href="/2024/03/06/backend/canal_config/" title="canal入门篇：介绍&amp;配置&amp;开启">canal入门篇：介绍&amp;配置&amp;开启</a></p>
+<h1 id="说明"><a href="#说明" class="headerlink" title="说明"></a>说明</h1><p>本文将使用SpringBoot框架搭建一个应用，通过canal获得数据库的更改消息，并将发生变更的实体同步更新到Redis中。</p>
+<p>使用canal的好处：</p>
+<ol>
+<li><strong>透明性与低侵入</strong>：使用 Canal 通常不需要对既有业务逻辑进行大规模改造，因为它作为独立的服务组件，可以透明地监听和处理数据库的变化，将更新事件推送给相应的缓存系统，实现数据同步，降低了对业务代码的入侵性。</li>
+<li><strong>扩展性与灵活性</strong>：Canal 支持多种数据源以及不同的消费方式，可以根据实际需求构建灵活的消息处理和分发机制。它可以与各种消息队列或数据处理系统集成，实现复杂的数据同步和多级缓存更新。</li>
+<li><strong>可靠性</strong>：由于 Canal 是基于 MySQL 的主从复制协议设计的，它继承了数据库层面的数据可靠性保障。同时，消息投递失败时（未进行ACK）可以通过重试机制确保最终一致性，而且可以支持幂等处理，避免重复消费造成的问题。</li>
+</ol>
+<h1 id="添加依赖"><a href="#添加依赖" class="headerlink" title="添加依赖"></a>添加依赖</h1><p>需要添加Springboot和连接Redis、canal的依赖。<br>pom.xml：</p>
+<figure class="highlight xml"><table><tr><td class="code"><pre><code class="hljs xml"><span class="hljs-tag">&lt;<span class="hljs-name">dependencyManagement</span>&gt;</span><br>    <span class="hljs-tag">&lt;<span class="hljs-name">dependencies</span>&gt;</span><br>        <span class="hljs-tag">&lt;<span class="hljs-name">dependency</span>&gt;</span><br>            <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>org.springframework.boot<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span><br>            <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>spring-boot-dependencies<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span><br>            <span class="hljs-tag">&lt;<span class="hljs-name">version</span>&gt;</span>2.7.9<span class="hljs-tag">&lt;/<span class="hljs-name">version</span>&gt;</span><br>            <span class="hljs-tag">&lt;<span class="hljs-name">type</span>&gt;</span>pom<span class="hljs-tag">&lt;/<span class="hljs-name">type</span>&gt;</span><br>            <span class="hljs-tag">&lt;<span class="hljs-name">scope</span>&gt;</span>import<span class="hljs-tag">&lt;/<span class="hljs-name">scope</span>&gt;</span><br>        <span class="hljs-tag">&lt;/<span class="hljs-name">dependency</span>&gt;</span><br>    <span class="hljs-tag">&lt;/<span class="hljs-name">dependencies</span>&gt;</span><br><span class="hljs-tag">&lt;/<span class="hljs-name">dependencyManagement</span>&gt;</span><br><span class="hljs-tag">&lt;<span class="hljs-name">dependencies</span>&gt;</span><br>    <span class="hljs-tag">&lt;<span class="hljs-name">dependency</span>&gt;</span><br>        <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>org.springframework.boot<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span><br>        <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>spring-boot-starter-web<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span><br>    <span class="hljs-tag">&lt;/<span class="hljs-name">dependency</span>&gt;</span><br>    <span class="hljs-tag">&lt;<span class="hljs-name">dependency</span>&gt;</span><br>        <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>org.springframework.boot<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span><br>        <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>spring-boot-starter-data-redis<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span><br>    <span class="hljs-tag">&lt;/<span class="hljs-name">dependency</span>&gt;</span><br>    <span class="hljs-tag">&lt;<span class="hljs-name">dependency</span>&gt;</span><br>        <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>com.alibaba.otter<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span><br>        <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>canal.client<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span><br>        <span class="hljs-tag">&lt;<span class="hljs-name">version</span>&gt;</span>1.1.0<span class="hljs-tag">&lt;/<span class="hljs-name">version</span>&gt;</span><br>    <span class="hljs-tag">&lt;/<span class="hljs-name">dependency</span>&gt;</span><br><span class="hljs-tag">&lt;/<span class="hljs-name">dependencies</span>&gt;</span><br></code></pre></td></tr></table></figure>
+
+
+]]></content>
       <categories>
         <category>分布式</category>
         <category>中间件</category>
@@ -13,6 +25,126 @@
         <tag>canal</tag>
         <tag>双写一致性</tag>
         <tag>redis</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>canal入门篇：介绍&amp;配置&amp;开启</title>
+    <url>/2024/03/06/backend/canal_config/</url>
+    <content><![CDATA[<p>本文将讲述canal的安装、配置、启动以及验证监听是否成功。</p>
+<h1 id="介绍-1"><a href="#介绍-1" class="headerlink" title="介绍[1]"></a>介绍<sup id="fnref:1" class="footnote-ref"><a href="#fn:1" rel="footnote"><span class="hint--top hint--rounded" aria-label="本文基于canalv1.1.7版本。">[1]</span></a></sup></h1><p><strong>中间件功能：基于数据库增量日志解析，提供增量数据的订阅&amp;消费。</strong>（目前主要支持了mysql）</p>
+<p>使用canal的优点：</p>
+<ul>
+<li><strong>实时性</strong>：Canal 直接对接 MySQL 的二进制日志（Binlog），实现了近乎实时的数据同步，可以实现实时数据流处理和近实时的数据集成。</li>
+<li><strong>轻量级</strong>：作为一个开源组件，Canal 采用 Java 编写，具有较好的跨平台性和扩展性，部署相对简单，资源占用较小，适合大规模分布式环境下的部署与使用。</li>
+<li><strong>可靠性</strong>：基于 MySQL 的 Binlog 记录机制，Canal 可以确保数据的完整性，不会丢失任何有效的数据库更改操作。</li>
+<li><strong>灵活性</strong>：Canal 提供了丰富的过滤和路由策略，允许用户根据需求精确配置需要同步的数据库、表甚至是字段级别的数据变更。</li>
+<li><strong>低侵入性</strong>：无需在业务代码中插入额外逻辑，就能实现数据的实时抓取，业务代码与数据同步逻辑完全解耦。</li>
+<li><strong>易用性</strong>：提供了简洁易懂的配置方式，支持多种输出方式，如消息队列、HTTP API 推送等，方便与其他系统进行集成。</li>
+</ul>
+<h2 id="工作原理"><a href="#工作原理" class="headerlink" title="工作原理"></a>工作原理</h2><h3 id="1-MySQL主从复制原理"><a href="#1-MySQL主从复制原理" class="headerlink" title="1. MySQL主从复制原理"></a>1. MySQL主从复制原理</h3><ol>
+<li><strong>主库 Binlog 日志</strong>：在主数据库（Master）中，所有对数据库的更改操作都被记录在<strong>二进制日志（Binary Log，即binlog）</strong>中。这个日志包含了所有数据修改语句（如INSERT、UPDATE、DELETE），或者更底层的事件，如行格式的二进制日志。</li>
+<li><strong>日志传输</strong>：从数据库（Slave）连接到主数据库，请求主数据库发送 binlog 中的更新事件。主数据库有一个名为 <strong>Binlog Dump Thread</strong> 的线程，它负责读取 binlog 并将这些事件传送给从数据库。</li>
+<li><strong>中继日志 Relay Log</strong>：从数据库接收到主数据库的更新事件后，将它们存储在自己的中继日志（Relay Log）中。</li>
+<li><strong>事件重放</strong>：从数据库有自己的** SQL 线程（也称 I&#x2F;O 线程和 SQL 线程）**，I&#x2F;O 线程负责接收并写入 relay log，而 SQL 线程则负责读取 relay log 中的事件并在从数据库上重新执行（即重放）这些事件。</li>
+</ol>
+<p><img src="/2024/03/06/backend/canal_config/MySQL%E4%B8%BB%E4%BB%8E%E5%A4%8D%E5%88%B6.png"></p>
+<p>这个过程保证了主数据库的每一次更新操作都能在从数据库上按照同样的顺序执行一次，从而让从数据库的数据与主数据库保持一致。</p>
+<blockquote>
+<p>复制模式(MySQL 支持多种复制模式)：</p>
+<ul>
+<li>异步复制是最常见的模式，主库不等待从库确认就继续处理新的事务，因此可能存在一定的数据延迟。</li>
+<li>半同步复制在主库提交事务之前至少需要一个从库确认已接收事件，提供了一定程度的数据一致性保障。</li>
+<li>全同步复制要求所有从库都确认事务后，主库才提交事务，提供了最强的数据一致性，但可能会影响性能。</li>
+</ul>
+</blockquote>
+<h3 id="2-canal工作原理"><a href="#2-canal工作原理" class="headerlink" title="2. canal工作原理"></a>2. canal工作原理</h3><p><img src="/2024/03/06/backend/canal_config/canal%E5%B7%A5%E4%BD%9C%E5%8E%9F%E7%90%86.png"></p>
+<ol>
+<li><strong>模拟MySQL Slave</strong>： Canal通过模拟MySQL的Slave节点行为，连接到MySQL Master节点，并遵循MySQL的复制协议。它会像真正的MySQL slave那样，向MySQL master发送dump binlog的请求。</li>
+<li><strong>获取Binary Log</strong>： 当MySQL Master接收到这个dump请求后，它会开始将自身的二进制日志（Binary Log）推送给Canal。Binary Log中记录了所有对数据库的更改操作，如INSERT、UPDATE、DELETE等。</li>
+<li><strong>解析Binary Log</strong>： Canal接收并解析Master推送过来的Binary Log数据流，将其转换成结构化的事件（event）。这些事件包含了数据库变更的具体内容，如变更前后的行数据、执行的SQL语句等。</li>
+</ol>
+<h2 id="架构"><a href="#架构" class="headerlink" title="架构"></a>架构</h2><p><img src="/2024/03/06/backend/canal_config/canal%E6%9E%B6%E6%9E%84.png"></p>
+<ol>
+<li>server：一个canal运行实例，对应于一个jvm</li>
+<li>instance：对应于一个数据队列（1个server对应1..n个instance）<ol>
+<li>eventParser：数据源接入，模拟slave协议和master进行交互，协议解析。</li>
+<li>eventSink：Parser和Store链接器，进行数据过滤，加工，分发的工作。</li>
+<li>eventStore：数据存储。</li>
+<li>metaManager：增量订阅&amp;消费信息管理器。</li>
+</ol>
+</li>
+</ol>
+<blockquote>
+<p>具体各个模块的功能请参考<a href="https://github.com/alibaba/canal/wiki/%E7%AE%80%E4%BB%8B">canal仓库</a></p>
+</blockquote>
+<h1 id="配置（快速启动canal）"><a href="#配置（快速启动canal）" class="headerlink" title="配置（快速启动canal）"></a>配置（快速启动canal）</h1><h2 id="1-更改MySQL配置"><a href="#1-更改MySQL配置" class="headerlink" title="1. 更改MySQL配置"></a>1. 更改MySQL配置</h2><p>修改MySQL配置文件my.ini，开启 Binlog 写入功能，并配置 binlog-format 为 ROW 模式：</p>
+<figure class="highlight ini"><table><tr><td class="code"><pre><code class="hljs ini"><span class="hljs-attr">log-bin</span>=mysql-bin <span class="hljs-comment"># 开启 binlog</span><br><span class="hljs-attr">binlog-format</span>=ROW <span class="hljs-comment"># 选择 ROW 模式</span><br><span class="hljs-attr">server-id</span>=<span class="hljs-number">1</span> <span class="hljs-comment"># 配置 MySQL replaction 需要定义，不要和 canal 的 slaveId 重复</span><br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p>Windows修改MySQL配置文件的方式：</p>
+<ol>
+<li><code>Win+R</code>打开<strong>运行</strong>，输入<code>services.msc</code>，进入服务页面。</li>
+<li>找到对应的MySQL服务，双击查看<strong>可执行文件的路径：</strong>条目下的<code>--default-file=</code>后的my.ini文件位置。</li>
+<li>修改该文件。</li>
+<li>右键MySQL服务条目，点击<strong>重新启动</strong>，重启MySQL服务。</li>
+</ol>
+</blockquote>
+<h2 id="2-安装canal"><a href="#2-安装canal" class="headerlink" title="2. 安装canal"></a>2. 安装canal</h2><p>进入Ubuntu安装canal：</p>
+<ol>
+<li>进入canal的<a href="https://github.com/alibaba/canal/releases">release页面</a>，选择对应版本的压缩包。（我下载的是canal.deployer-1.1.7.tar.gz<br>）</li>
+<li>在ubuntu中拉取该压缩包：<code>wget https://github.com/alibaba/canal/releases/download/canal-1.1.7/canal.deployer-1.1.7.tar.gz</code></li>
+<li>解压该压缩包<code>tar -zxf canal.deployer-1.1.7.tar.gz</code></li>
+<li>修改配置文件<code>vim conf/example/instance.properties</code></li>
+</ol>
+<p>修改配置：</p>
+<figure class="highlight routeros"><table><tr><td class="code"><pre><code class="hljs routeros">canal.instance.master.<span class="hljs-attribute">address</span>=192.168.112.1:3306<br>canal.instance.master.journal.<span class="hljs-attribute">name</span>=mysql-bin.000353<br>canal.instance.master.<span class="hljs-attribute">position</span>=1<br><span class="hljs-built_in">..</span>.<br>canal.instance.<span class="hljs-attribute">dbUsername</span>=canal<br>canal.instance.<span class="hljs-attribute">dbPassword</span>=canal<br><span class="hljs-built_in">..</span>.<br>canal.instance.filter.<span class="hljs-attribute">regex</span>=api_open_platform\\..*<br></code></pre></td></tr></table></figure>
+<ul>
+<li>address: 数据库地址</li>
+<li>journal.name: 日志文件名，去MySQL运行文件目录旁边找一下就能找到了</li>
+<li>position: 从日志的第几个字节开始读取</li>
+<li>dbUsername: 用户名</li>
+<li>dbPassword: 用户密码</li>
+<li>filter.regex：使用正则表达式选择数据库表（我设置的是监听api_open_platform数据库下所有的表）</li>
+</ul>
+<h2 id="启动canal"><a href="#启动canal" class="headerlink" title="启动canal"></a>启动canal</h2><ol>
+<li><strong>开启命令</strong>：<code>bash bin/startup.sh</code>。</li>
+<li><strong>查看日志命令</strong>：<code>vim logs/canal/canal.log</code>、<code>vim logs/example/example.log</code>。</li>
+<li><strong>关闭命令</strong>：<code>bash bin/stop.sh</code>。</li>
+</ol>
+<p>成功后的运行日志：</p>
+<ul>
+<li>canal.log：<blockquote>
+<p>2024-03-06 22:16:46.110 [main] INFO  com.alibaba.otter.canal.deployer.CanalLauncher - ## set default uncaught exception handler<br>2024-03-06 22:16:46.117 [main] INFO  com.alibaba.otter.canal.deployer.CanalLauncher - ## load canal configurations<br>2024-03-06 22:16:46.126 [main] INFO  com.alibaba.otter.canal.deployer.CanalStarter - ## start the canal server.<br>2024-03-06 22:16:46.152 [main] INFO  com.alibaba.otter.canal.deployer.CanalController - ## start the canal server[172.20.0.1(172.20.0.1):11111]<br>2024-03-06 22:16:47.076 [main] INFO  com.alibaba.otter.canal.deployer.CanalStarter - ## the canal server is running now ……</p>
+</blockquote>
+</li>
+<li>example.log：<blockquote>
+<p>2024-03-06 22:16:46.589 [main] INFO  c.a.otter.canal.instance.spring.CanalInstanceWithSpring - start CannalInstance for 1-example<br>2024-03-06 22:16:47.044 [main] WARN  c.a.o.canal.parse.inbound.mysql.dbsync.LogEventConvert - –&gt; init table filter : ^api_open_platform..<em>$<br>2024-03-06 22:16:47.044 [main] WARN  c.a.o.canal.parse.inbound.mysql.dbsync.LogEventConvert - –&gt; init table black filter : ^mysql.slave_.</em>$<br>2024-03-06 22:16:47.048 [main] INFO  c.a.otter.canal.instance.core.AbstractCanalInstance - start successful….<br>2024-03-06 22:16:47.116 [destination &#x3D; example , address &#x3D; &#x2F;192.168.112.1:3306 , EventParser] WARN  c.a.o.c.p.inbound.mysql.rds.RdsBinlogEventParserProxy - —&gt; begin to find start position, it will be long time for reset or first position<br>2024-03-06 22:16:47.132 [destination &#x3D; example , address &#x3D; &#x2F;192.168.112.1:3306 , EventParser] WARN  c.a.o.c.p.inbound.mysql.rds.RdsBinlogEventParserProxy - prepare to find start position mysql-bin.000353:4:1709690365000<br>2024-03-06 22:16:47.437 [destination &#x3D; example , address &#x3D; &#x2F;192.168.112.1:3306 , EventParser] WARN  c.a.o.c.p.inbound.mysql.rds.RdsBinlogEventParserProxy - —&gt; find start position successfully, EntryPosition[included&#x3D;false,journalName&#x3D;mysql-bin.000353,position&#x3D;4,serverId&#x3D;1,gtid&#x3D;<null>,timestamp&#x3D;1709690365000] cost : 292ms , the next step is binlog dump</p>
+</blockquote>
+</li>
+</ul>
+<h1 id="java连接canal"><a href="#java连接canal" class="headerlink" title="java连接canal"></a>java连接canal</h1><h2 id="添加maven依赖"><a href="#添加maven依赖" class="headerlink" title="添加maven依赖"></a>添加maven依赖</h2><figure class="highlight xml"><table><tr><td class="code"><pre><code class="hljs xml"><span class="hljs-tag">&lt;<span class="hljs-name">dependency</span>&gt;</span><br>        <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>com.alibaba.otter<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span><br>        <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>canal.client<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span><br>        <span class="hljs-tag">&lt;<span class="hljs-name">version</span>&gt;</span>1.1.0<span class="hljs-tag">&lt;/<span class="hljs-name">version</span>&gt;</span><br><span class="hljs-tag">&lt;/<span class="hljs-name">dependency</span>&gt;</span><br></code></pre></td></tr></table></figure>
+<h2 id="main函数"><a href="#main函数" class="headerlink" title="main函数"></a>main函数</h2><blockquote>
+<p>注：该函数仅用于测试能否连接。</p>
+</blockquote>
+<figure class="highlight java"><table><tr><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">main</span><span class="hljs-params">(String[] args)</span>&#123;<br>    System.out.println(<span class="hljs-string">&quot;---------O(∩_∩)O哈哈~ initCanal() main方法-----------&quot;</span>);<br>    <span class="hljs-comment">//=================================</span><br>    <span class="hljs-comment">// 创建链接canal服务端</span><br>    <span class="hljs-type">CanalConnector</span> <span class="hljs-variable">connector</span> <span class="hljs-operator">=</span> CanalConnectors.newSingleConnector(<span class="hljs-keyword">new</span> <span class="hljs-title class_">InetSocketAddress</span>(<span class="hljs-string">&quot;192.168.146.132&quot;</span>,<span class="hljs-number">11111</span>), <span class="hljs-string">&quot;example&quot;</span>, <span class="hljs-string">&quot;&quot;</span>, <span class="hljs-string">&quot;&quot;</span>);<br>    <span class="hljs-type">int</span> <span class="hljs-variable">batchSize</span> <span class="hljs-operator">=</span> <span class="hljs-number">1000</span>;<br>    <span class="hljs-comment">//空闲空转计数器</span><br>    <span class="hljs-type">int</span> <span class="hljs-variable">emptyCount</span> <span class="hljs-operator">=</span> <span class="hljs-number">0</span>;<br>    System.out.println(<span class="hljs-string">&quot;---------------------canal init OK，开始监听mysql变化------&quot;</span>);<br>    <span class="hljs-keyword">try</span> &#123;<br>        connector.connect();<br>        connector.subscribe(<span class="hljs-string">&quot;.*\\..*&quot;</span>);<br>        <span class="hljs-comment">//connector.subscribe(&quot;petstoredb.pets&quot;);</span><br>        connector.rollback();<br>        <span class="hljs-type">int</span> <span class="hljs-variable">totalEmptyCount</span> <span class="hljs-operator">=</span> <span class="hljs-number">600</span>;<br>        <span class="hljs-keyword">while</span> (emptyCount &lt; totalEmptyCount) &#123;<br>            System.out.println(<span class="hljs-string">&quot;我是canal，每秒一次正在监听:&quot;</span>+ UUID.randomUUID().toString());<br>            <span class="hljs-type">Message</span> <span class="hljs-variable">message</span> <span class="hljs-operator">=</span> connector.getWithoutAck(batchSize); <span class="hljs-comment">// 获取指定数量的数据</span><br>            <span class="hljs-type">long</span> <span class="hljs-variable">batchId</span> <span class="hljs-operator">=</span> message.getId();<br>            <span class="hljs-type">int</span> <span class="hljs-variable">size</span> <span class="hljs-operator">=</span> message.getEntries().size();<br>            <span class="hljs-keyword">if</span> (batchId == -<span class="hljs-number">1</span> || size == <span class="hljs-number">0</span>) &#123;<br>                emptyCount++;<br>                <span class="hljs-keyword">try</span> &#123; TimeUnit.SECONDS.sleep(<span class="hljs-number">1</span>); &#125; <span class="hljs-keyword">catch</span> (InterruptedException e) &#123; e.printStackTrace(); &#125;<br>            &#125; <span class="hljs-keyword">else</span> &#123;<br>                <span class="hljs-comment">//计数器重新置零</span><br>                emptyCount = <span class="hljs-number">0</span>;<br>                printEntry(message.getEntries());<br>            &#125;<br>            connector.ack(batchId); <span class="hljs-comment">// 提交确认</span><br>            <span class="hljs-comment">// connector.rollback(batchId); // 处理失败, 回滚数据</span><br>        &#125;<br>        System.out.println(<span class="hljs-string">&quot;已经监听了&quot;</span>+totalEmptyCount+<span class="hljs-string">&quot;秒，无任何消息，请重启重试......&quot;</span>);<br>    &#125; <span class="hljs-keyword">finally</span> &#123;<br>        connector.disconnect();<br>    &#125;<br>&#125;<br><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">printEntry</span><span class="hljs-params">(List&lt;Entry&gt; entrys)</span> &#123;<br>    <span class="hljs-keyword">for</span> (Entry entry : entrys) &#123;<br>        <span class="hljs-keyword">if</span> (entry.getEntryType() == EntryType.TRANSACTIONBEGIN || entry.getEntryType() == EntryType.TRANSACTIONEND) &#123;<br>            <span class="hljs-keyword">continue</span>;<br>        &#125;<br>        <span class="hljs-type">RowChange</span> <span class="hljs-variable">rowChage</span> <span class="hljs-operator">=</span> <span class="hljs-literal">null</span>;<br>        <span class="hljs-keyword">try</span> &#123;<br>            <span class="hljs-comment">//获取变更的row数据</span><br>            rowChage = RowChange.parseFrom(entry.getStoreValue());<br>        &#125; <span class="hljs-keyword">catch</span> (Exception e) &#123;<br>            <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">RuntimeException</span>(<span class="hljs-string">&quot;ERROR ## parser of eromanga-event has an error,data:&quot;</span> + entry.toString(),e);<br>        &#125;<br>        <span class="hljs-comment">//获取变动类型</span><br>        <span class="hljs-type">EventType</span> <span class="hljs-variable">eventType</span> <span class="hljs-operator">=</span> rowChage.getEventType();<br>        System.out.println(String.format(<span class="hljs-string">&quot;================binlog[%s:%s] , name[%s,%s] , eventType : %s&quot;</span>,<br>                entry.getHeader().getLogfileName(), entry.getHeader().getLogfileOffset(),<br>                entry.getHeader().getSchemaName(), entry.getHeader().getTableName(), eventType));<br>        <span class="hljs-keyword">for</span> (RowData rowData : rowChage.getRowDatasList()) &#123;<br>            <span class="hljs-keyword">if</span> (eventType == EventType.INSERT) &#123;<br>                rowData.getAfterColumnsList().forEach(column-&gt;System.out.println(column.getName() + <span class="hljs-string">&quot; : &quot;</span> + column.getValue() + <span class="hljs-string">&quot;    update=&quot;</span> + column.getUpdated()));<br>                <span class="hljs-comment">//redisInsert(rowData.getAfterColumnsList());</span><br>            &#125; <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (eventType == EventType.DELETE) &#123;<br>                rowData.getAfterColumnsList().forEach(column-&gt;System.out.println(column.getName() + <span class="hljs-string">&quot; : &quot;</span> + column.getValue() + <span class="hljs-string">&quot;    update=&quot;</span> + column.getUpdated()));<br>                <span class="hljs-comment">//redisDelete(rowData.getBeforeColumnsList());</span><br>            &#125; <span class="hljs-keyword">else</span> &#123;<span class="hljs-comment">//EventType.UPDATE</span><br>                rowData.getAfterColumnsList().forEach(column-&gt;System.out.println(column.getName() + <span class="hljs-string">&quot; : &quot;</span> + column.getValue() + <span class="hljs-string">&quot;    update=&quot;</span> + column.getUpdated()));<br>                <span class="hljs-comment">//redisUpdate(rowData.getAfterColumnsList());</span><br>            &#125;<br>        &#125;<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>输出为：</p>
+<blockquote>
+<p>我是canal，每秒一次正在监听:0d7700c0-0117-4a28-8d82-0a6ccbafadfd<br>我是canal，每秒一次正在监听:a658edf6-e56c-458e-bf13-25a64bffa7ec<br>我是canal，每秒一次正在监听:a6896fce-8f48-4478-983e-cf4bb05c1393<br>我是canal，每秒一次正在监听:e180a475-8a4a-44ee-84fa-096c2f44db16<br>我是canal，每秒一次正在监听:0fd10344-7eb1-412d-90fc-185e3ec69c51<br>&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;binlog[mysql-bin.000353:54296] , name[api_open_platform,interface_access] , eventType : INSERT<br>accesskey : a7e4c3c9-90be-434f-a201-1fb0c9c6921f    update&#x3D;true<br>verify_type : 1    update&#x3D;true<br>secretkey : 41ee07aa-bd35-45f0-aa6f-b39351d8db0c    update&#x3D;true<br>remaining_amount :     update&#x3D;true<br>remaining_times :     update&#x3D;true<br>interface_id : 10    update&#x3D;true<br>userid : 28    update&#x3D;true<br>call_times : 0    update&#x3D;true<br>failed_call_times : 0    update&#x3D;true<br>create_time : 2024-03-06 22:42:25    update&#x3D;true<br>update_time : 2024-03-06 22:42:25    update&#x3D;true<br>is_deleted : 0    update&#x3D;true<br>我是canal，每秒一次正在监听:1b80e597-9976-430a-b6f7-4fcaac936776<br>我是canal，每秒一次正在监听:9e89f0f4-0dfe-4f53-88c7-5731dbf0ebdf<br>我是canal，每秒一次正在监听:19322e19-0924-400d-a85b-bba58beb1a53<br>我是canal，每秒一次正在监听:0febf37a-df93-40b8-8c23-d0b89a1a1576</p>
+</blockquote>
+<p>至此，canal启动完成。<section class="footnotes"><div class="footnote-list"><ol><li><span id="fn:1" class="footnote-text"><span>本文基于canalv1.1.7版本。<br><a href="#fnref:1" rev="footnote" class="footnote-backref"> ↩</a></span></span></li></ol></div></section></p>
+]]></content>
+      <categories>
+        <category>分布式</category>
+        <category>中间件</category>
+        <category>canal</category>
+      </categories>
+      <tags>
+        <tag>canal</tag>
+        <tag>双写一致性</tag>
+        <tag>Dump</tag>
+        <tag>Binary log</tag>
+        <tag>mysql slave</tag>
       </tags>
   </entry>
   <entry>
@@ -382,126 +514,6 @@ newProxyInstance方法的三个参数：</li>
         <tag>Spring</tag>
         <tag>IOC</tag>
         <tag>AOP</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>canal入门篇：介绍&amp;配置</title>
-    <url>/2024/03/06/backend/canal_config/</url>
-    <content><![CDATA[<p>本文将讲述canal的安装、配置、启动以及验证监听是否成功。</p>
-<h1 id="介绍-1"><a href="#介绍-1" class="headerlink" title="介绍[1]"></a>介绍<sup id="fnref:1" class="footnote-ref"><a href="#fn:1" rel="footnote"><span class="hint--top hint--rounded" aria-label="本文基于canalv1.1.7版本。">[1]</span></a></sup></h1><p><strong>中间件功能：基于数据库增量日志解析，提供增量数据的订阅&amp;消费。</strong>（目前主要支持了mysql）</p>
-<p>使用canal的优点：</p>
-<ul>
-<li><strong>实时性</strong>：Canal 直接对接 MySQL 的二进制日志（Binlog），实现了近乎实时的数据同步，可以实现实时数据流处理和近实时的数据集成。</li>
-<li><strong>轻量级</strong>：作为一个开源组件，Canal 采用 Java 编写，具有较好的跨平台性和扩展性，部署相对简单，资源占用较小，适合大规模分布式环境下的部署与使用。</li>
-<li><strong>可靠性</strong>：基于 MySQL 的 Binlog 记录机制，Canal 可以确保数据的完整性，不会丢失任何有效的数据库更改操作。</li>
-<li><strong>灵活性</strong>：Canal 提供了丰富的过滤和路由策略，允许用户根据需求精确配置需要同步的数据库、表甚至是字段级别的数据变更。</li>
-<li><strong>低侵入性</strong>：无需在业务代码中插入额外逻辑，就能实现数据的实时抓取，业务代码与数据同步逻辑完全解耦。</li>
-<li><strong>易用性</strong>：提供了简洁易懂的配置方式，支持多种输出方式，如消息队列、HTTP API 推送等，方便与其他系统进行集成。</li>
-</ul>
-<h2 id="工作原理"><a href="#工作原理" class="headerlink" title="工作原理"></a>工作原理</h2><h3 id="1-MySQL主从复制原理"><a href="#1-MySQL主从复制原理" class="headerlink" title="1. MySQL主从复制原理"></a>1. MySQL主从复制原理</h3><ol>
-<li><strong>主库 Binlog 日志</strong>：在主数据库（Master）中，所有对数据库的更改操作都被记录在<strong>二进制日志（Binary Log，即binlog）</strong>中。这个日志包含了所有数据修改语句（如INSERT、UPDATE、DELETE），或者更底层的事件，如行格式的二进制日志。</li>
-<li><strong>日志传输</strong>：从数据库（Slave）连接到主数据库，请求主数据库发送 binlog 中的更新事件。主数据库有一个名为 <strong>Binlog Dump Thread</strong> 的线程，它负责读取 binlog 并将这些事件传送给从数据库。</li>
-<li><strong>中继日志 Relay Log</strong>：从数据库接收到主数据库的更新事件后，将它们存储在自己的中继日志（Relay Log）中。</li>
-<li><strong>事件重放</strong>：从数据库有自己的** SQL 线程（也称 I&#x2F;O 线程和 SQL 线程）**，I&#x2F;O 线程负责接收并写入 relay log，而 SQL 线程则负责读取 relay log 中的事件并在从数据库上重新执行（即重放）这些事件。</li>
-</ol>
-<p><img src="/2024/03/06/backend/canal_config/MySQL%E4%B8%BB%E4%BB%8E%E5%A4%8D%E5%88%B6.png"></p>
-<p>这个过程保证了主数据库的每一次更新操作都能在从数据库上按照同样的顺序执行一次，从而让从数据库的数据与主数据库保持一致。</p>
-<blockquote>
-<p>复制模式(MySQL 支持多种复制模式)：</p>
-<ul>
-<li>异步复制是最常见的模式，主库不等待从库确认就继续处理新的事务，因此可能存在一定的数据延迟。</li>
-<li>半同步复制在主库提交事务之前至少需要一个从库确认已接收事件，提供了一定程度的数据一致性保障。</li>
-<li>全同步复制要求所有从库都确认事务后，主库才提交事务，提供了最强的数据一致性，但可能会影响性能。</li>
-</ul>
-</blockquote>
-<h3 id="2-canal工作原理"><a href="#2-canal工作原理" class="headerlink" title="2. canal工作原理"></a>2. canal工作原理</h3><p><img src="/2024/03/06/backend/canal_config/canal%E5%B7%A5%E4%BD%9C%E5%8E%9F%E7%90%86.png"></p>
-<ol>
-<li><strong>模拟MySQL Slave</strong>： Canal通过模拟MySQL的Slave节点行为，连接到MySQL Master节点，并遵循MySQL的复制协议。它会像真正的MySQL slave那样，向MySQL master发送dump binlog的请求。</li>
-<li><strong>获取Binary Log</strong>： 当MySQL Master接收到这个dump请求后，它会开始将自身的二进制日志（Binary Log）推送给Canal。Binary Log中记录了所有对数据库的更改操作，如INSERT、UPDATE、DELETE等。</li>
-<li><strong>解析Binary Log</strong>： Canal接收并解析Master推送过来的Binary Log数据流，将其转换成结构化的事件（event）。这些事件包含了数据库变更的具体内容，如变更前后的行数据、执行的SQL语句等。</li>
-</ol>
-<h2 id="架构"><a href="#架构" class="headerlink" title="架构"></a>架构</h2><p><img src="/2024/03/06/backend/canal_config/canal%E6%9E%B6%E6%9E%84.png"></p>
-<ol>
-<li>server：一个canal运行实例，对应于一个jvm</li>
-<li>instance：对应于一个数据队列（1个server对应1..n个instance）<ol>
-<li>eventParser：数据源接入，模拟slave协议和master进行交互，协议解析。</li>
-<li>eventSink：Parser和Store链接器，进行数据过滤，加工，分发的工作。</li>
-<li>eventStore：数据存储。</li>
-<li>metaManager：增量订阅&amp;消费信息管理器。</li>
-</ol>
-</li>
-</ol>
-<blockquote>
-<p>具体各个模块的功能请参考<a href="https://github.com/alibaba/canal/wiki/%E7%AE%80%E4%BB%8B">canal仓库</a></p>
-</blockquote>
-<h1 id="配置（快速启动canal）"><a href="#配置（快速启动canal）" class="headerlink" title="配置（快速启动canal）"></a>配置（快速启动canal）</h1><h2 id="1-更改MySQL配置"><a href="#1-更改MySQL配置" class="headerlink" title="1. 更改MySQL配置"></a>1. 更改MySQL配置</h2><p>修改MySQL配置文件my.ini，开启 Binlog 写入功能，并配置 binlog-format 为 ROW 模式：</p>
-<figure class="highlight ini"><table><tr><td class="code"><pre><code class="hljs ini"><span class="hljs-attr">log-bin</span>=mysql-bin <span class="hljs-comment"># 开启 binlog</span><br><span class="hljs-attr">binlog-format</span>=ROW <span class="hljs-comment"># 选择 ROW 模式</span><br><span class="hljs-attr">server-id</span>=<span class="hljs-number">1</span> <span class="hljs-comment"># 配置 MySQL replaction 需要定义，不要和 canal 的 slaveId 重复</span><br></code></pre></td></tr></table></figure>
-
-<blockquote>
-<p>Windows修改MySQL配置文件的方式：</p>
-<ol>
-<li><code>Win+R</code>打开<strong>运行</strong>，输入<code>services.msc</code>，进入服务页面。</li>
-<li>找到对应的MySQL服务，双击查看<strong>可执行文件的路径：</strong>条目下的<code>--default-file=</code>后的my.ini文件位置。</li>
-<li>修改该文件。</li>
-<li>右键MySQL服务条目，点击<strong>重新启动</strong>，重启MySQL服务。</li>
-</ol>
-</blockquote>
-<h2 id="2-安装canal"><a href="#2-安装canal" class="headerlink" title="2. 安装canal"></a>2. 安装canal</h2><p>进入Ubuntu安装canal：</p>
-<ol>
-<li>进入canal的<a href="https://github.com/alibaba/canal/releases">release页面</a>，选择对应版本的压缩包。（我下载的是canal.deployer-1.1.7.tar.gz<br>）</li>
-<li>在ubuntu中拉取该压缩包：<code>wget https://github.com/alibaba/canal/releases/download/canal-1.1.7/canal.deployer-1.1.7.tar.gz</code></li>
-<li>解压该压缩包<code>tar -zxf canal.deployer-1.1.7.tar.gz</code></li>
-<li>修改配置文件<code>vim conf/example/instance.properties</code></li>
-</ol>
-<p>修改配置：</p>
-<figure class="highlight routeros"><table><tr><td class="code"><pre><code class="hljs routeros">canal.instance.master.<span class="hljs-attribute">address</span>=192.168.112.1:3306<br>canal.instance.master.journal.<span class="hljs-attribute">name</span>=mysql-bin.000353<br>canal.instance.master.<span class="hljs-attribute">position</span>=1<br><span class="hljs-built_in">..</span>.<br>canal.instance.<span class="hljs-attribute">dbUsername</span>=canal<br>canal.instance.<span class="hljs-attribute">dbPassword</span>=canal<br><span class="hljs-built_in">..</span>.<br>canal.instance.filter.<span class="hljs-attribute">regex</span>=api_open_platform\\..*<br></code></pre></td></tr></table></figure>
-<ul>
-<li>address: 数据库地址</li>
-<li>journal.name: 日志文件名，去MySQL运行文件目录旁边找一下就能找到了</li>
-<li>position: 从日志的第几个字节开始读取</li>
-<li>dbUsername: 用户名</li>
-<li>dbPassword: 用户密码</li>
-<li>filter.regex：使用正则表达式选择数据库表（我设置的是监听api_open_platform数据库下所有的表）</li>
-</ul>
-<ol>
-<li><strong>开启命令</strong>：<code>bash bin/startup.sh</code>。</li>
-<li><strong>查看日志命令</strong>：<code>vim logs/canal/canal.log</code>、<code>vim logs/example/example.log</code>。</li>
-<li><strong>关闭命令</strong>：<code>bash bin/stop.sh</code>。</li>
-</ol>
-<p>成功后的运行日志：</p>
-<ul>
-<li>canal.log：<blockquote>
-<p>2024-03-06 22:16:46.110 [main] INFO  com.alibaba.otter.canal.deployer.CanalLauncher - ## set default uncaught exception handler<br>2024-03-06 22:16:46.117 [main] INFO  com.alibaba.otter.canal.deployer.CanalLauncher - ## load canal configurations<br>2024-03-06 22:16:46.126 [main] INFO  com.alibaba.otter.canal.deployer.CanalStarter - ## start the canal server.<br>2024-03-06 22:16:46.152 [main] INFO  com.alibaba.otter.canal.deployer.CanalController - ## start the canal server[172.20.0.1(172.20.0.1):11111]<br>2024-03-06 22:16:47.076 [main] INFO  com.alibaba.otter.canal.deployer.CanalStarter - ## the canal server is running now ……</p>
-</blockquote>
-</li>
-<li>example.log：<blockquote>
-<p>2024-03-06 22:16:46.589 [main] INFO  c.a.otter.canal.instance.spring.CanalInstanceWithSpring - start CannalInstance for 1-example<br>2024-03-06 22:16:47.044 [main] WARN  c.a.o.canal.parse.inbound.mysql.dbsync.LogEventConvert - –&gt; init table filter : ^api_open_platform..<em>$<br>2024-03-06 22:16:47.044 [main] WARN  c.a.o.canal.parse.inbound.mysql.dbsync.LogEventConvert - –&gt; init table black filter : ^mysql.slave_.</em>$<br>2024-03-06 22:16:47.048 [main] INFO  c.a.otter.canal.instance.core.AbstractCanalInstance - start successful….<br>2024-03-06 22:16:47.116 [destination &#x3D; example , address &#x3D; &#x2F;192.168.112.1:3306 , EventParser] WARN  c.a.o.c.p.inbound.mysql.rds.RdsBinlogEventParserProxy - —&gt; begin to find start position, it will be long time for reset or first position<br>2024-03-06 22:16:47.132 [destination &#x3D; example , address &#x3D; &#x2F;192.168.112.1:3306 , EventParser] WARN  c.a.o.c.p.inbound.mysql.rds.RdsBinlogEventParserProxy - prepare to find start position mysql-bin.000353:4:1709690365000<br>2024-03-06 22:16:47.437 [destination &#x3D; example , address &#x3D; &#x2F;192.168.112.1:3306 , EventParser] WARN  c.a.o.c.p.inbound.mysql.rds.RdsBinlogEventParserProxy - —&gt; find start position successfully, EntryPosition[included&#x3D;false,journalName&#x3D;mysql-bin.000353,position&#x3D;4,serverId&#x3D;1,gtid&#x3D;<null>,timestamp&#x3D;1709690365000] cost : 292ms , the next step is binlog dump</p>
-</blockquote>
-</li>
-</ul>
-<h1 id="java连接canal"><a href="#java连接canal" class="headerlink" title="java连接canal"></a>java连接canal</h1><h2 id="添加maven依赖"><a href="#添加maven依赖" class="headerlink" title="添加maven依赖"></a>添加maven依赖</h2><figure class="highlight xml"><table><tr><td class="code"><pre><code class="hljs xml"><span class="hljs-tag">&lt;<span class="hljs-name">dependency</span>&gt;</span><br>        <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>com.alibaba.otter<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span><br>        <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>canal.client<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span><br>        <span class="hljs-tag">&lt;<span class="hljs-name">version</span>&gt;</span>1.1.0<span class="hljs-tag">&lt;/<span class="hljs-name">version</span>&gt;</span><br><span class="hljs-tag">&lt;/<span class="hljs-name">dependency</span>&gt;</span><br></code></pre></td></tr></table></figure>
-<h2 id="main函数"><a href="#main函数" class="headerlink" title="main函数"></a>main函数</h2><blockquote>
-<p>注：该函数仅用于测试能否连接。</p>
-</blockquote>
-<figure class="highlight java"><table><tr><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">main</span><span class="hljs-params">(String[] args)</span>&#123;<br>    System.out.println(<span class="hljs-string">&quot;---------O(∩_∩)O哈哈~ initCanal() main方法-----------&quot;</span>);<br>    <span class="hljs-comment">//=================================</span><br>    <span class="hljs-comment">// 创建链接canal服务端</span><br>    <span class="hljs-type">CanalConnector</span> <span class="hljs-variable">connector</span> <span class="hljs-operator">=</span> CanalConnectors.newSingleConnector(<span class="hljs-keyword">new</span> <span class="hljs-title class_">InetSocketAddress</span>(<span class="hljs-string">&quot;192.168.146.132&quot;</span>,<span class="hljs-number">11111</span>), <span class="hljs-string">&quot;example&quot;</span>, <span class="hljs-string">&quot;&quot;</span>, <span class="hljs-string">&quot;&quot;</span>);<br>    <span class="hljs-type">int</span> <span class="hljs-variable">batchSize</span> <span class="hljs-operator">=</span> <span class="hljs-number">1000</span>;<br>    <span class="hljs-comment">//空闲空转计数器</span><br>    <span class="hljs-type">int</span> <span class="hljs-variable">emptyCount</span> <span class="hljs-operator">=</span> <span class="hljs-number">0</span>;<br>    System.out.println(<span class="hljs-string">&quot;---------------------canal init OK，开始监听mysql变化------&quot;</span>);<br>    <span class="hljs-keyword">try</span> &#123;<br>        connector.connect();<br>        connector.subscribe(<span class="hljs-string">&quot;.*\\..*&quot;</span>);<br>        <span class="hljs-comment">//connector.subscribe(&quot;petstoredb.pets&quot;);</span><br>        connector.rollback();<br>        <span class="hljs-type">int</span> <span class="hljs-variable">totalEmptyCount</span> <span class="hljs-operator">=</span> <span class="hljs-number">600</span>;<br>        <span class="hljs-keyword">while</span> (emptyCount &lt; totalEmptyCount) &#123;<br>            System.out.println(<span class="hljs-string">&quot;我是canal，每秒一次正在监听:&quot;</span>+ UUID.randomUUID().toString());<br>            <span class="hljs-type">Message</span> <span class="hljs-variable">message</span> <span class="hljs-operator">=</span> connector.getWithoutAck(batchSize); <span class="hljs-comment">// 获取指定数量的数据</span><br>            <span class="hljs-type">long</span> <span class="hljs-variable">batchId</span> <span class="hljs-operator">=</span> message.getId();<br>            <span class="hljs-type">int</span> <span class="hljs-variable">size</span> <span class="hljs-operator">=</span> message.getEntries().size();<br>            <span class="hljs-keyword">if</span> (batchId == -<span class="hljs-number">1</span> || size == <span class="hljs-number">0</span>) &#123;<br>                emptyCount++;<br>                <span class="hljs-keyword">try</span> &#123; TimeUnit.SECONDS.sleep(<span class="hljs-number">1</span>); &#125; <span class="hljs-keyword">catch</span> (InterruptedException e) &#123; e.printStackTrace(); &#125;<br>            &#125; <span class="hljs-keyword">else</span> &#123;<br>                <span class="hljs-comment">//计数器重新置零</span><br>                emptyCount = <span class="hljs-number">0</span>;<br>                printEntry(message.getEntries());<br>            &#125;<br>            connector.ack(batchId); <span class="hljs-comment">// 提交确认</span><br>            <span class="hljs-comment">// connector.rollback(batchId); // 处理失败, 回滚数据</span><br>        &#125;<br>        System.out.println(<span class="hljs-string">&quot;已经监听了&quot;</span>+totalEmptyCount+<span class="hljs-string">&quot;秒，无任何消息，请重启重试......&quot;</span>);<br>    &#125; <span class="hljs-keyword">finally</span> &#123;<br>        connector.disconnect();<br>    &#125;<br>&#125;<br><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">printEntry</span><span class="hljs-params">(List&lt;Entry&gt; entrys)</span> &#123;<br>    <span class="hljs-keyword">for</span> (Entry entry : entrys) &#123;<br>        <span class="hljs-keyword">if</span> (entry.getEntryType() == EntryType.TRANSACTIONBEGIN || entry.getEntryType() == EntryType.TRANSACTIONEND) &#123;<br>            <span class="hljs-keyword">continue</span>;<br>        &#125;<br>        <span class="hljs-type">RowChange</span> <span class="hljs-variable">rowChage</span> <span class="hljs-operator">=</span> <span class="hljs-literal">null</span>;<br>        <span class="hljs-keyword">try</span> &#123;<br>            <span class="hljs-comment">//获取变更的row数据</span><br>            rowChage = RowChange.parseFrom(entry.getStoreValue());<br>        &#125; <span class="hljs-keyword">catch</span> (Exception e) &#123;<br>            <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">RuntimeException</span>(<span class="hljs-string">&quot;ERROR ## parser of eromanga-event has an error,data:&quot;</span> + entry.toString(),e);<br>        &#125;<br>        <span class="hljs-comment">//获取变动类型</span><br>        <span class="hljs-type">EventType</span> <span class="hljs-variable">eventType</span> <span class="hljs-operator">=</span> rowChage.getEventType();<br>        System.out.println(String.format(<span class="hljs-string">&quot;================binlog[%s:%s] , name[%s,%s] , eventType : %s&quot;</span>,<br>                entry.getHeader().getLogfileName(), entry.getHeader().getLogfileOffset(),<br>                entry.getHeader().getSchemaName(), entry.getHeader().getTableName(), eventType));<br>        <span class="hljs-keyword">for</span> (RowData rowData : rowChage.getRowDatasList()) &#123;<br>            <span class="hljs-keyword">if</span> (eventType == EventType.INSERT) &#123;<br>                rowData.getAfterColumnsList().forEach(column-&gt;System.out.println(column.getName() + <span class="hljs-string">&quot; : &quot;</span> + column.getValue() + <span class="hljs-string">&quot;    update=&quot;</span> + column.getUpdated()));<br>                <span class="hljs-comment">//redisInsert(rowData.getAfterColumnsList());</span><br>            &#125; <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (eventType == EventType.DELETE) &#123;<br>                rowData.getAfterColumnsList().forEach(column-&gt;System.out.println(column.getName() + <span class="hljs-string">&quot; : &quot;</span> + column.getValue() + <span class="hljs-string">&quot;    update=&quot;</span> + column.getUpdated()));<br>                <span class="hljs-comment">//redisDelete(rowData.getBeforeColumnsList());</span><br>            &#125; <span class="hljs-keyword">else</span> &#123;<span class="hljs-comment">//EventType.UPDATE</span><br>                rowData.getAfterColumnsList().forEach(column-&gt;System.out.println(column.getName() + <span class="hljs-string">&quot; : &quot;</span> + column.getValue() + <span class="hljs-string">&quot;    update=&quot;</span> + column.getUpdated()));<br>                <span class="hljs-comment">//redisUpdate(rowData.getAfterColumnsList());</span><br>            &#125;<br>        &#125;<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
-
-<p>输出为：</p>
-<blockquote>
-<p>我是canal，每秒一次正在监听:0d7700c0-0117-4a28-8d82-0a6ccbafadfd<br>我是canal，每秒一次正在监听:a658edf6-e56c-458e-bf13-25a64bffa7ec<br>我是canal，每秒一次正在监听:a6896fce-8f48-4478-983e-cf4bb05c1393<br>我是canal，每秒一次正在监听:e180a475-8a4a-44ee-84fa-096c2f44db16<br>我是canal，每秒一次正在监听:0fd10344-7eb1-412d-90fc-185e3ec69c51<br>&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;binlog[mysql-bin.000353:54296] , name[api_open_platform,interface_access] , eventType : INSERT<br>accesskey : a7e4c3c9-90be-434f-a201-1fb0c9c6921f    update&#x3D;true<br>verify_type : 1    update&#x3D;true<br>secretkey : 41ee07aa-bd35-45f0-aa6f-b39351d8db0c    update&#x3D;true<br>remaining_amount :     update&#x3D;true<br>remaining_times :     update&#x3D;true<br>interface_id : 10    update&#x3D;true<br>userid : 28    update&#x3D;true<br>call_times : 0    update&#x3D;true<br>failed_call_times : 0    update&#x3D;true<br>create_time : 2024-03-06 22:42:25    update&#x3D;true<br>update_time : 2024-03-06 22:42:25    update&#x3D;true<br>is_deleted : 0    update&#x3D;true<br>我是canal，每秒一次正在监听:1b80e597-9976-430a-b6f7-4fcaac936776<br>我是canal，每秒一次正在监听:9e89f0f4-0dfe-4f53-88c7-5731dbf0ebdf<br>我是canal，每秒一次正在监听:19322e19-0924-400d-a85b-bba58beb1a53<br>我是canal，每秒一次正在监听:0febf37a-df93-40b8-8c23-d0b89a1a1576</p>
-</blockquote>
-<p>至此，canal启动完成。<section class="footnotes"><div class="footnote-list"><ol><li><span id="fn:1" class="footnote-text"><span>本文基于canalv1.1.7版本。<br><a href="#fnref:1" rev="footnote" class="footnote-backref"> ↩</a></span></span></li></ol></div></section></p>
-]]></content>
-      <categories>
-        <category>分布式</category>
-        <category>中间件</category>
-        <category>canal</category>
-      </categories>
-      <tags>
-        <tag>canal</tag>
-        <tag>双写一致性</tag>
-        <tag>Dump</tag>
-        <tag>Binary log</tag>
-        <tag>mysql slave</tag>
       </tags>
   </entry>
   <entry>

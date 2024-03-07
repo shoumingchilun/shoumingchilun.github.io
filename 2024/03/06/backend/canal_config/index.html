@@ -12,13 +12,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
   <meta http-equiv="x-ua-compatible" content="ie=edge">
   
+    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+  
   <meta name="theme-color" content="#161f24">
   <meta name="author" content="寿命齿轮">
   <meta name="keywords" content="">
   
     <meta name="description" content="本文将讲述canal的安装、配置、启动以及验证监听是否成功。 介绍[1]中间件功能：基于数据库增量日志解析，提供增量数据的订阅&amp;消费。（目前主要支持了mysql） 使用canal的优点：  实时性：Canal 直接对接 MySQL 的二进制日志（Binlog），实现了近乎实时的数据同步，可以实现实时数据流处理和近实时的数据集成。 轻量级：作为一个开源组件，Canal 采用 Java 编写，">
 <meta property="og:type" content="article">
-<meta property="og:title" content="canal入门篇：介绍&amp;配置">
+<meta property="og:title" content="canal入门篇：介绍&amp;配置&amp;开启">
 <meta property="og:url" content="http://shoumingchilun.github.io/2024/03/06/backend/canal_config/">
 <meta property="og:site_name" content="Chilun&#39;s Blogs">
 <meta property="og:description" content="本文将讲述canal的安装、配置、启动以及验证监听是否成功。 介绍[1]中间件功能：基于数据库增量日志解析，提供增量数据的订阅&amp;消费。（目前主要支持了mysql） 使用canal的优点：  实时性：Canal 直接对接 MySQL 的二进制日志（Binlog），实现了近乎实时的数据同步，可以实现实时数据流处理和近实时的数据集成。 轻量级：作为一个开源组件，Canal 采用 Java 编写，">
@@ -27,7 +29,7 @@
 <meta property="og:image" content="http://shoumingchilun.github.io/2024/03/06/backend/canal_config/canal%E5%B7%A5%E4%BD%9C%E5%8E%9F%E7%90%86.png">
 <meta property="og:image" content="http://shoumingchilun.github.io/2024/03/06/backend/canal_config/canal%E6%9E%B6%E6%9E%84.png">
 <meta property="article:published_time" content="2024-03-06T12:31:23.000Z">
-<meta property="article:modified_time" content="2024-03-06T14:57:11.322Z">
+<meta property="article:modified_time" content="2024-03-07T04:30:41.901Z">
 <meta property="article:author" content="寿命齿轮">
 <meta property="article:tag" content="canal">
 <meta property="article:tag" content="双写一致性">
@@ -39,7 +41,7 @@
   
   
   
-  <title>canal入门篇：介绍&amp;配置 - Chilun&#39;s Blogs</title>
+  <title>canal入门篇：介绍&amp;配置&amp;开启 - Chilun&#39;s Blogs</title>
 
   <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
 
@@ -205,7 +207,7 @@
       <div class="banner-text text-center fade-in-up">
         <div class="h2">
           
-            <span id="subtitle" data-typed-text="canal入门篇：介绍&amp;配置"></span>
+            <span id="subtitle" data-typed-text="canal入门篇：介绍&amp;配置&amp;开启"></span>
           
         </div>
 
@@ -239,7 +241,7 @@
         
         
         
-          20 分钟
+          21 分钟
         
       </span>
     
@@ -289,12 +291,12 @@
       <div class="container nopadding-x-md" id="board-ctn">
         <div id="board">
           <article class="post-content mx-auto">
-            <h1 id="seo-header">canal入门篇：介绍&amp;配置</h1>
+            <h1 id="seo-header">canal入门篇：介绍&amp;配置&amp;开启</h1>
             
               <p id="updated-time" class="note note-info" style="display: none">
                 
                   
-                    本文最后更新于 2024-03-06T22:57:11+08:00
+                    本文最后更新于 2024-03-07T12:30:41+08:00
                   
                   
 
@@ -380,7 +382,7 @@
 <li>dbPassword: 用户密码</li>
 <li>filter.regex：使用正则表达式选择数据库表（我设置的是监听api_open_platform数据库下所有的表）</li>
 </ul>
-<ol>
+<h2 id="启动canal"><a href="#启动canal" class="headerlink" title="启动canal"></a>启动canal</h2><ol>
 <li><strong>开启命令</strong>：<code>bash bin/startup.sh</code>。</li>
 <li><strong>查看日志命令</strong>：<code>vim logs/canal/canal.log</code>、<code>vim logs/example/example.log</code>。</li>
 <li><strong>关闭命令</strong>：<code>bash bin/stop.sh</code>。</li>
@@ -474,7 +476,7 @@
 
   <div class="license-box my-3">
     <div class="license-title">
-      <div>canal入门篇：介绍&amp;配置</div>
+      <div>canal入门篇：介绍&amp;配置&amp;开启</div>
       <div>http://shoumingchilun.github.io/2024/03/06/backend/canal_config/</div>
     </div>
     <div class="license-meta">
@@ -625,10 +627,10 @@
     
       
       
-        <a href="/2024/03/06/backend/canal_config/" title="canal入门篇：介绍&amp;配置"
+        <a href="/2024/03/06/backend/canal_config/" title="canal入门篇：介绍&amp;配置&amp;开启"
            class="list-group-item list-group-item-action
            active">
-          <span class="category-post">canal入门篇：介绍&amp;配置</span>
+          <span class="category-post">canal入门篇：介绍&amp;配置&amp;开启</span>
         </a>
       
     
