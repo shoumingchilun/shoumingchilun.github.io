@@ -4,6 +4,41 @@
   
   
   <entry>
+    <title>ubuntu：初始化云服务器</title>
+    <link href="/2024/03/12/practice/initUbuntu/"/>
+    <url>/2024/03/12/practice/initUbuntu/</url>
+    
+    <content type="html"><![CDATA[<p>本文将介绍如何在一个新创建的ubuntu云服务上做一些准备工作，方便项目上线。</p><h1 id="更新软件列表"><a href="#更新软件列表" class="headerlink" title="更新软件列表"></a>更新软件列表</h1><p>执行<code>sudo apt update</code>，确保系统上安装的软件包列表是最新的，这样在安装新软件包或升级已安装的软件包时能够获得最新的版本和信息。</p><h1 id="开启sftp"><a href="#开启sftp" class="headerlink" title="开启sftp"></a>开启sftp</h1><p>执行<code>sudo apt install openssh-server</code>，方便进行文件传输。<br>执行后可使用winSCP方便地传文件。</p><h1 id="安装jdk17"><a href="#安装jdk17" class="headerlink" title="安装jdk17"></a>安装jdk17</h1><p>执行<code>sudo apt install openjdk-17-jdk</code>，以便后续运行jar包。<br>可使用<code>java -version</code>命令判断是否安装成功，以及查看java版本。<br>输出结果如：</p><blockquote><p>openjdk version “17.0.10” 2024-01-16<br>OpenJDK Runtime Environment (build 17.0.10+7-Ubuntu-122.04.1)<br>OpenJDK 64-Bit Server VM (build 17.0.10+7-Ubuntu-122.04.1, mixed mode, sharing)</p></blockquote><h1 id="安装MySQL"><a href="#安装MySQL" class="headerlink" title="安装MySQL"></a>安装MySQL</h1><p>执行<code>sudo apt install mysql-server</code>安装MySQL。<br>安装完成后，使用<code>sudo lsof -i | grep mysql</code>命令查看mysql是否开启运行。<br>输出应该为：</p><blockquote><p>ubuntu@VM-4-8-ubuntu:~$ sudo lsof -i | grep mysql<br>mysqld    19846           mysql   21u  IPv4  90057      0t0  TCP localhost:33060 (LISTEN)<br>mysqld    19846           mysql   23u  IPv4  90065      0t0  TCP localhost:mysql (LISTEN)</p></blockquote><p>（可以运行一下<code>sudo mysql_secure_installation</code>，执行自带的安全脚本，设置一些配置，开发环境不用在意这个）</p><h2 id="配置账号"><a href="#配置账号" class="headerlink" title="配置账号"></a>配置账号</h2><ol><li>使用<code>sudo mysql</code>进入MySQL页面。</li><li>使用<code>use mysql</code>进入MySQL数据库。</li><li>使用<code>update user set host = &#39;%&#39; where user = &#39;root&#39;;</code>命令设置root账户运行远程登录。</li><li>使用<code>flush privileges;</code>刷新配置。</li><li>使用<code>ALTER USER &#39;root&#39;@&#39;%&#39; IDENTIFIED WITH MYSQL_NATIVE_PASSWORD BY &#39;你的密码&#39;</code> 修改root账号密码。</li><li>再次使用<code>flush privileges;</code>刷新配置。</li><li>使用<code>exit</code>退出。</li></ol><p>下次进入就要用<code>sudo mysql -u root -p</code>命令了。</p><h2 id="配置远程连接"><a href="#配置远程连接" class="headerlink" title="配置远程连接"></a>配置远程连接</h2><p>（注意要先把防火墙开放一下）<br>此时账户配置好了，但是Navicat还是连接不上，因为MySQl有个配置文件中设置了只接受某个特定id来源的请求，需要修改：</p><ol><li>进入MySQL的配置文件目录（<code>cd /etc/mysql</code>），查看里面哪个配置文件中包含了bind-address。（我的是&#x2F;etc&#x2F;mysql&#x2F;mysql.conf.d&#x2F;mysqld.cnf文件里面）</li><li>使用vim修改即可。<blockquote><p>bind-address            &#x3D; 127.0.0.1<br>mysqlx-bind-address     &#x3D; 127.0.0.1<br>修改为<br>bind-address            &#x3D; 0.0.0.0<br>mysqlx-bind-address     &#x3D; 0.0.0.0</p></blockquote></li><li>重启MySQL服务：<code>sudo service mysql restart</code></li></ol><p>即可使用Navicat连接。</p><h1 id="安装Redis"><a href="#安装Redis" class="headerlink" title="安装Redis"></a>安装Redis</h1><p>执行<code>sudo apt install redis-server</code>安装Redis。<br>安装完成后，可使用<code>sudo systemctl status redis-server</code>查看有无启动（默认是启动的）。<br>输出为：</p><blockquote><p>ubuntu@VM-4-8-ubuntu:&#x2F;etc&#x2F;mysql&#x2F;mysql.conf.d$ sudo systemctl status redis-server<br>● redis-server.service - Advanced key-value store<br>     Loaded: loaded (&#x2F;lib&#x2F;systemd&#x2F;system&#x2F;redis-server.service; enabled; vendor preset: enabled)<br>     Active: active (running) since Tue 2024-03-12 18:14:04 CST; 48s ago<br>……</p></blockquote><p>可执行<code>redis-cli</code>进入本地Redis并测试有无启动成功：</p><blockquote><p>ubuntu@VM-4-8-ubuntu:&#x2F;etc&#x2F;mysql&#x2F;mysql.conf.d$ redis-cli<br>127.0.0.1:6379&gt; ping<br>PONG<br>127.0.0.1:6379&gt; exit</p></blockquote><h2 id="配置远程连接-1"><a href="#配置远程连接-1" class="headerlink" title="配置远程连接"></a>配置远程连接</h2><ol><li>使用<code>sudo su</code>进入root账号（进入redis配置文件夹需要root权限）</li><li>使用<code>cd /etc/redis</code>进入配置文件夹</li><li>使用<code>vim redis.conf</code>修改文件（输入<code>/bind</code>进行查找，点击<strong>n</strong>查找下一个）</li><li>修改配置文件。<blockquote><p>bind 127.0.0.1 ::1<br>修改为<br>bind 0.0.0.0 ::1</p></blockquote></li><li>重启Redis服务（<code>sudo systemctl restart redis-server</code>）</li></ol><p>（注意开放6379的防火墙）<br>即可在远程连接到Redis。</p><blockquote><p>D:\Redis\Redis-x64-5.0.14.1&gt;redis-cli -h [数据删除]<br>[数据删除]:6379&gt; ping<br>PONG<br>[数据删除]:6379&gt; exit</p></blockquote><h1 id="安装其他组件"><a href="#安装其他组件" class="headerlink" title="安装其他组件"></a>安装其他组件</h1><p>后续操作按需求选择即可，此处安装其他组件是为了让接口托管平台上线。</p><h2 id="Nginx"><a href="#Nginx" class="headerlink" title="Nginx"></a>Nginx</h2><h2 id="Canal"><a href="#Canal" class="headerlink" title="Canal"></a>Canal</h2><h2 id="RocketMQ"><a href="#RocketMQ" class="headerlink" title="RocketMQ"></a>RocketMQ</h2><p>RocketMQ仅需要JDK即可运行。</p><h2 id="Nacos"><a href="#Nacos" class="headerlink" title="Nacos"></a>Nacos</h2>]]></content>
+    
+    
+    <categories>
+      
+      <category>项目实践</category>
+      
+      <category>准备工作</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>云服务器</tag>
+      
+      <tag>ubuntu</tag>
+      
+      <tag>docker</tag>
+      
+      <tag>java</tag>
+      
+      <tag>sftp</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
     <title>canal入门篇：介绍&amp;配置&amp;启动</title>
     <link href="/2024/03/06/backend/canal_config/"/>
     <url>/2024/03/06/backend/canal_config/</url>
@@ -153,7 +188,7 @@
   
   
   <entry>
-    <title>about</title>
+    <title>分类</title>
     <link href="/"/>
     <url>/</url>
     
@@ -164,7 +199,7 @@
   
   
   <entry>
-    <title>分类</title>
+    <title>about</title>
     <link href="/"/>
     <url>/</url>
     
