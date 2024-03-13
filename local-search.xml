@@ -4,6 +4,128 @@
   
   
   <entry>
+    <title>RocketMQ：集成Springboot</title>
+    <link href="/2024/03/13/backend/middleware/messagequeue/rocket-Springboot/"/>
+    <url>/2024/03/13/backend/middleware/messagequeue/rocket-Springboot/</url>
+    
+    <content type="html"><![CDATA[<div class="row">    <embed src="RocketMQNote.pdf" width="100%" height="550" type="application/pdf"></div><blockquote><p>本文之前使用LaTeX书写，现直接使用PDF发布。<br>建议：rocketmq-spring-boot-starter相比原生SDK的功能要弱不少，如果需要实现复杂功能还是使用rocketmq-client-java比较合适。</p></blockquote>]]></content>
+    
+    
+    <categories>
+      
+      <category>分布式</category>
+      
+      <category>中间件</category>
+      
+      <category>消息队列</category>
+      
+    </categories>
+    
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>RocketMQ：领域模型</title>
+    <link href="/2024/03/13/backend/middleware/messagequeue/rocket-domainmodel/"/>
+    <url>/2024/03/13/backend/middleware/messagequeue/rocket-domainmodel/</url>
+    
+    <content type="html"><![CDATA[<div class="row">    <embed src="RocketMQNote.pdf" width="100%" height="550" type="application/pdf"></div><blockquote><p>本文之前使用LaTeX书写，现直接使用PDF发布。</p></blockquote>]]></content>
+    
+    
+    <categories>
+      
+      <category>分布式</category>
+      
+      <category>中间件</category>
+      
+      <category>消息队列</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>消息队列</tag>
+      
+      <tag>RocketMQ</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>RocketMQ：启动</title>
+    <link href="/2024/03/13/backend/middleware/messagequeue/rocket-start/"/>
+    <url>/2024/03/13/backend/middleware/messagequeue/rocket-start/</url>
+    
+    <content type="html"><![CDATA[<h1 id="1-下载二进制文件包"><a href="#1-下载二进制文件包" class="headerlink" title="1. 下载二进制文件包"></a>1. 下载二进制文件包</h1><p>进入<a href="https://rocketmq.apache.org/zh/docs/quickStart/01quickstart">官网</a>，获得<a href="https://dist.apache.org/repos/dist/release/rocketmq/5.1.4/rocketmq-all-5.1.4-bin-release.zip">二进制压缩包下载地址</a>。</p><p>使用wget命令下载压缩包：<code>wget https://dist.apache.org/repos/dist/release/rocketmq/5.1.4/rocketmq-all-5.1.4-bin-release.zip</code><br>使用unzip命令解压二进制文件压缩包：<code>unzip rocketmq-all-5.1.4-bin-release.zip</code></p><h1 id="2-修改启动命令"><a href="#2-修改启动命令" class="headerlink" title="2. 修改启动命令"></a>2. 修改启动命令</h1><h2 id="修改Java虚拟机分配内存大小"><a href="#修改Java虚拟机分配内存大小" class="headerlink" title="修改Java虚拟机分配内存大小"></a>修改Java虚拟机分配内存大小</h2><p>直接启动很可能报错操作系统内存不足（RocketMQ对内存要求极高）：</p><blockquote><p>OpenJDK64-BitServerVMwarning: INFO: os::commit_memory(0x0000000700000000,4294967296,0)failed; error&#x3D;’Notenoughspace’(errno&#x3D;12)</p></blockquote><p>所以需要修改脚本文件，将分配给虚拟机改小，需要修改<code>runserver.sh</code> 、 <code>runbroker.sh</code> 和 <code>tools.sh</code> 文件，将所有<code>-Xms``-Xmx``-Xmn</code>参数都改小，<code>-Xmx</code>为内存上限，<code>-Xmn</code>为内存下限，<code>-Xms</code>为初始大小。</p><h2 id="修改java启动命令"><a href="#修改java启动命令" class="headerlink" title="修改java启动命令"></a>修改java启动命令</h2><p>如果java版本过高，可能会报错Option UseBiasedLocking was deprecated，需要继续修改配置文件：<br>在runbroker.sh 文件中，<code>numactl --interleave=all pwd &gt; /dev/null 2&gt;&amp;1</code>的文本上方添加<code>$JAVA $&#123;JAVA_OPT&#125; --add-exports=java.base/sun.nio.ch=ALL-UNNAMED $@</code>。<br>脚本修改后为：</p><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><code class="hljs shell">JAVA_OPT=&quot;$&#123;JAVA_OPT&#125; -server -Xms256m -Xmx512m&quot;<br>choose_gc_options<br>JAVA_OPT=&quot;$&#123;JAVA_OPT&#125; -XX:-OmitStackTraceInFastThrow&quot;<br>JAVA_OPT=&quot;$&#123;JAVA_OPT&#125; -XX:+AlwaysPreTouch&quot;<br>JAVA_OPT=&quot;$&#123;JAVA_OPT&#125; -XX:MaxDirectMemorySize=15g&quot;<br>JAVA_OPT=&quot;$&#123;JAVA_OPT&#125; -XX:-UseLargePages -XX:-UseBiasedLocking&quot;<br><span class="hljs-meta prompt_">#</span><span class="language-bash">JAVA_OPT=<span class="hljs-string">&quot;<span class="hljs-variable">$&#123;JAVA_OPT&#125;</span> -Xdebug -Xrunjdwp:transport=dt_socket,address=9555,server=y,suspend=n&quot;</span></span><br>JAVA_OPT=&quot;$&#123;JAVA_OPT&#125; $&#123;JAVA_OPT_EXT&#125;&quot;<br>JAVA_OPT=&quot;$&#123;JAVA_OPT&#125; -cp $&#123;CLASSPATH&#125;&quot;<br><span class="hljs-meta prompt_"></span><br><span class="hljs-meta prompt_">$</span><span class="language-bash">JAVA <span class="hljs-variable">$&#123;JAVA_OPT&#125;</span> --add-exports=java.base/sun.nio.ch=ALL-UNNAMED <span class="hljs-variable">$@</span></span><br><br>numactl --interleave=all pwd &gt; /dev/null 2&gt;&amp;1<br>if [ $? -eq 0 ]<br>then<br>if [ -z &quot;$RMQ_NUMA_NODE&quot; ] ; then<br>numactl --interleave=all $JAVA $&#123;JAVA_OPT&#125; $@<br>else<br>numactl --cpunodebind=$RMQ_NUMA_NODE --membind=$RMQ_NUMA_NODE $JAVA $&#123;JAVA_OPT&#125; $@<br>fi<br>else<br>&quot;$JAVA&quot; $&#123;JAVA_OPT&#125; $@<br>fi<br></code></pre></td></tr></table></figure><h1 id="3-启动RocketMQ"><a href="#3-启动RocketMQ" class="headerlink" title="3. 启动RocketMQ"></a>3. 启动RocketMQ</h1><p>（当前目录为rocketmq-all-5.1.4-bin-release）</p><ol><li><strong>启动名称服务器</strong>：执行命令：<code>nohup sh bin/mqnamesrv &amp;</code></li><li><strong>启动消息队列和代理服务器</strong>：<code>nohup sh bin/mqbroker -n localhost:9876 --enable-proxy &amp;</code></li></ol><blockquote><p>nohup代表“不挂起”。在终端中执行命令然后关闭终端时，与该命令相关联的进程通常也会终止。nohup可以防止这种情况发生。</p></blockquote><p>可查看nohup.out（<code>vim nohup.out</code>）或日志文件（<code>tail -f ~/logs/rocketmqlogs/proxy.log</code>）来判断消息队列有无启动成功。</p><h1 id="4-关闭RocketMQ"><a href="#4-关闭RocketMQ" class="headerlink" title="4. 关闭RocketMQ"></a>4. 关闭RocketMQ</h1><ul><li><strong>关闭消息队列</strong>：<code>sh bin/mqshutdown broker</code></li><li><strong>关闭名称服务</strong>：<code>sh bin/mqshutdown namesrv</code></li></ul>]]></content>
+    
+    
+    <categories>
+      
+      <category>分布式</category>
+      
+      <category>中间件</category>
+      
+      <category>消息队列</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>消息队列</tag>
+      
+      <tag>RocketMQ</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>消息队列：认识篇</title>
+    <link href="/2024/03/13/backend/middleware/messagequeue/mq-introducte/"/>
+    <url>/2024/03/13/backend/middleware/messagequeue/mq-introducte/</url>
+    
+    <content type="html"><![CDATA[<h1 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h1><p>消息队列，顾名思义，存放消息（可类比为请求）的队列（一种先进先出的数据结构）。<br>其是一种常用于分布式系统的中间件，可以在不同的应用程序、服务或系统之间传递消息，并且常用于解耦合不同部分的系统，使得系统更加可扩展和灵活。<br><strong>基本原理：发送者将消息放入队列，接收者从队列中获取消息并处理。</strong><br>消息队列实质是一种方式，一种<strong>在不同组件之间传递消息的通信方式</strong>。发送者和接收者之间不需要直接通信，它们只需了解如何发送和接收消息即可。</p><h1 id="作用与优点"><a href="#作用与优点" class="headerlink" title="作用与优点"></a>作用与优点</h1><p>由上述内容，可推断出消息队列的一些作用：</p><ul><li><strong>解耦</strong>：发送者和接收者只需要关心发送消息和接受消息，不用关心彼此。</li><li><strong>异步</strong>：发送者不关心消息的处理，即不用等待消息的响应，故支持异步。</li><li><strong>削锋</strong>：某些活动的流量过大、请求过多，可能导致系统宕机；消息队列可以作为缓冲区，将这些请求暂时存储起来，以避免瞬时高流量，然后按照系统处理能力逐步消费，实现流量的平滑处理，从而降低系统的压力，避免宕机。<br>以及其身为分布式系统的固有优点：</li><li><strong>可扩展性</strong>：在解耦后，可方便地单独对发送者或接收者或消息队列进行动态伸缩。</li><li><strong>可靠性</strong>：由于消息队列允许多个消费者和生产者，并且通常支持消息持久化和复制，因此即使其中一个组件出现故障，系统仍然可以继续运行并且消息也不会丢失。</li></ul><h1 id="适用场景"><a href="#适用场景" class="headerlink" title="适用场景"></a>适用场景</h1><p>（此处仅介绍一些常见场景）</p><h2 id="异步场景举例：用户注册"><a href="#异步场景举例：用户注册" class="headerlink" title="异步场景举例：用户注册"></a>异步场景举例：用户注册</h2><h3 id="需求"><a href="#需求" class="headerlink" title="需求"></a>需求</h3><p>用户注册后需向其发送注册邮件和注册短信。</p><h3 id="设计"><a href="#设计" class="headerlink" title="设计"></a>设计</h3><p>用户注册后，将注册信息写入数据库；发送注册邮件；发送短信。<br>如不使用消息队列，不进行异步解耦，即注册服务器需要同步远程调用写入数据库、发送注册邮件、发送短信的三个函数，将与其他应用发生多次交互，同时还得等待响应，假设一个操作需要0.5s，则该操作会占用注册服务器一个线程的1.5s。<br>使用消息队列后，注册服务器直接向消息队列中写入三个消息（数据库写入消息、邮件发送消息、短信发送消息），并且是异步发送不用等待返回，假设一次发送消息为0.1s，也仅需0.3s。</p><h2 id="解耦场景举例：订单-库存管理"><a href="#解耦场景举例：订单-库存管理" class="headerlink" title="解耦场景举例：订单-库存管理"></a>解耦场景举例：订单-库存管理</h2><h3 id="需求-1"><a href="#需求-1" class="headerlink" title="需求"></a>需求</h3><p>用户下订单后，库存系统需要减少相对数量。</p><h3 id="设计-1"><a href="#设计-1" class="headerlink" title="设计"></a>设计</h3><p>用户下单后，订单系统需要通知库存系统。</p><h3 id="详细设计"><a href="#详细设计" class="headerlink" title="详细设计"></a>详细设计</h3><ul><li>原设计：订单系统调用库存系统的接口。<ul><li>存在缺陷：假如库存系统无法访问，则订单减库存将失败，从而导致订单失败；订单系统依赖库存系统接口，存在耦合。</li></ul></li><li>使用消息队列改进：订单系统发送订单消息（用户下单后，订单系统完成持久化处理，将消息写入消息队列，返回用户订单下单成功），库存系统读取订单消息并自行处理（订阅订单消息，采用拉&#x2F;推的方式，获取下单信息，库存系统根据下单信息，进行库存操作）。<ul><li>解决缺陷：假如库存系统无法访问，订单系统仅需要发送消息，可保持运转；订单消息仅发送消息，消息解读由库存系统进行（发布-订阅或消息队列模式），降低耦合度。</li></ul></li></ul><h2 id="削锋场景举例：秒杀活动"><a href="#削锋场景举例：秒杀活动" class="headerlink" title="削锋场景举例：秒杀活动"></a>削锋场景举例：秒杀活动</h2><h3 id="需求-2"><a href="#需求-2" class="headerlink" title="需求"></a>需求</h3><p>在秒杀活动中，大量用户同时抢购商品，可能会导致系统压力激增。为了应对这一情况，需要一种机制来平稳处理激增的请求流量，避免系统崩溃或性能下降。</p><h3 id="设计-2"><a href="#设计-2" class="headerlink" title="设计"></a>设计</h3><p>传统的处理方式可能会导致系统崩溃或性能下降。为了解决这个问题，可以使用消息队列来削峰填谷。</p><h3 id="详细设计-1"><a href="#详细设计-1" class="headerlink" title="详细设计"></a>详细设计</h3><ol><li>秒杀活动开始：当秒杀活动开始时，用户可以提交秒杀请求。</li><li>请求入队：订单系统接收到用户的秒杀请求后，将请求消息写入消息队列，而不是立即处理。</li><li>消息处理：秒杀请求消息被消息队列按照一定的规则（如先进先出）分发给后端处理程序。</li><li>后端处理：后端处理程序逐条处理消息，检查库存并进行相应的处理（如减少库存、生成<br>订单等）。</li></ol><p>以此消息队列可平滑处理激增的请求流量，避免系统因突发流量而崩溃。</p><h2 id="日志处理场景"><a href="#日志处理场景" class="headerlink" title="日志处理场景"></a>日志处理场景</h2><h3 id="需求-3"><a href="#需求-3" class="headerlink" title="需求"></a>需求</h3><p>需要一种解决大量日志传输和实时处理的方案，以便对日志数据进行分析和可视化展示。</p><h3 id="设计-3"><a href="#设计-3" class="headerlink" title="设计"></a>设计</h3><p>设计一个分布式日志处理系统，包括以下组件：</p><ol><li>日志采集客户端：负责从各个日志源采集日志数据，并将数据定期写入消息队列中。</li><li>消息队列：接收来自日志采集客户端的日志数据，负责数据的存储和转发。</li><li>日志处理应用：订阅并消费Kafka队列中的日志数据，进行实时处理和分析。</li><li>Logstash：作为日志处理应用的一部分，负责对原始日志进行解析和转换，统一输出为JSON格式的数据。</li><li>Elasticsearch：作为日志处理应用的核心数据存储服务，接收Logstash处理后的JSON格式日志数据，实现实时的数据索引和查询。</li><li>Kibana：基于Elasticsearch 的数据可视化组件，用于将Elasticsearch中的数据进行可视化展示和分析。</li></ol><h2 id="消息通讯场景"><a href="#消息通讯场景" class="headerlink" title="消息通讯场景"></a>消息通讯场景</h2><h3 id="需求-4"><a href="#需求-4" class="headerlink" title="需求"></a>需求</h3><p>需要一种高效的消息通讯机制，可以用于点对点通讯或者创建聊天室等场景，以实现实时的消息传递和交流。</p><h3 id="设计-4"><a href="#设计-4" class="headerlink" title="设计"></a>设计</h3><p>设计一个基于消息队列的消息通讯系统，包括以下两种场景：</p><ol><li>点对点通讯：客户端A和客户端B使用同一队列进行消息通讯；消息队列负责接收和转发客户端A和客户端B的消息。</li><li>客户端A、客户端B等多个客户端订阅同一主题：当有客户端发布消息时，消息队列将消息广播给所有订阅了该主题的客户端，客户端收到消息后进行展示。</li></ol><h1 id="常用消息队列框架"><a href="#常用消息队列框架" class="headerlink" title="常用消息队列框架"></a>常用消息队列框架</h1><ol><li><strong>RabbitMQ</strong>：RabbitMQ 是一个开源的消息队列系统，实现了高级消息队列协议（AMQP），它是一个可靠、高可用、可扩展的消息代理。RabbitMQ提供了多种消息传递模式，如点对点、发布&#x2F;订阅等，适用于各种场景的应用程序。</li><li><strong>RocketMQ</strong>：RocketMQ 是阿里巴巴开源的分布式消息队列系统，具有高吞吐量、低延迟、高可用性等特点。它支持丰富的消息模型，包括顺序消息、事务消息等，适用于大规模分布式系统的消息通信。</li><li><strong>Kafka</strong>：Kafka是由Apache软件基金会开发的分布式流处理平台和消息队列系统。Kafka设计用于支持大规模的消息处理，具有高吞吐量、持久性、分区等特点，广泛应用于大数据领域。</li><li><strong>ActiveMQ</strong>：ActiveMQ 是一个开源的消息中间件，实现了JavaMessageService(JMS)规范。它支持多种传输协议，如TCP、UDP、SSL等，提供了丰富的功能，包括消息持久化、事务支持等。</li><li><strong>Amazon SQS</strong>：AmazonSQS（Simple Queue Service）是亚马逊提供的消息队列服务，可帮助构建分布式应用程序。它具有高可用性、可扩展性、灵活性等特点，适用于构建在亚马逊云平台上的应用程序。</li></ol>]]></content>
+    
+    
+    <categories>
+      
+      <category>分布式</category>
+      
+      <category>中间件</category>
+      
+      <category>消息队列</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>消息队列</tag>
+      
+      <tag>RocketMQ</tag>
+      
+      <tag>解耦</tag>
+      
+      <tag>异步</tag>
+      
+      <tag>削锋</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
     <title>微服务：认识篇</title>
     <link href="/2024/03/13/backend/microservice/microservice-introduce/"/>
     <url>/2024/03/13/backend/microservice/microservice-introduce/</url>
@@ -19,6 +141,14 @@
       
     </categories>
     
+    
+    <tags>
+      
+      <tag>微服务</tag>
+      
+      <tag>SOA</tag>
+      
+    </tags>
     
   </entry>
   
