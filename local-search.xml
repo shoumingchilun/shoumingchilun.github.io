@@ -4,6 +4,60 @@
   
   
   <entry>
+    <title>RocketMQ：发布订阅模式</title>
+    <link href="/2024/03/13/backend/middleware/messagequeue/rocket-publishsubscribe/"/>
+    <url>/2024/03/13/backend/middleware/messagequeue/rocket-publishsubscribe/</url>
+    
+    <content type="html"><![CDATA[<p>本文将讲解消息队列的两种实现模式：队列模式、发布订阅模式。</p><h1 id="队列模式"><a href="#队列模式" class="headerlink" title="队列模式"></a>队列模式</h1><p>作为一种数据结构，队列的特性是<strong>先进先出</strong>。<br>使用队列来存储消息时，生产者发送的消息会被放入到一个队列，然后由消费者们竞争着消费队列的信息。</p><blockquote><p>竞争意味着每条消息只会被一个消费者消费。</p></blockquote><p>在存储消息时，如果我们使用数据结构-队列对消息进行存储，就会存在一个问题：队列具有先进先出的特性，当读到后一个消息时，前一个消息就会被丢失，进而其他消费者就无法访问该消息。（即消费者之间的竞争关系导致无法合适地共享信息）</p><p><img src="/2024/03/13/backend/middleware/messagequeue/rocket-publishsubscribe/%E9%98%9F%E5%88%97%E6%A8%A1%E5%BC%8F.svg"></p><p>发布-订阅模式是为解决单个队列无法满足同时提供给多个消费者相同消息的需求的。</p><h1 id="发布订阅模式"><a href="#发布订阅模式" class="headerlink" title="发布订阅模式"></a>发布订阅模式</h1><h2 id="支持共享"><a href="#支持共享" class="headerlink" title="支持共享"></a>支持共享</h2><p>发布-订阅模式的目的：<strong>每个消费者都能选择想要消费某个队列，消费其中指定某个位置的消息。</strong><br>发布-订阅模式中我们需要引入两个概念——Topic、offset：</p><ul><li>Topic：主题，用于区别不同的队列。<ul><li>举例：生产者1负责生产订单记录，生产者2负责生产发货记录，消费者1负责处理订单记录，消费者2负责处理发货记录。那么自然不能只使用一个队列存储所有信息让消费者自己选择自己需要的信息，这应该是消息队列的责任。所用我们引入主题的概念，用以区别不同的队列，生产者1的消息发送、存储到订单主题的主题队列，生产者2的消息发送、存储到发货主题的主题队列；消费者1只对订单主题感兴趣，消息队列就只给它提供订单主题的主题队列中的信息……</li></ul></li><li>offset：消息位置，用以记录消费者在队列中处理到的信息位置。<ul><li>消费者每次处理一个信息，offset就+1，下一次转发给该消费者就是这个主题中的下一个消息。</li></ul></li></ul><p>示意图：<br><img src="/2024/03/13/backend/middleware/messagequeue/rocket-publishsubscribe/%E5%8F%91%E5%B8%83%E8%AE%A2%E9%98%851.png"></p><h2 id="支持竞争"><a href="#支持竞争" class="headerlink" title="支持竞争"></a>支持竞争</h2><p>发布订阅模式解决了上述将全部消息提供给多个消费者的需求，但是存在一个问题，就是<strong>无法实现原先的竞争关系</strong>：某些消息不需要被同一类的不同消费者重复接收，但是只依赖offset的+1无法解决该问题。<br>可以复用原有队列的数据结构，但是原有队列处理方式还存在一个问题：竞争消费位置——<strong>同一类</strong>消费者无法同时消费多个消息，其必须一个一个地处理消息。<br>而且无论是消息粒度负载均衡策略还是队列粒度负载均衡策略，在消费者上线或下线、服务端扩缩容等场景下，都会触发短暂的重新负载均衡动作。此时可能会存在短暂的负载不一致情况，出现少量消息重复的现象。因此，还需要在下游消费逻辑中保证消息幂等以支持去重功能。<br>为了解决此问题，需要引入一个新机制：<strong>队列</strong>（消息队列-MessageQueue，在Kafka中被称为分区）。</p><p>同一个主题的消息，会被分开存放到不同队列中（主题与队列的关系为一对多），不同消费者可以接收不同队列中的信息，以做到同时消费。<br>示意图：<br><img src="/2024/03/13/backend/middleware/messagequeue/rocket-publishsubscribe/%E5%8F%91%E5%B8%83%E8%AE%A2%E9%98%852.png"></p><p>一个消费者可对应一到多个队列（或分区）。对应多个时需保持多个offset。且要求消费者数量少于队列数量，以避免出现闲置的消费者。</p><p><img src="/2024/03/13/backend/middleware/messagequeue/rocket-publishsubscribe/%E5%8F%91%E5%B8%83%E8%AE%A2%E9%98%853.svg"></p><p>改进后的发布订阅还有一个优点：可以灵活实现<strong>重复消费</strong>或者<strong>跳过部分消息不消费</strong>的功能。</p><ul><li><strong>重复消费</strong>：比如消费者1已经消费到 Topic-A-queue1-20，即第 20 条消息，但是消费者1一不小心把之前消费得到的结果数据弄丢了，如果按照队列模式那就找不到消息了，因为消息已经出队了没了；而在发布-订阅模式中，我们仅需把这个消息位置变更成 Topic-A-queue1-20，这样又可以让消费者1重新消费，只需要简单地改一条数据就能实现这样功能。</li><li><strong>跳过部分消息不消费</strong>：假设 Topic-A-queue1 中第 21-30 这 10 条消息是错误的，我们可以修改当前的消息点位成 Topic-A-queue1-30，这样消费者1就直接跳过了这 10 条错误消息，从第 31 条消息开始消费。</li></ul><blockquote><p>目前讲解的是队列级的负载均衡，即消费者对应到具体队列（每个队列仅支持被一个消费者消费），实际上存在消息级的负载均衡，无需关注消费者和队列的相对数量，能够更均匀地分摊消息。可自行了解。</p></blockquote>]]></content>
+    
+    
+    <categories>
+      
+      <category>分布式</category>
+      
+      <category>中间件</category>
+      
+      <category>消息队列</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>队列模式</tag>
+      
+      <tag>发布订阅模式</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>RocketMQ：消息存储原理</title>
+    <link href="/2024/03/13/backend/middleware/messagequeue/rocket-storage/"/>
+    <url>/2024/03/13/backend/middleware/messagequeue/rocket-storage/</url>
+    
+    <content type="html"><![CDATA[]]></content>
+    
+    
+    <categories>
+      
+      <category>分布式</category>
+      
+      <category>中间件</category>
+      
+      <category>消息队列</category>
+      
+    </categories>
+    
+    
+  </entry>
+  
+  
+  
+  <entry>
     <title>RocketMQ：集成Springboot</title>
     <link href="/2024/03/13/backend/middleware/messagequeue/rocket-Springboot/"/>
     <url>/2024/03/13/backend/middleware/messagequeue/rocket-Springboot/</url>
@@ -24,9 +78,9 @@
     
     <tags>
       
-      <tag>消息队列</tag>
-      
       <tag>RocketMQ</tag>
+      
+      <tag>消息队列</tag>
       
       <tag>Springboot</tag>
       
@@ -57,9 +111,9 @@
     
     <tags>
       
-      <tag>消息队列</tag>
-      
       <tag>RocketMQ</tag>
+      
+      <tag>消息队列</tag>
       
       <tag>Producer</tag>
       
@@ -116,9 +170,9 @@
     
     <tags>
       
-      <tag>消息队列</tag>
-      
       <tag>RocketMQ</tag>
+      
+      <tag>消息队列</tag>
       
     </tags>
     
@@ -147,9 +201,9 @@
     
     <tags>
       
-      <tag>消息队列</tag>
-      
       <tag>RocketMQ</tag>
+      
+      <tag>消息队列</tag>
       
       <tag>解耦</tag>
       

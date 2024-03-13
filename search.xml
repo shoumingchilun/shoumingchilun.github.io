@@ -71,211 +71,6 @@
       </tags>
   </entry>
   <entry>
-    <title>《区块链：技术驱动金融》摘录（概念目录）</title>
-    <url>/2024/03/03/Web3/readingNotes/%E5%8C%BA%E5%9D%97%E9%93%BE%EF%BC%9A%E6%8A%80%E6%9C%AF%E9%A9%B1%E5%8A%A8%E9%87%91%E8%9E%8D/</url>
-    <content><![CDATA[<p>本文将介绍一些区块链领域的技术概念，充当一份技术目录以供备用。</p>
-<h1 id="哈希函数"><a href="#哈希函数" class="headerlink" title="哈希函数"></a>哈希函数</h1><h2 id="特性"><a href="#特性" class="headerlink" title="特性"></a>特性</h2><p>哈希函数具有以下特性：</p>
-<ul>
-<li><strong>碰撞阻力（Collision Resistance）</strong>：避免存在x，y，使H(x)&#x3D;H(y)<ul>
-<li>对于任意两个不同的输入x和y，找到满足H(x) &#x3D; H(y)的x和y在计算上应该是非常困难的。理想的哈希函数应保证对于所有可能的输入，其输出的哈希值都各不相同，但实际上因为输出空间有限而输入空间无限，理论上总是存在碰撞的可能，但在实际应用中，一个好的哈希函数设计应当使寻找碰撞的概率变得极低。</li>
-<li>特性应用：<strong>信息摘要（Message Digests）</strong>——在数据完整性校验中，哈希函数被用来生成一段数据的“数字指纹”，如MD5或SHA系列算法。当文件传输后，接收方可以通过重新计算哈希值并与发送方提供的摘要对比，确认数据在传输过程中是否被篡改。若摘要匹配，则说明数据未变；如果不匹配，则可能存在数据损坏或被恶意篡改。</li>
-</ul>
-</li>
-<li><strong>隐秘性（Pre-image Resistance &#x2F; One-wayness）</strong>：y&#x3D;H(x)，不可通过y推出x<ul>
-<li>隐秘性是指给定一个哈希值y，找到任何原输入x使得y &#x3D; H(x)在计算上是不可能或极其困难的。这体现了哈希函数的单向性，即从输出反推输入几乎不可能。</li>
-<li>特性应用：<strong>承诺（Commitment Schemes）</strong> ——在密码学中，哈希函数可用于构建承诺方案，一方可以在不暴露具体值的情况下对某个秘密值做出承诺，并在以后揭示该值时证明承诺的有效性。例如，在零知识证明中，一个参与者可以提前提交一个哈希值作为承诺，后续再公开原始数据，其他人可以通过计算哈希验证其一致性，但在此之前无法猜出原始数据。</li>
-</ul>
-</li>
-<li><strong>谜题友好（Puzzle-Friendliness 或 Puzzle-freeness）</strong>：使H(k||x)&#x3D;y成立的x无法在比2^n小很多时间内找到<ul>
-<li>（该特性主要应用于比特币挖矿中）</li>
-<li>谜题友好通常指的是哈希函数在特定条件下能够生成难以预先计算但易于验证结果的问题，即所谓的“工作量证明（Proof of Work, PoW）”。这种情况下，要求找到一个输入x（通常带有额外的随机数k）使得H(k || x) &#x3D; y成立的x在计算资源受限的情况下（比如在比穷举搜索所需时间小很多的时间内）是难以找到的。</li>
-<li>特性应用：<strong>搜索谜题（Cryptographic Puzzles or Hashcash）</strong>——在比特币挖矿中，矿工竞相解决一个基于哈希难题的PoW问题，寻找一个nonce（k）使得区块头的哈希值小于某个目标阈值。这一特性确保了挖矿过程需要大量计算资源投入，从而达到区块链系统的去中心化共识机制的安全性。只有成功解决谜题的矿工才能添加新区块并获得奖励。</li>
-</ul>
-</li>
-</ul>
-<blockquote>
-<p>谜题友好可以通俗地理解为——我很难找到符合要求的hash输入来发布一个区块并获得奖励（需要大量枚举），但是我可以很方便地验证一个新发布区块对应的hash是否是合理的，并以此判定对方是否应该获得奖励。</p>
-</blockquote>
-<p>目前主流使用的哈希函数：<strong>SHA-256</strong>。</p>
-<h2 id="哈希指针"><a href="#哈希指针" class="headerlink" title="哈希指针"></a>哈希指针</h2><p><strong>概念：哈希指针是一种数据结构。</strong><br>简单来说，哈希指针是一个指向数据存储位置及其位置数据的哈希值的指针。一个普通的指针可以告诉你数据存储的位置，哈希指针不但可以告诉你数据存储的位置，并且还可以给你一种方式，让你<strong>验证数据没有被篡改过</strong>。</p>
-<p><strong>常用应用：</strong></p>
-<ul>
-<li><strong>区块链</strong>：在区块链中，每个区块包含了区块头和区块体两部分。区块头包含了一个哈希指针，它指向的是前一个区块的哈希值。这样形成的链式结构确保了区块之间的<strong>顺序性和历史不可篡改性</strong>。<strong>如果有人试图修改某个过去的区块数据，那么该区块的哈希值会变化，并因此导致后续所有区块的哈希值都需要相应改变，因为它们都包含了前一个区块的哈希指针。</strong>这要求攻击者必须重新计算整个链条的哈希值，而这在比特币等具有足够工作量证明机制的区块链中几乎是不可能的。<br><img src="/2024/03/03/Web3/readingNotes/%E5%8C%BA%E5%9D%97%E9%93%BE%EF%BC%9A%E6%8A%80%E6%9C%AF%E9%A9%B1%E5%8A%A8%E9%87%91%E8%9E%8D/%E5%93%88%E5%B8%8C%E6%8C%87%E9%92%88_%E5%8C%BA%E5%9D%97%E9%93%BE.png"></li>
-<li><strong>梅克尔树</strong>：当任意一笔交易数据发生变化时，该交易所在叶子节点的哈希值会变，进而影响到整棵树的根哈希值。由于区块头包含了这一梅克尔根，所以<strong>任何对交易数据的篡改都会立刻反映在区块哈希值的变化</strong>上，从而<strong>保护了整个区块链账本的完整性和一致性</strong>。另外梅克尔树还应用在轻客户端验证等场景中。<br><img src="/2024/03/03/Web3/readingNotes/%E5%8C%BA%E5%9D%97%E9%93%BE%EF%BC%9A%E6%8A%80%E6%9C%AF%E9%A9%B1%E5%8A%A8%E9%87%91%E8%9E%8D/%E5%93%88%E5%B8%8C%E6%8C%87%E9%92%88_%E6%A2%85%E5%85%8B%E5%B0%94%E6%A0%91.png"></li>
-</ul>
-<h1 id="数字签名"><a href="#数字签名" class="headerlink" title="数字签名"></a>数字签名</h1><p>数字签名方案由以下三个算法构成:</p>
-<ol>
-<li>$(sk,pk):&#x3D;generateKeys(keysize)$<br><code>generateKeys</code>方法把<code>keysize</code>作为输入，来产生一对公钥和私钥。私钥<code>sk</code>被安全保存，并用来签名一段消息；公钥<code>pk</code>是人人都可以找到的，拿到它，就可以用来验证你的签名。</li>
-<li>$sig:&#x3D;sign(sk,message)$<br>签名过程是把一段消息和私钥作为一个输入，对于消息输出是签名。</li>
-<li>$isValid:&#x3D;verify(pk,message, sig)$<br>验证过程是通过把一段消息和签名消息与公钥作为输入，如果返回的结果是真，证明签名属实；如果返回的结果为假，证明签名消息为假。</li>
-</ol>
-<p>我们要求以下两个性质有效:</p>
-<ul>
-<li>有效签名可以通过验证，即<br>$$verify(pk,message,sign(sk,message))&#x3D;&#x3D;true$$</li>
-<li>签名不可伪造</li>
-</ul>
-<p>解释：</p>
-<ul>
-<li>发送方（签名者）拥有一个公钥和一个私钥。<strong>公钥任何人都可以知道，私钥则保密不公开。</strong></li>
-<li>当发送方要签署一个文档时，首先使用单向散列函数（如SHA-256）将文档转换成固定长度的<strong>摘要</strong>。</li>
-<li>发送方接着<strong>使用自己的私钥对该摘要进行加密</strong>，生成的密文就是<strong>数字签名</strong>。</li>
-<li>接收方收到原始文档和数字签名后，<strong>使用发送方的公钥来解密签名</strong>，得到摘要A。</li>
-<li>同时，接收方也会计算接收到的文档本身的散列值，得到另一个摘要B。</li>
-<li>如果摘要A与摘要B匹配，则说明文档在传输过程中<strong>未被篡改</strong>，并且确实是<strong>由拥有对应私钥的人签署</strong>的。</li>
-</ul>
-<p>流程：</p>
-<ol>
-<li>对消息生成一个唯一且不变的摘要。</li>
-<li>使用私钥对摘要进行加密形成签名。</li>
-<li>收件人使用公钥解密签名并重新计算消息摘要。</li>
-<li>比较两次计算出的摘要，如果相同，则确认签名有效，消息未被篡改且确信来自于拥有相应私钥的发送方。</li>
-</ol>
-<h1 id="去中心化"><a href="#去中心化" class="headerlink" title="去中心化"></a>去中心化</h1><p><strong>去中心化</strong>：去中心化是一种网络架构或系统<strong>设计原则</strong>，其中权力、功能和数据不在单一的中心点或权威机构手中，而是分散在网络中的各个节点之间。<strong>在去中心化的系统中，每个节点都可以作为网络的一部分参与到数据的处理、存储和验证过程中，而不是依赖单一的中心服务器。</strong>去中心化的目的是为了提高系统的鲁棒性、透明度和防篡改能力，减少单点故障的可能性，并增强用户的数据自主权和隐私保护。</p>
-<p><strong>分布式共识</strong>： 分布式共识则是去中心化系统中用于<strong>保证所有参与节点对于系统状态达成一致同意的关键机制</strong>。在区块链技术中，分布式共识算法确保了<strong>即便在网络中存在不可靠或者恶意的节点，其余的节点依然可以通过特定的规则和算法就交易的有效性、区块的顺序以及其他关键状态达成一致意见。</strong>这种共识机制是去中心化系统能够正常运作并保持数据完整性的基石。</p>
-<p>一个去中心化网络，通常需要借助分布式共识机制来确保网络中所有参与者能基于同样的规则正确地更新和验证系统状态，共同维护一个可靠的、无需信任中介的公共账本。</p>
-<h2 id="分布式共识协议"><a href="#分布式共识协议" class="headerlink" title="分布式共识协议"></a>分布式共识协议</h2><p>在一个<strong>分布式共识协议</strong>中，特别是在面对有潜在故障或恶意节点的环境（比如拜占庭将军问题的场景），有两个核心属性是用来保证系统正确性和安全性的：</p>
-<ul>
-<li><strong>输入值的中止须经所有诚实节点来确定</strong>： 这意味着在分布式系统中的决策过程不是任意节点单方面决定的，即使是有故障或恶意节点试图干扰系统，最终是否接受一个特定的输入值作为共识结果，必须经过所有“诚实”（也称为“正确”或“非拜占庭”）节点的确认或认可。换句话说，<strong>只有当大多数（通常是超过半数）诚实节点达成一致同意的情况下，一个输入值才能被认为是被系统接受了</strong>，并且这个共识过程将在有限时间内结束，即达成可终止性。</li>
-<li><strong>这个输入值必须由诚实节点来生成</strong>： 这条属性指出，最终被选为共识输出的那个输入值，应当来源于系统中诚实节点的提议或计算。在实际的分布式共识算法中，这可能意味着<strong>诚实节点提交的提案将优先被处理，或者通过某种机制确保即使在恶意节点的存在下，最终被采纳的也是诚实节点提供的有效信息</strong>。这样设计的目的在于防止恶意节点通过伪造信息影响系统共识结果的真实性。</li>
-</ul>
-<p>这两个属性结合在一起，旨在构建一个即使在部分节点出现故障或有意作恶情况下，仍能确保所有诚实节点对某一特定状态达成一致的分布式系统。这样的系统能够在各种不利条件下保持稳定运行，并确保其记录的数据或状态更新是可靠和安全的。在区块链技术中，这类分布式共识协议尤为重要，例如PoW（工作量证明）、PoS（权益证明）以及BFT（拜占庭容错）类算法都是用来实现这一目标的不同方式。</p>
-<h2 id="比特币共识算法"><a href="#比特币共识算法" class="headerlink" title="比特币共识算法"></a>比特币共识算法</h2><p>这个算法的简化假设是，可以随意选择一个节点，这些节点都不会受到女巫攻击的影响。</p>
-<blockquote>
-<p>女巫攻击（Sybil Attack）是一种在网络环境中，特别是点对点（P2P）网络和区块链系统中常见的安全威胁。这种攻击方式是指攻击者通过创建并控制多个虚假的身份、账号或节点，假装成多个独立的网络参与者，以期获得对该网络的不当影响力和控制权。在实际中，女巫攻击等安全问题会通过经济成本（如挖矿成本）和其他网络层的防御措施得以缓解。</p>
-</blockquote>
-<p>实际版：</p>
-<ol>
-<li><strong>交易传播</strong>：每当有新的比特币交易产生时，这笔交易会被立即广播给比特币网络中的所有节点。这些节点相当于网络中的各个参与者，负责接收、验证和传递交易信息。</li>
-<li><strong>交易打包</strong>：每个节点在接收到新的交易后，会将这些交易放入一个新的区块中等待验证和确认。一个区块内包含了多笔交易记录。</li>
-<li><strong>区块提议</strong>：在比特币的实际共识机制——工作量证明（Proof of Work，PoW）中，节点通过竞争的方式尝试解决一个复杂的数学难题来争取新区块的生成权。这里的简化版本假设每个回合有一个随机节点（实际上是在PoW中通过计算能力竞争获胜的节点）有权提出一个新区块。</li>
-<li><strong>区块验证</strong>：当某个节点广播它所提议的新区块时，网络中的其他节点会对区块内的所有交易进行合法性检查，包括但不限于检查交易是否有正确的数字签名、交易资金来源是否有效、交易金额是否足够等等。只有当区块中的所有交易都被认为是正当合法的，其他节点才会接受这个新区块。</li>
-<li><strong>链接区块与共识</strong>：一旦节点确认新区块合法，它们会将此区块的哈希值加入到自己即将创建的新区块的前一块哈希列表中，形成了区块链的链式结构。这意味着节点通过对新区块的引用（即在其后的区块中包含前一块的哈希值）表达对之前区块内容的认可和接受。</li>
-</ol>
-<p>简化版：</p>
-<ol>
-<li>新的交易被广播到所有节点上。</li>
-<li>每个节点都将新的交易放进一个区块。</li>
-<li>在每个回合，一个随机的节点可以广播它的区块。</li>
-<li>其他节点可以选择接受这个区块，前提是如果区块里的交易都是正当的（有真的签名）。</li>
-<li>节点们可以把以上区块的哈希值放进自己的区块里，以此来表示它们对那个新区块的认可。<blockquote>
-<p>简化版描述忽略了比特币实际采用的工作量证明（PoW）中“挖矿”的竞争过程。</p>
-</blockquote>
-</li>
-</ol>
-<h1 id="奖励机制与工作量证明"><a href="#奖励机制与工作量证明" class="headerlink" title="奖励机制与工作量证明"></a>奖励机制与工作量证明</h1><h2 id="奖励机制"><a href="#奖励机制" class="headerlink" title="奖励机制"></a>奖励机制</h2><p>比特币的奖励机制是鼓励矿工积极参与网络安全维护和交易验证的关键部分。每当一个矿工成功解决了一个区块的工作量证明难题，并且网络中的其他节点验证了该区块的有效性后，该矿工便可以将新区块链接到区块链上，并获取以下两个类型的奖励：</p>
-<ul>
-<li><strong>区块奖励</strong>：最初4年每个区块50个比特币，每4年减半（210000个区块）。</li>
-<li><strong>交易费</strong>：交易输出值小于输入值，差值作为交易费给予区块创造者。</li>
-</ul>
-<p>只要挖矿奖励&gt;挖矿成本，矿工就能赚钱。<br>挖矿奖励&#x3D;区块奖励+交易费<br>挖矿成本&#x3D;硬件成本+运营成本</p>
-<h2 id="工作量证明"><a href="#工作量证明" class="headerlink" title="工作量证明"></a>工作量证明</h2><p>在比特币网络中，工作量证明是一种共识机制，用于决定谁有权将新的区块添加到区块链上，并因此获得新区块产生的新币奖励以及交易费。PoW要求网络中的参与者（通常称为矿工）使用特殊的硬件设备执行复杂数学运算，即散列运算，以寻找满足特定条件的随机数（Nonce）。这个条件表现为找到一个Nonce使得区块头的哈希值小于或等于某个目标值，这个过程也被称为“挖矿”。</p>
-<p>矿工们不断地尝试不同的Nonce，竞争成为第一个解决这一难题的人。由于哈希函数的性质——单向不可预测和难以逆推，唯一有效的方法是通过暴力尝试来找到正确的Nonce。这意味着较大的计算力意味着更高的概率能够快速找到正确答案。对于某个特定的矿工，发现下一区块的平均时间&#x3D;10分钟&#x2F;占全部计算能力的比例。</p>
-<p>哈希函数解密的特点：</p>
-<ul>
-<li><strong>难于计算</strong>：有一定难度，计算量超大</li>
-<li><strong>可参数化成本：难度可调整</strong>，保证区块产生时间间隔为10分钟左右，每2016个区块调整一次</li>
-<li><strong>易于证明</strong>：计算结果易于检验</li>
-</ul>
-<h2 id="良性循环"><a href="#良性循环" class="headerlink" title="良性循环"></a>良性循环</h2><p>另一个微妙的概念是<strong>自举过程（bootstrapping）</strong>。<br>比特币系统里三个不同的想法——区块链的安全性、挖矿生态系统的健康程度，以及货币的价值在相互作用。<br>我们显然希望区块链安全，这样比特币才能成为一种可行的货币。想要区块链安全，就要保证黑客不能倾覆共识过程。这反过来意味着，一个黑客不能够制造一大堆挖矿节点来占据50%以上的新区块生成。<br>但如何实现这一点呢？前提条件是有一个健康的挖矿生态系统，其中大部分节点是诚实的、遵守协议的。但健康的挖矿生态系统的前提条件又是什么呢——我们什么时候可以保证大多数矿工会把大多数计算能力运用到解哈希谜题的竞争中呢？好吧，只有在比特币价位高时他们才会这么做，因为他们收到的奖励是比特币而他们的花费都是美元。所以币的价值越高，矿工就越有动力这么做。<br>那如何保障币的价值又高又稳定呢？只有用户普遍相信区块链的安全性才会发生。如果他们认为网络随时会被攻击者颠覆，那比特币作为货币将一文不值。所以你可以看到区块链的安全性、挖矿生态系统的健康程度和货币的价值这三者之间相互依赖、相互作用的关系。</p>
-<p><img src="/2024/03/03/Web3/readingNotes/%E5%8C%BA%E5%9D%97%E9%93%BE%EF%BC%9A%E6%8A%80%E6%9C%AF%E9%A9%B1%E5%8A%A8%E9%87%91%E8%9E%8D/%E8%89%AF%E6%80%A7%E5%BE%AA%E7%8E%AF.png"></p>
-<p>因为这三者之间的循环依赖关系，其中一个的存在可以用另一个的存在推测出来。在比特币初创之时，这三者都不存在。除了中本聪自己，没有人在运行挖矿软件。比特币作为货币没有什么价值。事实上，因为没有很多人挖矿区块链也很不安全，任何人都可以轻易颠覆这个过程。</p>
-<h1 id="交易"><a href="#交易" class="headerlink" title="交易"></a>交易</h1><p>在比特币中，一笔<strong>交易（Transaction）</strong>代表了一次价值转移的行为，即将一定数量的比特币从一个或多个地址转移到另一个或多个地址的过程。<strong>比特币交易是在去中心化的比特币网络中被创建、验证并最终记录在区块链上的数据结构单元。</strong></p>
-<h2 id="交易程序段"><a href="#交易程序段" class="headerlink" title="交易程序段"></a>交易程序段</h2><p><img src="/2024/03/03/Web3/readingNotes/%E5%8C%BA%E5%9D%97%E9%93%BE%EF%BC%9A%E6%8A%80%E6%9C%AF%E9%A9%B1%E5%8A%A8%E9%87%91%E8%9E%8D/%E4%BA%A4%E6%98%93%E7%A8%8B%E5%BA%8F%E6%AE%B5.jpg"></p>
-<ul>
-<li><strong>元数据</strong>：存放一些内部处理的信息——交易的规模、输入的数量、输出的数量，还有此笔交易的哈希值，也就是这个交易独一无二的ID。我们可以用哈希指针指向这个ID。最后还有一个**锁定时间(lock_time)**（定义了交易最早可以被加入区块链的时间或区块高度，它可以防止交易过早被确认。）。</li>
-<li><strong>输入</strong>：所有输入排成一个序列，每个输入的格式都是一样的。输入需要明确说明之前一笔交易的某个输出，因此它包括之前那笔交易的哈希值，使其成为指向那个特定交易的哈希指针。这个输入部分同时包括之前交易输出的索引和一个签名:我们必须有签名来证明我们有资格去支配这笔比特币。</li>
-<li><strong>输出</strong>：所有输出也排成一个序列。每个输出的内容分成两部分。所有输出的金额之和必须小于或等于输入的金额之和。当输出的总金额小于输入总金额时，输出的总金额与输人的总金额的差额部分，就作为交易费支付给为这笔交易记账的矿工。</li>
-</ul>
-<h2 id="交易过程"><a href="#交易过程" class="headerlink" title="交易过程"></a>交易过程</h2><ul>
-<li><strong>交易广播</strong>：当一个用户发起一笔比特币交易时，该交易会被广播到整个比特币网络。</li>
-<li><strong>交易验证</strong>：<ul>
-<li><strong>格式验证</strong>：每个节点接收到交易后，首先会检查交易数据结构的完整性，包括交易版本、输入数量和输出数量、交易金额是否为正数、交易签名是否存在且有效等。</li>
-<li><strong>UTXO验证</strong>：然后，节点会查询本地的未花费交易输出（UTXO）数据库，验证交易的输入是否来自于有效的、未被花费过的交易输出，并确认交易发出者有足够的余额进行支付。</li>
-<li><strong>脚本验证</strong>：比特币使用一种基于堆栈的非图灵完备脚本语言，对交易输入所引用的UTXO上的解锁脚本（ScriptSig）和UTXO本身锁定脚本（ScriptPubKey）进行执行，只有当脚本执行结果为真时，才能证明交易发起者有权花费这笔UTXO。</li>
-</ul>
-</li>
-<li><strong>区块构建与挖矿</strong>：验证成功的交易将被节点打包进新的区块中，尝试通过工作量证明机制（Proof of Work）解决一个复杂的数学难题，成功解题的矿工将新区块链接到区块链上。</li>
-<li><strong>区块链同步与确认</strong>：其他节点在接收到新区块后，会对区块中的所有交易再次进行上述验证，验证通过后将新区块添加至本地的区块链副本中，从而实现全网交易的一致性确认。</li>
-</ul>
-<h2 id="交易脚步验证过程中的堆栈状态"><a href="#交易脚步验证过程中的堆栈状态" class="headerlink" title="交易脚步验证过程中的堆栈状态"></a>交易脚步验证过程中的堆栈状态</h2><p>比特币交易的脚本验证过程涉及两个关键部分：<code>scriptSig</code> 和 <code>scriptPubKey</code>：</p>
-<ul>
-<li><strong>scriptSig (交易输入脚本)<strong>：scriptSig 是存储在比特币交易的输入部分的数据结构，它主要用于</strong>解锁之前交易的输出（即UTXO，Unspent Transaction Output）</strong>。当一个用户想要花费一个UTXO时，必须提供足够的证据来证明自己对该UTXO有合法的使用权。这种证据通常就是一个数字签名（由私钥生成），以及与之相关的公钥或其他数据。在比特币交易中，scriptSig 包含了解锁UTXO所需的信息，比如在最常见的一种交易类型P2PKH中，scriptSig包含的是交易发起者的数字签名和其对应的公钥。</li>
-<li><strong>scriptPubKey (交易输出脚本&#x2F;锁定脚本)</strong>:scriptPubKey 存储在比特币交易的输出部分，它定义了<strong>如何花费这个输出，或者说定义了谁有权利花费这个输出</strong>。每个UTXO都有一个与其关联的scriptPubKey，只有当提供的scriptSig能成功执行并通过scriptPubKey设定的条件时，这笔UTXO才能被花费。同样以P2PKH为例，scriptPubKey通常包含一个OP_DUP、OP_HASH160、公钥哈希和OP_EQUALVERIFY、OP_CHECKSIG等一串操作码，以及一个公钥哈希值。这意味着只有提供与该哈希值相对应的公钥及其正确签名的人才能解锁并花费这笔资金。<blockquote>
-<p><strong>UTXO</strong>：Unspent Transaction Output，在比特币和其他采用UTXO模型的加密货币系统中扮演着核心角色。UTXO是一种会计模式，用于跟踪和管理数字货币的所有权和价值转移。<br>在一个基于UTXO的系统中：<br>每一笔交易都有输出（outputs），这些输出包含了特定数量的数字货币，并且与一组规则（scriptPubKey）相关联，规定了谁能花费这些数字货币。<br>当用户发起一笔新的交易时，需要引用过去未被花费的交易输出作为新交易的输入（inputs）。这些未花费的交易输出就是UTXOs。<br>在花费UTXO时，发送方必须提供匹配的证明（scriptSig）来解锁UTXO，从而将其转移到新的所有者。<br>交易完成后，原始的UTXO会被标记为已花费，同时创建出新的UTXO给接收方。这样，数字货币的流动就像一系列的硬币从一个人转移到另一个人，每笔交易都会更新整个网络上的UTXO集合。<br>通过这种方式，UTXO模型确保了交易历史的透明性和安全性，并且能够防止双花问题的发生。整个比特币账本可以看作是UTXO的全局数据库，记录着所有现存、可花费的UTXO的状态。</p>
-</blockquote>
-</li>
-</ul>
-<p>在比特币交易中，每个输入包含两个内容：一个来自<strong>输出（scriptPubKey）</strong>，另一个是交易的<strong>签名（scriptSig）</strong>。当验证一个输入时，这两个脚本被组合在一起，并按照从左到右的顺序执行<strong>操作码（OP_CODEs）</strong>。</p>
-<figure class="highlight vbnet"><table><tr><td class="code"><pre><code class="hljs vbnet"><span class="hljs-symbol">scriptSig:</span> [signature] [<span class="hljs-keyword">public</span> <span class="hljs-keyword">key</span>]<br><span class="hljs-symbol">scriptPubKey:</span> OP_DUP OP_HASH160 [pubkey hash] OP_EQUALVERIFY OP_CHECKSIG<br><br>执行过程：<br><span class="hljs-number">1</span>. 先执行scriptSig的内容，[signature] 和 [<span class="hljs-keyword">public</span> <span class="hljs-keyword">key</span>] 分别压入堆栈。<br><span class="hljs-number">2</span>. 然后执行scriptPubKey，按顺序执行各个操作码：<br>   a. OP_DUP：复制堆栈顶的<span class="hljs-keyword">public</span> <span class="hljs-keyword">key</span>，堆栈变为 [signature, <span class="hljs-keyword">public</span> <span class="hljs-keyword">key</span>, <span class="hljs-keyword">public</span> <span class="hljs-keyword">key</span>]。<br>   b. OP_HASH160：计算<span class="hljs-keyword">public</span> <span class="hljs-keyword">key</span>的hash160值并压入堆栈，堆栈变为 [signature, <span class="hljs-keyword">public</span> <span class="hljs-keyword">key</span>, pubkey_hash160]。<br>   c. [pubkey hash] 由scriptPubKey推入堆栈，堆栈变为 [signature, <span class="hljs-keyword">public</span> <span class="hljs-keyword">key</span>, pubkey_hash160, pubkey_hash160_from_scriptPubKey]。<br>   d. OP_EQUALVERIFY：比较两个连续的pubkey_hash160是否相等，若相等则删除这两个项，堆栈变为 [signature]。<br>   e. OP_CHECKSIG：验证signature是否对应于<span class="hljs-keyword">public</span> <span class="hljs-keyword">key</span>对交易的有效签名，如果签名有效，堆栈剩下真值，否则脚本执行失败。<br><br>如果到最后堆栈中只剩下了真值（或空堆栈，取决于具体的脚本约定），则交易被认为通过了脚本验证。<br></code></pre></td></tr></table></figure>
-<p><img src="/2024/03/03/Web3/readingNotes/%E5%8C%BA%E5%9D%97%E9%93%BE%EF%BC%9A%E6%8A%80%E6%9C%AF%E9%A9%B1%E5%8A%A8%E9%87%91%E8%9E%8D/%E5%A0%86%E6%A0%88%E7%8A%B6%E6%80%81.jpg"></p>
-<h2 id="MULTISIG（多重签名）"><a href="#MULTISIG（多重签名）" class="headerlink" title="MULTISIG（多重签名）"></a>MULTISIG（多重签名）</h2><p>比特币的<strong>多重签名（Multisig）</strong>是指一种安全机制，它允许一个比特币交易在获得预先设定的多个密钥持有人的签名之后才能被确认和执行。多重签名技术增强了交易的安全性和资金管理灵活性，因为它要求多个独立实体共同授权才能动用资金。</p>
-<p>在比特币的多重签名方案中，可以设置一个M-of-N的条件，这里的N代表参与交易的总签名数，而M则代表至少需要多少个签名使得交易生效。例如，2-of-3多重签名意味着三个不同的密钥持有者中有任意两个的签名就足以批准交易。</p>
-<p>实施多重签名的具体流程包括：</p>
-<ol>
-<li>创建多重签名地址：首先，多个密钥持有者共同协商并创建一个多重签名地址。这个地址不是普通的公钥哈希地址，而是与一个特殊的锁定脚本（scriptPubKey）关联，该脚本描述了多重签名的规则（例如，“需要2个签名才能花费”）。</li>
-<li>设置交易条件：当资金存入到这个多重签名地址时，实际上是以满足多重签名规则的形式锁定这些资金。</li>
-<li>提取资金：当要从这个地址支出资金时，交易的输入部分（scriptSig）除了包含常规的解锁信息外，还需要附加足够数量的有效签名（达到M的数量），这些签名分别对应于N个密钥持有者中的部分或全部。</li>
-<li>验证交易：网络中的每个节点在验证交易时，会检查交易输入中的多重签名数据是否符合该地址对应的多重签名条件，只有当验证通过后，这笔交易才会被接受并最终打包进区块确认。</li>
-</ol>
-<blockquote>
-<p>比如：爱丽丝使用多重签名给鲍勃付款。爱丽丝并不直接付款给鲍勃，而是发起一个多重签名的交易，并规定：三个人中有两人签名之后，资金才能被支取。这三个人是爱丽丝、鲍勃与第三方仲裁员朱迪。朱迪负责调解可能发生的纠纷。因此，爱丽丝发起了一个2&#x2F;3的多重签名交易来付款，这个交易规定三个人中有两人签名之后，资金才能被支取这个交易被纳入区块链后，资金被第三方监管，这三个人中的任意两个人可以决定资金的去向。现在，鲍勃觉得可以给爱丽丝发货了，通常情况下，如果爱丽丝和鲍勃都是有诚信的，鲍勃会按照爱丽丝要求发货，爱丽丝收货之后和鲍勃共同签名，把资金转给鲍勃。由于三个人中有两人签名即可完成支付，此时由于没有任何争议，朱迪根本不需要参与；然而，如果出现纠纷，朱迪可以作为调解人，并根据实际情况加入进来，与爱丽丝或鲍勃之一共同签名以解决问题。和爱丽丝直接付款给鲍勃相比，第三方支付交易并不会更复杂，都只需在区块链里增加一笔交易即可。</p>
-</blockquote>
-<p>多重签名在实践中可以应用于多种场景，比如增加冷钱包的安全性（需要多人协作解锁）、提升企业内部财务管理的权限控制，或是增强联合投资账户的资金保护等。</p>
-<h2 id="高效小额支付"><a href="#高效小额支付" class="headerlink" title="高效小额支付"></a>高效小额支付</h2><p>支付通道（Payment Channels）是一种在区块链之外进行交易的方法，它允许参与者在没有直接将每笔交易写入区块链的情况下进行多次交易。支付通道的目的是提高交易速度、降低交易成本，并减轻区块链网络的负担。<br>举例：<br>我们希望可以把每分钟的费用累积起来，最后一次性支付。为了实现这种想法，爱丽丝先发起一个MULTISIG交易，把可能花费的最大金额转到MULTISIG地址，但这个交易需要爱丽丝与鲍勃两个人的签名才能生效。爱丽丝在使用流量的时候，每隔一分钟就签名一次，向鲍勃支付这分钟所产生的流量费用，然后把剩余的钱转给自己，每分钟重复一次，直到挂机为止。请注意，这些交易只有爱丽丝的签名，还没有鲍勃的签名，因此，交易还没被放进区块链里。爱丽丝挂机之后，会告诉鲍勃“我用好了，你可以切断我的服务了”，此时，爱丽丝将不再支付费用，鲍勃也将切断服务，然后在爱丽丝发送的最后一个交易里签名，把它放入区块链里。<br>随着每个交易付给鲍勃的币越来越多，爱丽丝的币就会越来越少。最后一个交易会一次性向鲍勃支付所有的流量费，然后把剩余的币还给爱丽丝。整个过程中，爱丽丝单独签名的交易不会进入区块链(上面没有鲍勃的签名)，最后它们都会被丢弃掉。</p>
-<h2 id="币基交易"><a href="#币基交易" class="headerlink" title="币基交易"></a>币基交易</h2><p>每个区块的梅克尔树上都有一个有意思的交易，叫作币基交易。这类似于财奴币里的造币交易。这个交易创造新的比特币，它看上去像是个普通的交易，但有几点不同:</p>
-<ol>
-<li>它永远只有一个单一的输入与单一的输出。</li>
-<li>这个交易并不消费之前交易输出的比特币，因此，没有指针指向“上一交易”</li>
-<li>这个输出值目前大约是25个币多一点点。这个输出值就是矿工的挖矿收它由两部分组成：一部分是奖励的25个比特币（奖励在每生产210000个区块（大概4年）后减半），另一部分是所有交易的交易手续费。</li>
-<li>还有一个特别的地方就是“币基”参数，矿工可以放任何值进去。</li>
-</ol>
-<h1 id="网络"><a href="#网络" class="headerlink" title="网络"></a>网络</h1><h2 id="1-新节点加入："><a href="#1-新节点加入：" class="headerlink" title="1. 新节点加入："></a>1. 新节点加入：</h2><p>启动一个新节点，向一个已知的节点发送消息，查询是否有其他节点，重复此过程多次，选择与哪些节点相连，加入完成。</p>
-<h2 id="2-接受新交易信息："><a href="#2-接受新交易信息：" class="headerlink" title="2. 接受新交易信息："></a>2. 接受新交易信息：</h2><p>节点接受到交易信息后将其加入到交易池，并传播到与其相连的节点，若交易池中已存在此交易，则停止传播，确保泛洪协议的自动停止。<br>（注：每个交易唯一的哈希值，所以查询是否存在效率较高）</p>
-<h2 id="3-核验新交易信息："><a href="#3-核验新交易信息：" class="headerlink" title="3. 核验新交易信息："></a>3. 核验新交易信息：</h2><ul>
-<li>检验交易有效，确保脚本返回值为真</li>
-<li>检查是否存在双重交易</li>
-<li>检验交易信息是否已经存在</li>
-<li>接受交易的脚本必须为白名单上的脚本<br>（注：竞态条件：又称紊乱情况，指双重支付中哪个交易被存入区块链，会由下一个创建区块的节点强制决定）</li>
-</ul>
-<h2 id="4-传播区块"><a href="#4-传播区块" class="headerlink" title="4. 传播区块"></a>4. 传播区块</h2><p>核验一个区块要比核验一个交易复杂得多。除了确认区块头部，确定里点还必须确认区块里的每个交易。最面的哈希值是在可以接受的范围内，节后，一个节点往外传播的区块必须是最长的一条区块链上新加人的区块（“最长的区块链”取决于节点对区块链当前状态的认识）。只有这样才可一样，节点同样可以执行它自己的逻以防止区块链分叉。但就像传播交易时以选择传递在共识链上更早加入的区辑：它可以选择传递无效的区块，也可成一个分叉，不过这种情况是协议可以承受的。<br>（注：竞态条件：两个有效区块同时被挖到，哪个区块被纳入长期共识链取决于其他节点选择在哪个节点上扩展区块链）</p>
-<h2 id="轻量节点："><a href="#轻量节点：" class="headerlink" title="轻量节点："></a>轻量节点：</h2><p>也称简单付款验证客户端，或SPV节点。SPV节点只会验证和他们相关的交易信息，只存储他们关心、需要核验的部分交易；SPV节点的区块头部大小只有区块链的千分之一，只有几十MB。</p>
-<h1 id="限制与优化"><a href="#限制与优化" class="headerlink" title="限制与优化"></a>限制与优化</h1><h2 id="比特币的限制"><a href="#比特币的限制" class="headerlink" title="比特币的限制"></a>比特币的限制</h2><p>限制：</p>
-<ul>
-<li>每秒处理交易数只有7</li>
-<li>未来比特币使用的密码算法可能被破解</li>
-</ul>
-<h2 id="如何优化比特币协议"><a href="#如何优化比特币协议" class="headerlink" title="如何优化比特币协议"></a>如何优化比特币协议</h2><ul>
-<li>硬分叉：引入新的特性，使前一版本的协议失效，会使老节点认定最长的区块链分支是无效的，认为其他分支才是最长有效的，这会使原有的链分叉，老节点会永远排除在另一条链中。</li>
-<li>软分叉：引入新的特性，使现有的核验规则更严格，老节点依旧会接受所有区块，但老节点创建的一些区块被认为是无效的，这会促使老节点更新协议。</li>
-</ul>
-<h1 id="挖矿"><a href="#挖矿" class="headerlink" title="挖矿"></a>挖矿</h1><h2 id="挖矿的步骤"><a href="#挖矿的步骤" class="headerlink" title="挖矿的步骤"></a>挖矿的步骤</h2><ul>
-<li>监听交易广播</li>
-<li>监听区块链，即同步其他节点的区块链历史记录，并监听、检验广播到网络中的新区块，</li>
-<li>组装备选区块，即将监听到的合法的交易组合放入到新区块中备用</li>
-<li>找到使备选区块合法的有效随机数</li>
-<li>希望自己的区块被全网接受，因为有可能出现竞态条件</li>
-<li>获得利润</li>
-</ul>
-<h2 id="如何寻找有效区块"><a href="#如何寻找有效区块" class="headerlink" title="如何寻找有效区块"></a>如何寻找有效区块</h2><p><img src="/2024/03/03/Web3/readingNotes/%E5%8C%BA%E5%9D%97%E9%93%BE%EF%BC%9A%E6%8A%80%E6%9C%AF%E9%A9%B1%E5%8A%A8%E9%87%91%E8%9E%8D/%E5%AF%BB%E6%89%BE%E6%9C%89%E6%95%88%E5%8C%BA%E5%9D%97.jpg"></p>
-<p>一个区块内，可变内容为头部随机数（nonce）和币基随机数（币基交易中可放入任何值），但由于币基随机数变动后计算量更大（需要额外计算梅克尔树），所以优先变动头部随机数。</p>
-]]></content>
-      <categories>
-        <category>Web3</category>
-        <category>区块链</category>
-        <category>阅读摘录</category>
-      </categories>
-      <tags>
-        <tag>区块链</tag>
-        <tag>哈希</tag>
-        <tag>去中心化</tag>
-        <tag>分布式共识</tag>
-        <tag>比特币</tag>
-        <tag>工作量证明</tag>
-        <tag>零币</tag>
-        <tag>虚拟挖矿</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>微服务：认识篇</title>
     <url>/2024/03/13/backend/microservice/microservice-introduce/</url>
     <content><![CDATA[<p>本文将从时代背景、发展过程、微服务特点出发，对微服务整体构建一个大致的理解：</p>
@@ -367,102 +162,6 @@
       <tags>
         <tag>微服务</tag>
         <tag>SOA</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>canal入门篇：实现MySQL&amp;Redis双写一致性</title>
-    <url>/2024/03/06/backend/middleware/canal/canal_MySQL&amp;Redis/</url>
-    <content><![CDATA[<p>本文将介绍如何使用canal实现MySQl和Redis的双写一致性。前文为：<a href="/2024/03/06/backend/middleware/canal/canal_config/" title="canal入门篇：介绍&amp;配置&amp;启动">canal入门篇：介绍&amp;配置&amp;启动</a>。</p>
-<blockquote>
-<p><a href="https://github.com/shoumingchilun/API_OPEN_SPACE_CANAL">github仓库链接</a></p>
-</blockquote>
-<h1 id="canalAPI讲解"><a href="#canalAPI讲解" class="headerlink" title="canalAPI讲解"></a>canalAPI讲解</h1><p>本文将使用SpringBoot框架搭建一个应用，通过canal获得数据库的更改消息，并将发生变更的实体同步更新到Redis中。</p>
-<h2 id="优点"><a href="#优点" class="headerlink" title="优点"></a>优点</h2><p>使用canal的好处：</p>
-<ol>
-<li><strong>透明性与低侵入</strong>：使用 Canal 通常不需要对既有业务逻辑进行大规模改造，因为它作为独立的服务组件，可以透明地监听和处理数据库的变化，将更新事件推送给相应的缓存系统，实现数据同步，降低了对业务代码的入侵性。</li>
-<li><strong>扩展性与灵活性</strong>：Canal 支持多种数据源以及不同的消费方式，可以根据实际需求构建灵活的消息处理和分发机制。它可以与各种消息队列或数据处理系统集成，实现复杂的数据同步和多级缓存更新。</li>
-<li><strong>可靠性</strong>：由于 Canal 是基于 MySQL 的主从复制协议设计的，它继承了数据库层面的数据可靠性保障。同时，消息投递失败时（未进行ACK）可以通过重试机制确保最终一致性，而且可以支持幂等处理，避免重复消费造成的问题。</li>
-</ol>
-<h2 id="类说明"><a href="#类说明" class="headerlink" title="类说明"></a>类说明</h2><h3 id="canal-Client"><a href="#canal-Client" class="headerlink" title="canal Client"></a>canal Client</h3><p>先介绍一下canal Client相关的一些配置类：</p>
-<ul>
-<li><strong>ClientIdentity</strong>：canal client和server交互之间的身份标识。</li>
-<li><strong>CanalConnector</strong>：SimpleCanalConnector&#x2F;ClusterCanalConnector是两种connector的实现。simple针对的是简单的ip直连模式，cluster针对多ip的模式，可依赖CanalNodeAccessStrategy进行failover控制。（确保 Canal 在发生故障时能够无缝地切换到备份节点或者恢复服务，暂时不关注）</li>
-<li><strong>CanalNodeAccessStrategy</strong>：SimpleNodeAccessStrategy&#x2F;ClusterNodeAccessStrategy是两种failover的实现。simple针对给定的初始ip列表进行failover选择，cluster基于zookeeper上的cluster节点动态选择正在运行的canal server。（暂时不关注）</li>
-</ul>
-<p>然后即可从<code>connector</code>中通过<code>get</code>&#x2F;<code>getWithoutAck</code>获得的<code>Message</code>的这个类，该类主要的功能就是使用<code>getEntries</code>函数获得包装好的<code>List&lt;Entry&gt;</code>对象。</p>
-<h3 id="Entry"><a href="#Entry" class="headerlink" title="Entry"></a>Entry</h3><p>介绍一下Entry、RowChange、rowdata、column的概念。</p>
-<ol>
-<li><strong>Entry</strong>：Entry 是 Canal 解析 MySQL Binlog 后产生的基本单元，它<strong>代表了Binlog中的一条记录</strong>。每个Entry对象对应了MySQL数据库的一个事务或一个GTID事件（如果启用了GTID）。Entry包含了事务的相关元数据如执行时间、事务ID等，以及实际的数据库更改内容。</li>
-<li><strong>RowChange</strong>： RowChange 是更进一步封装的事件变更细节，它描述了<strong>一次数据库表级别的行级别数据变化</strong>。一个RowChange对象对应binlog中的一次行变更事件，它可以包含多行数据的插入、更新或删除操作。</li>
-<li><strong>RowData</strong>：RowData 表示<strong>单行数据的变更内容</strong>。对于RowChange中的每一次行操作（insert&#x2F;update&#x2F;delete），都会有对应的RowData对象来具体描述变更前后的列值信息。<ol>
-<li>RowData有两个重要的字段：<ul>
-<li>beforeColumnsList：在UPDATE或DELETE事件中，存储的是变更前的列数据集合。</li>
-<li>afterColumnsList：在INSERT或UPDATE事件中，存储的是变更后的列数据集合。</li>
-</ul>
-</li>
-<li>对于INSERT、UPDATE和DELETE事件，其表现形式不同：<ul>
-<li>INSERT事件：RowData会包含这一行插入后的所有列值。</li>
-<li>UPDATE事件：RowData包含两部分，即变更前的列值（beforeColumns）和变更后的列值（afterColumns）。</li>
-<li>DELETE事件：RowData仅包含被删除前的那一行的所有列值。</li>
-</ul>
-</li>
-</ol>
-</li>
-<li><strong>Column</strong>：Column 对象更加细致地表示了数据库表中某一列的数据变化情况，包括列名、列值、是否为空、是否是主键等属性信息。在RowData的beforeColumns和afterColumns列表中，每一项就是一个Column对象。</li>
-</ol>
-<h3 id="解析Entry"><a href="#解析Entry" class="headerlink" title="解析Entry"></a>解析Entry</h3><p>在获得一个<code>List&lt;Entry&gt;</code>后，我们需要对其中每个条目进行逐步解析：</p>
-<ol>
-<li><strong>判断类型</strong>：通过调用<code>getEntryType()</code>获得该<code>Entry</code>的<code>EntryType</code>，常见的类型有**事务开始(BEGIN)、事务结束(COMMIT)、行数据(ROWDATA)**等。</li>
-<li>对于 <strong>ROWDATA 类型</strong>的 Entry，可以从中提取 <strong>RowChange 对象</strong>（包含了数据库行级别的变更详情）：通过调用<code>CanalEntry.RowChange.parseFrom(entry.getStoreValue())</code>获得 RowChange 对象。</li>
-<li>获得 RowChange 对象后，可根据<code>EventType</code>获得具体操作的类型，如<code>INSERT</code>、<code>UPDATE</code>、<code>ALTER</code>等，如： <code>rowChage.getEventType()==EventType.DELETE</code>。</li>
-<li>可从 <code>RowChange</code> 对象中获得 <code>RowData</code> 对象，并从后者中获得一行数据变更前的状态和变更后的状态，再从中获得单独的<code>column</code>进行解析： <figure class="highlight java"><table><tr><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">for</span> (RowData rowData : rowChage.getRowDatasList()) &#123;<br>    rowData.getBeforeColumnsList().forEach(column -&gt; System.out.println(column.getName() + <span class="hljs-string">&quot; : &quot;</span> + column.getValue()));<br>    rowData.getAfterColumnsList().forEach(column -&gt; System.out.println(column.getName() + <span class="hljs-string">&quot; : &quot;</span> + column.getValue()));<br></code></pre></td></tr></table></figure></li>
-</ol>
-<h1 id="实现双写一致性"><a href="#实现双写一致性" class="headerlink" title="实现双写一致性"></a>实现双写一致性</h1><p>（省略启动类）</p>
-<h2 id="添加依赖"><a href="#添加依赖" class="headerlink" title="添加依赖"></a>添加依赖</h2><p>需要添加Springboot和连接Redis、canal的依赖。<br>pom.xml：</p>
-<figure class="highlight xml"><table><tr><td class="code"><pre><code class="hljs xml"><span class="hljs-tag">&lt;<span class="hljs-name">dependencyManagement</span>&gt;</span><br>    <span class="hljs-tag">&lt;<span class="hljs-name">dependencies</span>&gt;</span><br>        <span class="hljs-tag">&lt;<span class="hljs-name">dependency</span>&gt;</span><br>            <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>org.springframework.boot<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span><br>            <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>spring-boot-dependencies<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span><br>            <span class="hljs-tag">&lt;<span class="hljs-name">version</span>&gt;</span>2.7.9<span class="hljs-tag">&lt;/<span class="hljs-name">version</span>&gt;</span><br>            <span class="hljs-tag">&lt;<span class="hljs-name">type</span>&gt;</span>pom<span class="hljs-tag">&lt;/<span class="hljs-name">type</span>&gt;</span><br>            <span class="hljs-tag">&lt;<span class="hljs-name">scope</span>&gt;</span>import<span class="hljs-tag">&lt;/<span class="hljs-name">scope</span>&gt;</span><br>        <span class="hljs-tag">&lt;/<span class="hljs-name">dependency</span>&gt;</span><br>    <span class="hljs-tag">&lt;/<span class="hljs-name">dependencies</span>&gt;</span><br><span class="hljs-tag">&lt;/<span class="hljs-name">dependencyManagement</span>&gt;</span><br><span class="hljs-tag">&lt;<span class="hljs-name">dependencies</span>&gt;</span><br>    <span class="hljs-tag">&lt;<span class="hljs-name">dependency</span>&gt;</span><br>        <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>org.springframework.boot<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span><br>        <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>spring-boot-starter-web<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span><br>    <span class="hljs-tag">&lt;/<span class="hljs-name">dependency</span>&gt;</span><br>    <span class="hljs-tag">&lt;<span class="hljs-name">dependency</span>&gt;</span><br>        <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>org.springframework.boot<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span><br>        <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>spring-boot-starter-data-redis<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span><br>    <span class="hljs-tag">&lt;/<span class="hljs-name">dependency</span>&gt;</span><br>    <span class="hljs-tag">&lt;<span class="hljs-name">dependency</span>&gt;</span><br>        <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>com.alibaba.otter<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span><br>        <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>canal.client<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span><br>        <span class="hljs-tag">&lt;<span class="hljs-name">version</span>&gt;</span>1.1.0<span class="hljs-tag">&lt;/<span class="hljs-name">version</span>&gt;</span><br>    <span class="hljs-tag">&lt;/<span class="hljs-name">dependency</span>&gt;</span><br><span class="hljs-tag">&lt;/<span class="hljs-name">dependencies</span>&gt;</span><br></code></pre></td></tr></table></figure>
-
-<h2 id="注册CanalConnector-Bean"><a href="#注册CanalConnector-Bean" class="headerlink" title="注册CanalConnector Bean"></a>注册CanalConnector Bean</h2><p>使用配置文件注入依赖。</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><code class="hljs java"><span class="hljs-meta">@Configuration</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">CanalConfig</span> &#123;<br>    <span class="hljs-meta">@Value(&quot;$&#123;mycanal.hostname&#125;&quot;)</span><br>    <span class="hljs-keyword">private</span> String hostname;<br>    <span class="hljs-meta">@Value(&quot;$&#123;mycanal.port&#125;&quot;)</span><br>    <span class="hljs-keyword">private</span> Integer port;<br>    <span class="hljs-meta">@Value(&quot;$&#123;mycanal.destination&#125;&quot;)</span><br>    <span class="hljs-keyword">private</span> String destination;<br>    <span class="hljs-meta">@Value(&quot;$&#123;mycanal.username&#125;&quot;)</span><br>    <span class="hljs-keyword">private</span> <span class="hljs-type">String</span> <span class="hljs-variable">username</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;&quot;</span>;<br>    <span class="hljs-meta">@Value(&quot;$&#123;mycanal.password&#125;&quot;)</span><br>    <span class="hljs-keyword">private</span> <span class="hljs-type">String</span> <span class="hljs-variable">password</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;&quot;</span>;<br><br><br>    <span class="hljs-meta">@Bean</span><br>    <span class="hljs-keyword">public</span> CanalConnector <span class="hljs-title function_">createCanalConnector</span><span class="hljs-params">()</span> &#123;<br>        <span class="hljs-keyword">return</span> CanalConnectors.newSingleConnector(<span class="hljs-keyword">new</span> <span class="hljs-title class_">InetSocketAddress</span>(hostname,<br>                port), destination, username, password);<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
-
-<p>配置文件application.yml：</p>
-<figure class="highlight dts"><table><tr><td class="code"><pre><code class="hljs dts"><span class="hljs-symbol">mycanal:</span><br><span class="hljs-symbol">  hostname:</span> <span class="hljs-number">192.168</span><span class="hljs-number">.146</span><span class="hljs-number">.132</span><br><span class="hljs-symbol">  port:</span> <span class="hljs-number">11111</span><br><span class="hljs-symbol">  destination:</span> example<br><span class="hljs-symbol">  username:</span><br><span class="hljs-symbol">  password:</span><br></code></pre></td></tr></table></figure>
-
-<h2 id="设置Redis转码方式"><a href="#设置Redis转码方式" class="headerlink" title="设置Redis转码方式"></a>设置Redis转码方式</h2><figure class="highlight java"><table><tr><td class="code"><pre><code class="hljs java"><span class="hljs-meta">@Configuration</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">RedisConfig</span> &#123;<br>    <span class="hljs-meta">@Bean</span><br>    <span class="hljs-keyword">public</span> RedisTemplate&lt;String, Object&gt; <span class="hljs-title function_">redisTemplate</span><span class="hljs-params">(LettuceConnectionFactory lettuceConnectionFactory)</span> &#123;<br>        RedisTemplate&lt;String, Object&gt; redisTemplate = <span class="hljs-keyword">new</span> <span class="hljs-title class_">RedisTemplate</span>&lt;&gt;();<br><br>        redisTemplate.setConnectionFactory(lettuceConnectionFactory);<br>        <span class="hljs-comment">//设置key序列化方式string</span><br>        redisTemplate.setKeySerializer(<span class="hljs-keyword">new</span> <span class="hljs-title class_">StringRedisSerializer</span>());<br>        <span class="hljs-comment">//设置value的序列化方式json，使用GenericJackson2JsonRedisSerializer替换默认序列化</span><br>        redisTemplate.setValueSerializer(<span class="hljs-keyword">new</span> <span class="hljs-title class_">GenericJackson2JsonRedisSerializer</span>());<br>        redisTemplate.setHashKeySerializer(<span class="hljs-keyword">new</span> <span class="hljs-title class_">StringRedisSerializer</span>());<br>        redisTemplate.setHashValueSerializer(<span class="hljs-keyword">new</span> <span class="hljs-title class_">GenericJackson2JsonRedisSerializer</span>());<br><br>        redisTemplate.afterPropertiesSet();<br>        <span class="hljs-keyword">return</span> redisTemplate;<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
-
-<blockquote>
-<p>补充：如果使用GenericJackson2JsonRedisSerializer充当序列化&#x2F;反序列化工具的话<code>redisTemplate.setValueSerializer(new GenericJackson2JsonRedisSerializer());</code>，请保证各组件内类名一致（包含包路径）。</p>
-</blockquote>
-<h2 id="创建实体类"><a href="#创建实体类" class="headerlink" title="创建实体类"></a>创建实体类</h2><p>Redis中value对应的实体。</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><code class="hljs java"><span class="hljs-meta">@Data</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">InterfaceAccess</span> <span class="hljs-keyword">implements</span> <span class="hljs-title class_">Serializable</span> &#123;<br>    <span class="hljs-keyword">private</span> String accesskey;<br>    <span class="hljs-keyword">private</span> Integer verifyType;<br>    <span class="hljs-keyword">private</span> String secretkey;<br>    <span class="hljs-keyword">private</span> BigDecimal remainingAmount;<br>    <span class="hljs-keyword">private</span> Integer remainingTimes;<br>    <span class="hljs-keyword">private</span> Long interfaceId;<br>    <span class="hljs-keyword">private</span> Long userid;<br>    <span class="hljs-keyword">private</span> Integer callTimes;<br>    <span class="hljs-keyword">private</span> Integer failedCallTimes;<br>    <span class="hljs-keyword">private</span> Date createTime;<br>    <span class="hljs-keyword">private</span> Date updateTime;<br>    <span class="hljs-keyword">private</span> Integer isDeleted;<br>    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-type">long</span> <span class="hljs-variable">serialVersionUID</span> <span class="hljs-operator">=</span> <span class="hljs-number">1L</span>;<br>&#125;<br></code></pre></td></tr></table></figure>
-
-<h2 id="设计Redis服务接口并实现"><a href="#设计Redis服务接口并实现" class="headerlink" title="设计Redis服务接口并实现"></a>设计Redis服务接口并实现</h2><figure class="highlight java"><table><tr><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">interface</span> <span class="hljs-title class_">RedisService</span> &#123;<br>    <span class="hljs-type">String</span> <span class="hljs-variable">ACCESS_PREFIX</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;InterfaceAccess_&quot;</span>;<br>    <span class="hljs-keyword">void</span> <span class="hljs-title function_">updateInterfaceAccess</span><span class="hljs-params">(InterfaceAccess interfaceAccess)</span>;<br>    <span class="hljs-keyword">void</span> <span class="hljs-title function_">deleteInterfaceAccess</span><span class="hljs-params">(InterfaceAccess interfaceAccess)</span>;<br>&#125;<br><br><span class="hljs-meta">@Service</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">RedisServiceImpl</span> <span class="hljs-keyword">implements</span> <span class="hljs-title class_">RedisService</span> &#123;<br>    <span class="hljs-meta">@Resource</span><br>    <span class="hljs-keyword">private</span> RedisTemplate&lt;String, InterfaceAccess&gt; redisTemplate;<br><br>    <span class="hljs-meta">@Override</span><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">updateInterfaceAccess</span><span class="hljs-params">(InterfaceAccess interfaceAccess)</span> &#123;<br>        redisTemplate.opsForValue().set(RedisService.ACCESS_PREFIX + interfaceAccess.getAccesskey(), interfaceAccess, <span class="hljs-number">2</span>, TimeUnit.MINUTES);<br>    &#125;<br><br>    <span class="hljs-meta">@Override</span><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">deleteInterfaceAccess</span><span class="hljs-params">(InterfaceAccess interfaceAccess)</span> &#123;<br>        redisTemplate.delete(RedisService.ACCESS_PREFIX + interfaceAccess.getAccesskey());<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
-
-<h2 id="创建CanalMessageHandler类"><a href="#创建CanalMessageHandler类" class="headerlink" title="创建CanalMessageHandler类"></a>创建CanalMessageHandler类</h2><p>使用ApplicationRunner接口实现容器启动后开始监听。</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><code class="hljs java"><span class="hljs-meta">@Slf4j</span><br><span class="hljs-meta">@Component</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">CanalMessageHandler</span> <span class="hljs-keyword">implements</span> <span class="hljs-title class_">ApplicationRunner</span> &#123;<br>    <span class="hljs-meta">@Resource</span><br>    <span class="hljs-keyword">private</span> CanalConnector connector;<br><br>    <span class="hljs-meta">@Resource</span><br>    <span class="hljs-keyword">private</span> RedisService redisService;<br><br>    <span class="hljs-meta">@Override</span><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">run</span><span class="hljs-params">(ApplicationArguments args)</span> &#123;<br>        <span class="hljs-type">int</span> <span class="hljs-variable">batchSize</span> <span class="hljs-operator">=</span> <span class="hljs-number">1000</span>;<br>        <span class="hljs-comment">//空闲空转计数器</span><br>        <span class="hljs-type">int</span> <span class="hljs-variable">emptyCount</span> <span class="hljs-operator">=</span> <span class="hljs-number">0</span>;<br>        <span class="hljs-keyword">try</span> &#123;<br>            connector.connect();<br>            <span class="hljs-comment">// 监听api_open_platform数据库下的interface_access表</span><br>            connector.subscribe(<span class="hljs-string">&quot;api_open_platform.interface_access&quot;</span>);<br>            <span class="hljs-comment">// 回滚到未进行 ack 的地方，下次fetch的时候，可以从最后一个没有 ack 的地方开始拿</span><br>            connector.rollback();<br>            <span class="hljs-comment">// 如果3600s内没有监听到更改，则报错并停止运行</span><br>            <span class="hljs-type">int</span> <span class="hljs-variable">totalEmptyCount</span> <span class="hljs-operator">=</span> <span class="hljs-number">3600</span>;<br>            <span class="hljs-keyword">while</span> (emptyCount &lt; totalEmptyCount) &#123;<br>                System.out.println(<span class="hljs-string">&quot;正在监听canal Server: &quot;</span> + System.currentTimeMillis());<br>                <span class="hljs-type">Message</span> <span class="hljs-variable">message</span> <span class="hljs-operator">=</span> connector.getWithoutAck(batchSize); <span class="hljs-comment">// 获取指定数量的数据</span><br>                <span class="hljs-type">long</span> <span class="hljs-variable">batchId</span> <span class="hljs-operator">=</span> message.getId();<br>                <span class="hljs-type">int</span> <span class="hljs-variable">size</span> <span class="hljs-operator">=</span> message.getEntries().size();<br>                <span class="hljs-keyword">if</span> (batchId == -<span class="hljs-number">1</span> || size == <span class="hljs-number">0</span>) &#123;<br>                    emptyCount++;<br>                    <span class="hljs-keyword">try</span> &#123;<br>                        TimeUnit.SECONDS.sleep(<span class="hljs-number">1</span>);<br>                    &#125; <span class="hljs-keyword">catch</span> (InterruptedException e) &#123;<br>                        e.printStackTrace();<br>                    &#125;<br>                &#125; <span class="hljs-keyword">else</span> &#123;<br>                    <span class="hljs-comment">//计数器重新置零</span><br>                    emptyCount = <span class="hljs-number">0</span>;<br>                    handlerMessage(message.getEntries());<br>                &#125;<br>                connector.ack(batchId); <span class="hljs-comment">// 提交确认</span><br>                <span class="hljs-comment">// connector.rollback(batchId); // 处理失败, 回滚数据</span><br>            &#125;<br>            log.error(<span class="hljs-string">&quot;已经监听了&quot;</span> + totalEmptyCount + <span class="hljs-string">&quot;秒，无任何消息，请检查canal是否正常运行或连接是否成功......&quot;</span>);<br>        &#125; <span class="hljs-keyword">finally</span> &#123;<br>            connector.disconnect();<br>        &#125;<br>    &#125;<br><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">handlerMessage</span><span class="hljs-params">(List&lt;Entry&gt; entrys)</span> &#123;<br>        <span class="hljs-comment">//...</span><br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
-
-<h2 id="实现handlerMessage方法"><a href="#实现handlerMessage方法" class="headerlink" title="实现handlerMessage方法"></a>实现handlerMessage方法</h2><p>对消息进行处理，并通过调用<code>RedisService</code>的方法同步到redis。</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">handlerMessage</span><span class="hljs-params">(List&lt;Entry&gt; entrys)</span> &#123;<br>    <span class="hljs-type">ObjectMapper</span> <span class="hljs-variable">objectMapper</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">ObjectMapper</span>();<br>    <span class="hljs-type">SimpleDateFormat</span> <span class="hljs-variable">sdf</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">SimpleDateFormat</span>(<span class="hljs-string">&quot;yyyy-MM-dd HH:mm:ss&quot;</span>);<br>    <span class="hljs-keyword">for</span> (Entry entry : entrys) &#123;<br>        <span class="hljs-comment">//如果不是ROWDATA，则忽略</span><br>        <span class="hljs-keyword">if</span> (entry.getEntryType() != EntryType.ROWDATA) &#123;<br>            <span class="hljs-keyword">continue</span>;<br>        &#125;<br>        <span class="hljs-type">RowChange</span> <span class="hljs-variable">rowchange</span> <span class="hljs-operator">=</span> <span class="hljs-literal">null</span>;<br>        <span class="hljs-keyword">try</span> &#123;<br>            <span class="hljs-comment">//获取变更的row数据</span><br>            rowchange = CanalEntry.RowChange.parseFrom(entry.getStoreValue());<br>        &#125; <span class="hljs-keyword">catch</span> (Exception e) &#123;<br>            log.error(<span class="hljs-string">&quot;解析Entry获得RowChange失败：&quot;</span> + entry, e);<br>            <span class="hljs-keyword">return</span>;<br>        &#125;<br>        <span class="hljs-comment">//获取变动类型</span><br>        <span class="hljs-type">EventType</span> <span class="hljs-variable">eventType</span> <span class="hljs-operator">=</span> rowchange.getEventType();<br>        log.info(String.format(<span class="hljs-string">&quot;================binlog[%s:%s] , name[%s,%s] , eventType : %s&quot;</span>,<br>                entry.getHeader().getLogfileName(), entry.getHeader().getLogfileOffset(),<br>                entry.getHeader().getSchemaName(), entry.getHeader().getTableName(), eventType));<br><br>        <span class="hljs-keyword">for</span> (RowData rowData : rowchange.getRowDatasList()) &#123;<br>            <span class="hljs-comment">//由于使用逻辑删除，delete实现方式为将is_deleted属性设置为1，所以删除逻辑写在update中</span><br>            <span class="hljs-keyword">if</span> (eventType == EventType.UPDATE) &#123;<br>                <span class="hljs-comment">//可使用该方式查看各个index对应的列名是什么</span><br>                <span class="hljs-comment">//rowData.getAfterColumnsList().stream().forEach(column -&gt; &#123;</span><br>                <span class="hljs-comment">//    System.out.println(column.getName());</span><br>                <span class="hljs-comment">//&#125;);</span><br>                <span class="hljs-type">InterfaceAccess</span> <span class="hljs-variable">interfaceAccess</span> <span class="hljs-operator">=</span> parseRowDateIntoInterfaceAccess(rowData);<br>                <span class="hljs-keyword">if</span> (interfaceAccess.getIsDeleted() == <span class="hljs-number">1</span>) &#123;<br>                    <span class="hljs-comment">//说明已经删除，需要同步删除</span><br>                    redisService.deleteInterfaceAccess(interfaceAccess);<br>                &#125; <span class="hljs-keyword">else</span> &#123;<br>                    <span class="hljs-comment">//说明未删除，需要同步更新</span><br>                    redisService.updateInterfaceAccess(interfaceAccess);<br>                &#125;<br>            &#125;<br>        &#125;<br>    &#125;<br>&#125;<br><br><span class="hljs-keyword">private</span> InterfaceAccess <span class="hljs-title function_">parseRowDateIntoInterfaceAccess</span><span class="hljs-params">(RowData rowData)</span> &#123;<br>    <span class="hljs-type">SimpleDateFormat</span> <span class="hljs-variable">sdf</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">SimpleDateFormat</span>(<span class="hljs-string">&quot;yyyy-MM-dd HH:mm:ss&quot;</span>);<br>    <span class="hljs-type">InterfaceAccess</span> <span class="hljs-variable">interfaceAccess</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">InterfaceAccess</span>();<br>    <span class="hljs-type">String</span> <span class="hljs-variable">accesskey</span> <span class="hljs-operator">=</span> rowData.getAfterColumns(<span class="hljs-number">0</span>).getValue();<br>    <span class="hljs-type">Integer</span> <span class="hljs-variable">verifyType</span> <span class="hljs-operator">=</span> Integer.parseInt(rowData.getAfterColumns(<span class="hljs-number">1</span>).getValue());<br>    <span class="hljs-comment">//允许为空的参数如果为空，则column.getValue().equals(&quot;&quot;)</span><br>    <span class="hljs-type">String</span> <span class="hljs-variable">secretkey</span> <span class="hljs-operator">=</span> rowData.getAfterColumns(<span class="hljs-number">2</span>).getValue().equals(<span class="hljs-string">&quot;&quot;</span>) ? <span class="hljs-literal">null</span> : rowData.getAfterColumns(<span class="hljs-number">2</span>).getValue();<br>    <span class="hljs-type">BigDecimal</span> <span class="hljs-variable">remainingAmount</span> <span class="hljs-operator">=</span> <span class="hljs-literal">null</span>;<br>    <span class="hljs-keyword">if</span> (!rowData.getAfterColumns(<span class="hljs-number">3</span>).getValue().equals(<span class="hljs-string">&quot;&quot;</span>)) &#123;<br>        remainingAmount = <span class="hljs-keyword">new</span> <span class="hljs-title class_">BigDecimal</span>(rowData.getAfterColumns(<span class="hljs-number">3</span>).getValue());<br>    &#125;<br>    <span class="hljs-type">Integer</span> <span class="hljs-variable">remainingTimes</span> <span class="hljs-operator">=</span> <span class="hljs-literal">null</span>;<br>    <span class="hljs-keyword">if</span> (!rowData.getAfterColumns(<span class="hljs-number">4</span>).getValue().equals(<span class="hljs-string">&quot;&quot;</span>)) &#123;<br>        remainingTimes = Integer.parseInt(rowData.getAfterColumns(<span class="hljs-number">4</span>).getValue());<br>    &#125;<br>    <span class="hljs-type">Long</span> <span class="hljs-variable">interfaceId</span> <span class="hljs-operator">=</span> Long.parseLong(rowData.getAfterColumns(<span class="hljs-number">5</span>).getValue());<br>    <span class="hljs-type">Long</span> <span class="hljs-variable">userid</span> <span class="hljs-operator">=</span> Long.parseLong(rowData.getAfterColumns(<span class="hljs-number">6</span>).getValue());<br>    <span class="hljs-type">Integer</span> <span class="hljs-variable">callTimes</span> <span class="hljs-operator">=</span> Integer.parseInt(rowData.getAfterColumns(<span class="hljs-number">7</span>).getValue());<br>    <span class="hljs-type">Integer</span> <span class="hljs-variable">failedCallTimes</span> <span class="hljs-operator">=</span> Integer.parseInt(rowData.getAfterColumns(<span class="hljs-number">8</span>).getValue());<br>    <span class="hljs-type">Date</span> <span class="hljs-variable">createTime</span> <span class="hljs-operator">=</span> <span class="hljs-literal">null</span>;<br>    <span class="hljs-type">Date</span> <span class="hljs-variable">updateTime</span> <span class="hljs-operator">=</span> <span class="hljs-literal">null</span>;<br>    <span class="hljs-keyword">try</span> &#123;<br>        createTime = sdf.parse(rowData.getAfterColumns(<span class="hljs-number">9</span>).getValue());<br>        updateTime = sdf.parse(rowData.getAfterColumns(<span class="hljs-number">10</span>).getValue());<br>    &#125; <span class="hljs-keyword">catch</span> (ParseException e) &#123;<br>        log.error(<span class="hljs-string">&quot;解析日期失败：&quot;</span>, e);<br>    &#125;<br>    <span class="hljs-type">Integer</span> <span class="hljs-variable">isDeleted</span> <span class="hljs-operator">=</span> Integer.parseInt(rowData.getAfterColumns(<span class="hljs-number">11</span>).getValue());<br>    interfaceAccess.setAccesskey(accesskey);<br>    interfaceAccess.setVerifyType(verifyType);<br>    interfaceAccess.setSecretkey(secretkey);<br>    interfaceAccess.setRemainingAmount(remainingAmount);<br>    interfaceAccess.setRemainingTimes(remainingTimes);<br>    interfaceAccess.setInterfaceId(interfaceId);<br>    interfaceAccess.setUserid(userid);<br>    interfaceAccess.setCallTimes(callTimes);<br>    interfaceAccess.setFailedCallTimes(failedCallTimes);<br>    interfaceAccess.setCreateTime(createTime);<br>    interfaceAccess.setUpdateTime(updateTime);<br>    interfaceAccess.setIsDeleted(isDeleted);<br>    <span class="hljs-keyword">return</span> interfaceAccess;<br>&#125;<br></code></pre></td></tr></table></figure>
-
-<h2 id="效果"><a href="#效果" class="headerlink" title="效果"></a>效果</h2><h3 id="1-数据库更新后："><a href="#1-数据库更新后：" class="headerlink" title="1. 数据库更新后："></a>1. 数据库更新后：</h3><p>标准输出：</p>
-<blockquote>
-<p>正在监听canal Server: 1709812780346<br>2024-03-07 19:59:40.394  INFO 26712 — [           main] c.c.a.canal.handler.CanalMessageHandler  : &#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;binlog[mysql-bin.000354:6832] , name[api_open_platform,interface_access] , eventType : UPDATE<br>2024-03-07 19:59:40.425  INFO 26712 — [           main] c.c.a.canal.handler.CanalMessageHandler  : 在redis中同步f607abdc-c80e-4255-81d3-37ea6fe355b4<br>正在监听canal Server: 1709812780425<br>正在监听canal Server: 1709812781481</p>
-</blockquote>
-<p>查询redis：<br><img src="/2024/03/06/backend/middleware/canal/canal_MySQL&Redis/redis-update.png"></p>
-<h3 id="2-数据库删除后"><a href="#2-数据库删除后" class="headerlink" title="2. 数据库删除后"></a>2. 数据库删除后</h3><p>标准输出：</p>
-<blockquote>
-<p>正在监听canal Server: 1709812979293<br>正在监听canal Server: 1709812980340<br>2024-03-07 20:03:00.383  INFO 26712 — [           main] c.c.a.canal.handler.CanalMessageHandler  : &#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;binlog[mysql-bin.000354:7413] , name[api_open_platform,interface_access] , eventType : UPDATE<br>2024-03-07 20:03:00.384  INFO 26712 — [           main] c.c.a.canal.handler.CanalMessageHandler  : 从redis中删除f607abdc-c80e-4255-81d3-37ea6fe355b4<br>正在监听canal Server: 1709812980384</p>
-</blockquote>
-<p>查询redis：<br><img src="/2024/03/06/backend/middleware/canal/canal_MySQL&Redis/redis-delete.png"></p>
-]]></content>
-      <categories>
-        <category>分布式</category>
-        <category>中间件</category>
-        <category>canal</category>
-      </categories>
-      <tags>
-        <tag>canal</tag>
-        <tag>双写一致性</tag>
-        <tag>redis</tag>
       </tags>
   </entry>
   <entry>
@@ -835,76 +534,304 @@ newProxyInstance方法的三个参数：</li>
       </tags>
   </entry>
   <entry>
-    <title>消息队列：认识篇</title>
-    <url>/2024/03/13/backend/middleware/messagequeue/mq-introducte/</url>
-    <content><![CDATA[<h1 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h1><p>消息队列，顾名思义，存放消息（可类比为请求）的队列（一种先进先出的数据结构）。<br>其是一种常用于分布式系统的中间件，可以在不同的应用程序、服务或系统之间传递消息，并且常用于解耦合不同部分的系统，使得系统更加可扩展和灵活。<br><strong>基本原理：发送者将消息放入队列，接收者从队列中获取消息并处理。</strong><br>消息队列实质是一种方式，一种<strong>在不同组件之间传递消息的通信方式</strong>。发送者和接收者之间不需要直接通信，它们只需了解如何发送和接收消息即可。</p>
-<h1 id="作用与优点"><a href="#作用与优点" class="headerlink" title="作用与优点"></a>作用与优点</h1><p>由上述内容，可推断出消息队列的一些作用：</p>
+    <title>canal入门篇：实现MySQL&amp;Redis双写一致性</title>
+    <url>/2024/03/06/backend/middleware/canal/canal_MySQL&amp;Redis/</url>
+    <content><![CDATA[<p>本文将介绍如何使用canal实现MySQl和Redis的双写一致性。前文为：<a href="/2024/03/06/backend/middleware/canal/canal_config/" title="canal入门篇：介绍&amp;配置&amp;启动">canal入门篇：介绍&amp;配置&amp;启动</a>。</p>
+<blockquote>
+<p><a href="https://github.com/shoumingchilun/API_OPEN_SPACE_CANAL">github仓库链接</a></p>
+</blockquote>
+<h1 id="canalAPI讲解"><a href="#canalAPI讲解" class="headerlink" title="canalAPI讲解"></a>canalAPI讲解</h1><p>本文将使用SpringBoot框架搭建一个应用，通过canal获得数据库的更改消息，并将发生变更的实体同步更新到Redis中。</p>
+<h2 id="优点"><a href="#优点" class="headerlink" title="优点"></a>优点</h2><p>使用canal的好处：</p>
+<ol>
+<li><strong>透明性与低侵入</strong>：使用 Canal 通常不需要对既有业务逻辑进行大规模改造，因为它作为独立的服务组件，可以透明地监听和处理数据库的变化，将更新事件推送给相应的缓存系统，实现数据同步，降低了对业务代码的入侵性。</li>
+<li><strong>扩展性与灵活性</strong>：Canal 支持多种数据源以及不同的消费方式，可以根据实际需求构建灵活的消息处理和分发机制。它可以与各种消息队列或数据处理系统集成，实现复杂的数据同步和多级缓存更新。</li>
+<li><strong>可靠性</strong>：由于 Canal 是基于 MySQL 的主从复制协议设计的，它继承了数据库层面的数据可靠性保障。同时，消息投递失败时（未进行ACK）可以通过重试机制确保最终一致性，而且可以支持幂等处理，避免重复消费造成的问题。</li>
+</ol>
+<h2 id="类说明"><a href="#类说明" class="headerlink" title="类说明"></a>类说明</h2><h3 id="canal-Client"><a href="#canal-Client" class="headerlink" title="canal Client"></a>canal Client</h3><p>先介绍一下canal Client相关的一些配置类：</p>
 <ul>
-<li><strong>解耦</strong>：发送者和接收者只需要关心发送消息和接受消息，不用关心彼此。</li>
-<li><strong>异步</strong>：发送者不关心消息的处理，即不用等待消息的响应，故支持异步。</li>
-<li><strong>削锋</strong>：某些活动的流量过大、请求过多，可能导致系统宕机；消息队列可以作为缓冲区，将这些请求暂时存储起来，以避免瞬时高流量，然后按照系统处理能力逐步消费，实现流量的平滑处理，从而降低系统的压力，避免宕机。<br>以及其身为分布式系统的固有优点：</li>
-<li><strong>可扩展性</strong>：在解耦后，可方便地单独对发送者或接收者或消息队列进行动态伸缩。</li>
-<li><strong>可靠性</strong>：由于消息队列允许多个消费者和生产者，并且通常支持消息持久化和复制，因此即使其中一个组件出现故障，系统仍然可以继续运行并且消息也不会丢失。</li>
+<li><strong>ClientIdentity</strong>：canal client和server交互之间的身份标识。</li>
+<li><strong>CanalConnector</strong>：SimpleCanalConnector&#x2F;ClusterCanalConnector是两种connector的实现。simple针对的是简单的ip直连模式，cluster针对多ip的模式，可依赖CanalNodeAccessStrategy进行failover控制。（确保 Canal 在发生故障时能够无缝地切换到备份节点或者恢复服务，暂时不关注）</li>
+<li><strong>CanalNodeAccessStrategy</strong>：SimpleNodeAccessStrategy&#x2F;ClusterNodeAccessStrategy是两种failover的实现。simple针对给定的初始ip列表进行failover选择，cluster基于zookeeper上的cluster节点动态选择正在运行的canal server。（暂时不关注）</li>
 </ul>
-<h1 id="适用场景"><a href="#适用场景" class="headerlink" title="适用场景"></a>适用场景</h1><p>（此处仅介绍一些常见场景）</p>
-<h2 id="异步场景举例：用户注册"><a href="#异步场景举例：用户注册" class="headerlink" title="异步场景举例：用户注册"></a>异步场景举例：用户注册</h2><h3 id="需求"><a href="#需求" class="headerlink" title="需求"></a>需求</h3><p>用户注册后需向其发送注册邮件和注册短信。</p>
-<h3 id="设计"><a href="#设计" class="headerlink" title="设计"></a>设计</h3><p>用户注册后，将注册信息写入数据库；发送注册邮件；发送短信。<br>如不使用消息队列，不进行异步解耦，即注册服务器需要同步远程调用写入数据库、发送注册邮件、发送短信的三个函数，将与其他应用发生多次交互，同时还得等待响应，假设一个操作需要0.5s，则该操作会占用注册服务器一个线程的1.5s。<br>使用消息队列后，注册服务器直接向消息队列中写入三个消息（数据库写入消息、邮件发送消息、短信发送消息），并且是异步发送不用等待返回，假设一次发送消息为0.1s，也仅需0.3s。</p>
-<h2 id="解耦场景举例：订单-库存管理"><a href="#解耦场景举例：订单-库存管理" class="headerlink" title="解耦场景举例：订单-库存管理"></a>解耦场景举例：订单-库存管理</h2><h3 id="需求-1"><a href="#需求-1" class="headerlink" title="需求"></a>需求</h3><p>用户下订单后，库存系统需要减少相对数量。</p>
-<h3 id="设计-1"><a href="#设计-1" class="headerlink" title="设计"></a>设计</h3><p>用户下单后，订单系统需要通知库存系统。</p>
-<h3 id="详细设计"><a href="#详细设计" class="headerlink" title="详细设计"></a>详细设计</h3><ul>
-<li>原设计：订单系统调用库存系统的接口。<ul>
-<li>存在缺陷：假如库存系统无法访问，则订单减库存将失败，从而导致订单失败；订单系统依赖库存系统接口，存在耦合。</li>
+<p>然后即可从<code>connector</code>中通过<code>get</code>&#x2F;<code>getWithoutAck</code>获得的<code>Message</code>的这个类，该类主要的功能就是使用<code>getEntries</code>函数获得包装好的<code>List&lt;Entry&gt;</code>对象。</p>
+<h3 id="Entry"><a href="#Entry" class="headerlink" title="Entry"></a>Entry</h3><p>介绍一下Entry、RowChange、rowdata、column的概念。</p>
+<ol>
+<li><strong>Entry</strong>：Entry 是 Canal 解析 MySQL Binlog 后产生的基本单元，它<strong>代表了Binlog中的一条记录</strong>。每个Entry对象对应了MySQL数据库的一个事务或一个GTID事件（如果启用了GTID）。Entry包含了事务的相关元数据如执行时间、事务ID等，以及实际的数据库更改内容。</li>
+<li><strong>RowChange</strong>： RowChange 是更进一步封装的事件变更细节，它描述了<strong>一次数据库表级别的行级别数据变化</strong>。一个RowChange对象对应binlog中的一次行变更事件，它可以包含多行数据的插入、更新或删除操作。</li>
+<li><strong>RowData</strong>：RowData 表示<strong>单行数据的变更内容</strong>。对于RowChange中的每一次行操作（insert&#x2F;update&#x2F;delete），都会有对应的RowData对象来具体描述变更前后的列值信息。<ol>
+<li>RowData有两个重要的字段：<ul>
+<li>beforeColumnsList：在UPDATE或DELETE事件中，存储的是变更前的列数据集合。</li>
+<li>afterColumnsList：在INSERT或UPDATE事件中，存储的是变更后的列数据集合。</li>
 </ul>
 </li>
-<li>使用消息队列改进：订单系统发送订单消息（用户下单后，订单系统完成持久化处理，将消息写入消息队列，返回用户订单下单成功），库存系统读取订单消息并自行处理（订阅订单消息，采用拉&#x2F;推的方式，获取下单信息，库存系统根据下单信息，进行库存操作）。<ul>
-<li>解决缺陷：假如库存系统无法访问，订单系统仅需要发送消息，可保持运转；订单消息仅发送消息，消息解读由库存系统进行（发布-订阅或消息队列模式），降低耦合度。</li>
+<li>对于INSERT、UPDATE和DELETE事件，其表现形式不同：<ul>
+<li>INSERT事件：RowData会包含这一行插入后的所有列值。</li>
+<li>UPDATE事件：RowData包含两部分，即变更前的列值（beforeColumns）和变更后的列值（afterColumns）。</li>
+<li>DELETE事件：RowData仅包含被删除前的那一行的所有列值。</li>
 </ul>
 </li>
-</ul>
-<h2 id="削锋场景举例：秒杀活动"><a href="#削锋场景举例：秒杀活动" class="headerlink" title="削锋场景举例：秒杀活动"></a>削锋场景举例：秒杀活动</h2><h3 id="需求-2"><a href="#需求-2" class="headerlink" title="需求"></a>需求</h3><p>在秒杀活动中，大量用户同时抢购商品，可能会导致系统压力激增。为了应对这一情况，需要一种机制来平稳处理激增的请求流量，避免系统崩溃或性能下降。</p>
-<h3 id="设计-2"><a href="#设计-2" class="headerlink" title="设计"></a>设计</h3><p>传统的处理方式可能会导致系统崩溃或性能下降。为了解决这个问题，可以使用消息队列来削峰填谷。</p>
-<h3 id="详细设计-1"><a href="#详细设计-1" class="headerlink" title="详细设计"></a>详细设计</h3><ol>
-<li>秒杀活动开始：当秒杀活动开始时，用户可以提交秒杀请求。</li>
-<li>请求入队：订单系统接收到用户的秒杀请求后，将请求消息写入消息队列，而不是立即处理。</li>
-<li>消息处理：秒杀请求消息被消息队列按照一定的规则（如先进先出）分发给后端处理程序。</li>
-<li>后端处理：后端处理程序逐条处理消息，检查库存并进行相应的处理（如减少库存、生成<br>订单等）。</li>
 </ol>
-<p>以此消息队列可平滑处理激增的请求流量，避免系统因突发流量而崩溃。</p>
-<h2 id="日志处理场景"><a href="#日志处理场景" class="headerlink" title="日志处理场景"></a>日志处理场景</h2><h3 id="需求-3"><a href="#需求-3" class="headerlink" title="需求"></a>需求</h3><p>需要一种解决大量日志传输和实时处理的方案，以便对日志数据进行分析和可视化展示。</p>
-<h3 id="设计-3"><a href="#设计-3" class="headerlink" title="设计"></a>设计</h3><p>设计一个分布式日志处理系统，包括以下组件：</p>
+</li>
+<li><strong>Column</strong>：Column 对象更加细致地表示了数据库表中某一列的数据变化情况，包括列名、列值、是否为空、是否是主键等属性信息。在RowData的beforeColumns和afterColumns列表中，每一项就是一个Column对象。</li>
+</ol>
+<h3 id="解析Entry"><a href="#解析Entry" class="headerlink" title="解析Entry"></a>解析Entry</h3><p>在获得一个<code>List&lt;Entry&gt;</code>后，我们需要对其中每个条目进行逐步解析：</p>
 <ol>
-<li>日志采集客户端：负责从各个日志源采集日志数据，并将数据定期写入消息队列中。</li>
-<li>消息队列：接收来自日志采集客户端的日志数据，负责数据的存储和转发。</li>
-<li>日志处理应用：订阅并消费Kafka队列中的日志数据，进行实时处理和分析。</li>
-<li>Logstash：作为日志处理应用的一部分，负责对原始日志进行解析和转换，统一输出为JSON格式的数据。</li>
-<li>Elasticsearch：作为日志处理应用的核心数据存储服务，接收Logstash处理后的JSON格式日志数据，实现实时的数据索引和查询。</li>
-<li>Kibana：基于Elasticsearch 的数据可视化组件，用于将Elasticsearch中的数据进行可视化展示和分析。</li>
+<li><strong>判断类型</strong>：通过调用<code>getEntryType()</code>获得该<code>Entry</code>的<code>EntryType</code>，常见的类型有**事务开始(BEGIN)、事务结束(COMMIT)、行数据(ROWDATA)**等。</li>
+<li>对于 <strong>ROWDATA 类型</strong>的 Entry，可以从中提取 <strong>RowChange 对象</strong>（包含了数据库行级别的变更详情）：通过调用<code>CanalEntry.RowChange.parseFrom(entry.getStoreValue())</code>获得 RowChange 对象。</li>
+<li>获得 RowChange 对象后，可根据<code>EventType</code>获得具体操作的类型，如<code>INSERT</code>、<code>UPDATE</code>、<code>ALTER</code>等，如： <code>rowChage.getEventType()==EventType.DELETE</code>。</li>
+<li>可从 <code>RowChange</code> 对象中获得 <code>RowData</code> 对象，并从后者中获得一行数据变更前的状态和变更后的状态，再从中获得单独的<code>column</code>进行解析： <figure class="highlight java"><table><tr><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">for</span> (RowData rowData : rowChage.getRowDatasList()) &#123;<br>    rowData.getBeforeColumnsList().forEach(column -&gt; System.out.println(column.getName() + <span class="hljs-string">&quot; : &quot;</span> + column.getValue()));<br>    rowData.getAfterColumnsList().forEach(column -&gt; System.out.println(column.getName() + <span class="hljs-string">&quot; : &quot;</span> + column.getValue()));<br></code></pre></td></tr></table></figure></li>
 </ol>
-<h2 id="消息通讯场景"><a href="#消息通讯场景" class="headerlink" title="消息通讯场景"></a>消息通讯场景</h2><h3 id="需求-4"><a href="#需求-4" class="headerlink" title="需求"></a>需求</h3><p>需要一种高效的消息通讯机制，可以用于点对点通讯或者创建聊天室等场景，以实现实时的消息传递和交流。</p>
-<h3 id="设计-4"><a href="#设计-4" class="headerlink" title="设计"></a>设计</h3><p>设计一个基于消息队列的消息通讯系统，包括以下两种场景：</p>
-<ol>
-<li>点对点通讯：客户端A和客户端B使用同一队列进行消息通讯；消息队列负责接收和转发客户端A和客户端B的消息。</li>
-<li>客户端A、客户端B等多个客户端订阅同一主题：当有客户端发布消息时，消息队列将消息广播给所有订阅了该主题的客户端，客户端收到消息后进行展示。</li>
-</ol>
-<h1 id="常用消息队列框架"><a href="#常用消息队列框架" class="headerlink" title="常用消息队列框架"></a>常用消息队列框架</h1><ol>
-<li><strong>RabbitMQ</strong>：RabbitMQ 是一个开源的消息队列系统，实现了高级消息队列协议（AMQP），它是一个可靠、高可用、可扩展的消息代理。RabbitMQ提供了多种消息传递模式，如点对点、发布&#x2F;订阅等，适用于各种场景的应用程序。</li>
-<li><strong>RocketMQ</strong>：RocketMQ 是阿里巴巴开源的分布式消息队列系统，具有高吞吐量、低延迟、高可用性等特点。它支持丰富的消息模型，包括顺序消息、事务消息等，适用于大规模分布式系统的消息通信。</li>
-<li><strong>Kafka</strong>：Kafka是由Apache软件基金会开发的分布式流处理平台和消息队列系统。Kafka设计用于支持大规模的消息处理，具有高吞吐量、持久性、分区等特点，广泛应用于大数据领域。</li>
-<li><strong>ActiveMQ</strong>：ActiveMQ 是一个开源的消息中间件，实现了JavaMessageService(JMS)规范。它支持多种传输协议，如TCP、UDP、SSL等，提供了丰富的功能，包括消息持久化、事务支持等。</li>
-<li><strong>Amazon SQS</strong>：AmazonSQS（Simple Queue Service）是亚马逊提供的消息队列服务，可帮助构建分布式应用程序。它具有高可用性、可扩展性、灵活性等特点，适用于构建在亚马逊云平台上的应用程序。</li>
-</ol>
+<h1 id="实现双写一致性"><a href="#实现双写一致性" class="headerlink" title="实现双写一致性"></a>实现双写一致性</h1><p>（省略启动类）</p>
+<h2 id="添加依赖"><a href="#添加依赖" class="headerlink" title="添加依赖"></a>添加依赖</h2><p>需要添加Springboot和连接Redis、canal的依赖。<br>pom.xml：</p>
+<figure class="highlight xml"><table><tr><td class="code"><pre><code class="hljs xml"><span class="hljs-tag">&lt;<span class="hljs-name">dependencyManagement</span>&gt;</span><br>    <span class="hljs-tag">&lt;<span class="hljs-name">dependencies</span>&gt;</span><br>        <span class="hljs-tag">&lt;<span class="hljs-name">dependency</span>&gt;</span><br>            <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>org.springframework.boot<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span><br>            <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>spring-boot-dependencies<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span><br>            <span class="hljs-tag">&lt;<span class="hljs-name">version</span>&gt;</span>2.7.9<span class="hljs-tag">&lt;/<span class="hljs-name">version</span>&gt;</span><br>            <span class="hljs-tag">&lt;<span class="hljs-name">type</span>&gt;</span>pom<span class="hljs-tag">&lt;/<span class="hljs-name">type</span>&gt;</span><br>            <span class="hljs-tag">&lt;<span class="hljs-name">scope</span>&gt;</span>import<span class="hljs-tag">&lt;/<span class="hljs-name">scope</span>&gt;</span><br>        <span class="hljs-tag">&lt;/<span class="hljs-name">dependency</span>&gt;</span><br>    <span class="hljs-tag">&lt;/<span class="hljs-name">dependencies</span>&gt;</span><br><span class="hljs-tag">&lt;/<span class="hljs-name">dependencyManagement</span>&gt;</span><br><span class="hljs-tag">&lt;<span class="hljs-name">dependencies</span>&gt;</span><br>    <span class="hljs-tag">&lt;<span class="hljs-name">dependency</span>&gt;</span><br>        <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>org.springframework.boot<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span><br>        <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>spring-boot-starter-web<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span><br>    <span class="hljs-tag">&lt;/<span class="hljs-name">dependency</span>&gt;</span><br>    <span class="hljs-tag">&lt;<span class="hljs-name">dependency</span>&gt;</span><br>        <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>org.springframework.boot<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span><br>        <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>spring-boot-starter-data-redis<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span><br>    <span class="hljs-tag">&lt;/<span class="hljs-name">dependency</span>&gt;</span><br>    <span class="hljs-tag">&lt;<span class="hljs-name">dependency</span>&gt;</span><br>        <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>com.alibaba.otter<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span><br>        <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>canal.client<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span><br>        <span class="hljs-tag">&lt;<span class="hljs-name">version</span>&gt;</span>1.1.0<span class="hljs-tag">&lt;/<span class="hljs-name">version</span>&gt;</span><br>    <span class="hljs-tag">&lt;/<span class="hljs-name">dependency</span>&gt;</span><br><span class="hljs-tag">&lt;/<span class="hljs-name">dependencies</span>&gt;</span><br></code></pre></td></tr></table></figure>
+
+<h2 id="注册CanalConnector-Bean"><a href="#注册CanalConnector-Bean" class="headerlink" title="注册CanalConnector Bean"></a>注册CanalConnector Bean</h2><p>使用配置文件注入依赖。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><code class="hljs java"><span class="hljs-meta">@Configuration</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">CanalConfig</span> &#123;<br>    <span class="hljs-meta">@Value(&quot;$&#123;mycanal.hostname&#125;&quot;)</span><br>    <span class="hljs-keyword">private</span> String hostname;<br>    <span class="hljs-meta">@Value(&quot;$&#123;mycanal.port&#125;&quot;)</span><br>    <span class="hljs-keyword">private</span> Integer port;<br>    <span class="hljs-meta">@Value(&quot;$&#123;mycanal.destination&#125;&quot;)</span><br>    <span class="hljs-keyword">private</span> String destination;<br>    <span class="hljs-meta">@Value(&quot;$&#123;mycanal.username&#125;&quot;)</span><br>    <span class="hljs-keyword">private</span> <span class="hljs-type">String</span> <span class="hljs-variable">username</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;&quot;</span>;<br>    <span class="hljs-meta">@Value(&quot;$&#123;mycanal.password&#125;&quot;)</span><br>    <span class="hljs-keyword">private</span> <span class="hljs-type">String</span> <span class="hljs-variable">password</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;&quot;</span>;<br><br><br>    <span class="hljs-meta">@Bean</span><br>    <span class="hljs-keyword">public</span> CanalConnector <span class="hljs-title function_">createCanalConnector</span><span class="hljs-params">()</span> &#123;<br>        <span class="hljs-keyword">return</span> CanalConnectors.newSingleConnector(<span class="hljs-keyword">new</span> <span class="hljs-title class_">InetSocketAddress</span>(hostname,<br>                port), destination, username, password);<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>配置文件application.yml：</p>
+<figure class="highlight dts"><table><tr><td class="code"><pre><code class="hljs dts"><span class="hljs-symbol">mycanal:</span><br><span class="hljs-symbol">  hostname:</span> <span class="hljs-number">192.168</span><span class="hljs-number">.146</span><span class="hljs-number">.132</span><br><span class="hljs-symbol">  port:</span> <span class="hljs-number">11111</span><br><span class="hljs-symbol">  destination:</span> example<br><span class="hljs-symbol">  username:</span><br><span class="hljs-symbol">  password:</span><br></code></pre></td></tr></table></figure>
+
+<h2 id="设置Redis转码方式"><a href="#设置Redis转码方式" class="headerlink" title="设置Redis转码方式"></a>设置Redis转码方式</h2><figure class="highlight java"><table><tr><td class="code"><pre><code class="hljs java"><span class="hljs-meta">@Configuration</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">RedisConfig</span> &#123;<br>    <span class="hljs-meta">@Bean</span><br>    <span class="hljs-keyword">public</span> RedisTemplate&lt;String, Object&gt; <span class="hljs-title function_">redisTemplate</span><span class="hljs-params">(LettuceConnectionFactory lettuceConnectionFactory)</span> &#123;<br>        RedisTemplate&lt;String, Object&gt; redisTemplate = <span class="hljs-keyword">new</span> <span class="hljs-title class_">RedisTemplate</span>&lt;&gt;();<br><br>        redisTemplate.setConnectionFactory(lettuceConnectionFactory);<br>        <span class="hljs-comment">//设置key序列化方式string</span><br>        redisTemplate.setKeySerializer(<span class="hljs-keyword">new</span> <span class="hljs-title class_">StringRedisSerializer</span>());<br>        <span class="hljs-comment">//设置value的序列化方式json，使用GenericJackson2JsonRedisSerializer替换默认序列化</span><br>        redisTemplate.setValueSerializer(<span class="hljs-keyword">new</span> <span class="hljs-title class_">GenericJackson2JsonRedisSerializer</span>());<br>        redisTemplate.setHashKeySerializer(<span class="hljs-keyword">new</span> <span class="hljs-title class_">StringRedisSerializer</span>());<br>        redisTemplate.setHashValueSerializer(<span class="hljs-keyword">new</span> <span class="hljs-title class_">GenericJackson2JsonRedisSerializer</span>());<br><br>        redisTemplate.afterPropertiesSet();<br>        <span class="hljs-keyword">return</span> redisTemplate;<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p>补充：如果使用GenericJackson2JsonRedisSerializer充当序列化&#x2F;反序列化工具的话<code>redisTemplate.setValueSerializer(new GenericJackson2JsonRedisSerializer());</code>，请保证各组件内类名一致（包含包路径）。</p>
+</blockquote>
+<h2 id="创建实体类"><a href="#创建实体类" class="headerlink" title="创建实体类"></a>创建实体类</h2><p>Redis中value对应的实体。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><code class="hljs java"><span class="hljs-meta">@Data</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">InterfaceAccess</span> <span class="hljs-keyword">implements</span> <span class="hljs-title class_">Serializable</span> &#123;<br>    <span class="hljs-keyword">private</span> String accesskey;<br>    <span class="hljs-keyword">private</span> Integer verifyType;<br>    <span class="hljs-keyword">private</span> String secretkey;<br>    <span class="hljs-keyword">private</span> BigDecimal remainingAmount;<br>    <span class="hljs-keyword">private</span> Integer remainingTimes;<br>    <span class="hljs-keyword">private</span> Long interfaceId;<br>    <span class="hljs-keyword">private</span> Long userid;<br>    <span class="hljs-keyword">private</span> Integer callTimes;<br>    <span class="hljs-keyword">private</span> Integer failedCallTimes;<br>    <span class="hljs-keyword">private</span> Date createTime;<br>    <span class="hljs-keyword">private</span> Date updateTime;<br>    <span class="hljs-keyword">private</span> Integer isDeleted;<br>    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-type">long</span> <span class="hljs-variable">serialVersionUID</span> <span class="hljs-operator">=</span> <span class="hljs-number">1L</span>;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h2 id="设计Redis服务接口并实现"><a href="#设计Redis服务接口并实现" class="headerlink" title="设计Redis服务接口并实现"></a>设计Redis服务接口并实现</h2><figure class="highlight java"><table><tr><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">interface</span> <span class="hljs-title class_">RedisService</span> &#123;<br>    <span class="hljs-type">String</span> <span class="hljs-variable">ACCESS_PREFIX</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;InterfaceAccess_&quot;</span>;<br>    <span class="hljs-keyword">void</span> <span class="hljs-title function_">updateInterfaceAccess</span><span class="hljs-params">(InterfaceAccess interfaceAccess)</span>;<br>    <span class="hljs-keyword">void</span> <span class="hljs-title function_">deleteInterfaceAccess</span><span class="hljs-params">(InterfaceAccess interfaceAccess)</span>;<br>&#125;<br><br><span class="hljs-meta">@Service</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">RedisServiceImpl</span> <span class="hljs-keyword">implements</span> <span class="hljs-title class_">RedisService</span> &#123;<br>    <span class="hljs-meta">@Resource</span><br>    <span class="hljs-keyword">private</span> RedisTemplate&lt;String, InterfaceAccess&gt; redisTemplate;<br><br>    <span class="hljs-meta">@Override</span><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">updateInterfaceAccess</span><span class="hljs-params">(InterfaceAccess interfaceAccess)</span> &#123;<br>        redisTemplate.opsForValue().set(RedisService.ACCESS_PREFIX + interfaceAccess.getAccesskey(), interfaceAccess, <span class="hljs-number">2</span>, TimeUnit.MINUTES);<br>    &#125;<br><br>    <span class="hljs-meta">@Override</span><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">deleteInterfaceAccess</span><span class="hljs-params">(InterfaceAccess interfaceAccess)</span> &#123;<br>        redisTemplate.delete(RedisService.ACCESS_PREFIX + interfaceAccess.getAccesskey());<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h2 id="创建CanalMessageHandler类"><a href="#创建CanalMessageHandler类" class="headerlink" title="创建CanalMessageHandler类"></a>创建CanalMessageHandler类</h2><p>使用ApplicationRunner接口实现容器启动后开始监听。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><code class="hljs java"><span class="hljs-meta">@Slf4j</span><br><span class="hljs-meta">@Component</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">CanalMessageHandler</span> <span class="hljs-keyword">implements</span> <span class="hljs-title class_">ApplicationRunner</span> &#123;<br>    <span class="hljs-meta">@Resource</span><br>    <span class="hljs-keyword">private</span> CanalConnector connector;<br><br>    <span class="hljs-meta">@Resource</span><br>    <span class="hljs-keyword">private</span> RedisService redisService;<br><br>    <span class="hljs-meta">@Override</span><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">run</span><span class="hljs-params">(ApplicationArguments args)</span> &#123;<br>        <span class="hljs-type">int</span> <span class="hljs-variable">batchSize</span> <span class="hljs-operator">=</span> <span class="hljs-number">1000</span>;<br>        <span class="hljs-comment">//空闲空转计数器</span><br>        <span class="hljs-type">int</span> <span class="hljs-variable">emptyCount</span> <span class="hljs-operator">=</span> <span class="hljs-number">0</span>;<br>        <span class="hljs-keyword">try</span> &#123;<br>            connector.connect();<br>            <span class="hljs-comment">// 监听api_open_platform数据库下的interface_access表</span><br>            connector.subscribe(<span class="hljs-string">&quot;api_open_platform.interface_access&quot;</span>);<br>            <span class="hljs-comment">// 回滚到未进行 ack 的地方，下次fetch的时候，可以从最后一个没有 ack 的地方开始拿</span><br>            connector.rollback();<br>            <span class="hljs-comment">// 如果3600s内没有监听到更改，则报错并停止运行</span><br>            <span class="hljs-type">int</span> <span class="hljs-variable">totalEmptyCount</span> <span class="hljs-operator">=</span> <span class="hljs-number">3600</span>;<br>            <span class="hljs-keyword">while</span> (emptyCount &lt; totalEmptyCount) &#123;<br>                System.out.println(<span class="hljs-string">&quot;正在监听canal Server: &quot;</span> + System.currentTimeMillis());<br>                <span class="hljs-type">Message</span> <span class="hljs-variable">message</span> <span class="hljs-operator">=</span> connector.getWithoutAck(batchSize); <span class="hljs-comment">// 获取指定数量的数据</span><br>                <span class="hljs-type">long</span> <span class="hljs-variable">batchId</span> <span class="hljs-operator">=</span> message.getId();<br>                <span class="hljs-type">int</span> <span class="hljs-variable">size</span> <span class="hljs-operator">=</span> message.getEntries().size();<br>                <span class="hljs-keyword">if</span> (batchId == -<span class="hljs-number">1</span> || size == <span class="hljs-number">0</span>) &#123;<br>                    emptyCount++;<br>                    <span class="hljs-keyword">try</span> &#123;<br>                        TimeUnit.SECONDS.sleep(<span class="hljs-number">1</span>);<br>                    &#125; <span class="hljs-keyword">catch</span> (InterruptedException e) &#123;<br>                        e.printStackTrace();<br>                    &#125;<br>                &#125; <span class="hljs-keyword">else</span> &#123;<br>                    <span class="hljs-comment">//计数器重新置零</span><br>                    emptyCount = <span class="hljs-number">0</span>;<br>                    handlerMessage(message.getEntries());<br>                &#125;<br>                connector.ack(batchId); <span class="hljs-comment">// 提交确认</span><br>                <span class="hljs-comment">// connector.rollback(batchId); // 处理失败, 回滚数据</span><br>            &#125;<br>            log.error(<span class="hljs-string">&quot;已经监听了&quot;</span> + totalEmptyCount + <span class="hljs-string">&quot;秒，无任何消息，请检查canal是否正常运行或连接是否成功......&quot;</span>);<br>        &#125; <span class="hljs-keyword">finally</span> &#123;<br>            connector.disconnect();<br>        &#125;<br>    &#125;<br><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">handlerMessage</span><span class="hljs-params">(List&lt;Entry&gt; entrys)</span> &#123;<br>        <span class="hljs-comment">//...</span><br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h2 id="实现handlerMessage方法"><a href="#实现handlerMessage方法" class="headerlink" title="实现handlerMessage方法"></a>实现handlerMessage方法</h2><p>对消息进行处理，并通过调用<code>RedisService</code>的方法同步到redis。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">handlerMessage</span><span class="hljs-params">(List&lt;Entry&gt; entrys)</span> &#123;<br>    <span class="hljs-type">ObjectMapper</span> <span class="hljs-variable">objectMapper</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">ObjectMapper</span>();<br>    <span class="hljs-type">SimpleDateFormat</span> <span class="hljs-variable">sdf</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">SimpleDateFormat</span>(<span class="hljs-string">&quot;yyyy-MM-dd HH:mm:ss&quot;</span>);<br>    <span class="hljs-keyword">for</span> (Entry entry : entrys) &#123;<br>        <span class="hljs-comment">//如果不是ROWDATA，则忽略</span><br>        <span class="hljs-keyword">if</span> (entry.getEntryType() != EntryType.ROWDATA) &#123;<br>            <span class="hljs-keyword">continue</span>;<br>        &#125;<br>        <span class="hljs-type">RowChange</span> <span class="hljs-variable">rowchange</span> <span class="hljs-operator">=</span> <span class="hljs-literal">null</span>;<br>        <span class="hljs-keyword">try</span> &#123;<br>            <span class="hljs-comment">//获取变更的row数据</span><br>            rowchange = CanalEntry.RowChange.parseFrom(entry.getStoreValue());<br>        &#125; <span class="hljs-keyword">catch</span> (Exception e) &#123;<br>            log.error(<span class="hljs-string">&quot;解析Entry获得RowChange失败：&quot;</span> + entry, e);<br>            <span class="hljs-keyword">return</span>;<br>        &#125;<br>        <span class="hljs-comment">//获取变动类型</span><br>        <span class="hljs-type">EventType</span> <span class="hljs-variable">eventType</span> <span class="hljs-operator">=</span> rowchange.getEventType();<br>        log.info(String.format(<span class="hljs-string">&quot;================binlog[%s:%s] , name[%s,%s] , eventType : %s&quot;</span>,<br>                entry.getHeader().getLogfileName(), entry.getHeader().getLogfileOffset(),<br>                entry.getHeader().getSchemaName(), entry.getHeader().getTableName(), eventType));<br><br>        <span class="hljs-keyword">for</span> (RowData rowData : rowchange.getRowDatasList()) &#123;<br>            <span class="hljs-comment">//由于使用逻辑删除，delete实现方式为将is_deleted属性设置为1，所以删除逻辑写在update中</span><br>            <span class="hljs-keyword">if</span> (eventType == EventType.UPDATE) &#123;<br>                <span class="hljs-comment">//可使用该方式查看各个index对应的列名是什么</span><br>                <span class="hljs-comment">//rowData.getAfterColumnsList().stream().forEach(column -&gt; &#123;</span><br>                <span class="hljs-comment">//    System.out.println(column.getName());</span><br>                <span class="hljs-comment">//&#125;);</span><br>                <span class="hljs-type">InterfaceAccess</span> <span class="hljs-variable">interfaceAccess</span> <span class="hljs-operator">=</span> parseRowDateIntoInterfaceAccess(rowData);<br>                <span class="hljs-keyword">if</span> (interfaceAccess.getIsDeleted() == <span class="hljs-number">1</span>) &#123;<br>                    <span class="hljs-comment">//说明已经删除，需要同步删除</span><br>                    redisService.deleteInterfaceAccess(interfaceAccess);<br>                &#125; <span class="hljs-keyword">else</span> &#123;<br>                    <span class="hljs-comment">//说明未删除，需要同步更新</span><br>                    redisService.updateInterfaceAccess(interfaceAccess);<br>                &#125;<br>            &#125;<br>        &#125;<br>    &#125;<br>&#125;<br><br><span class="hljs-keyword">private</span> InterfaceAccess <span class="hljs-title function_">parseRowDateIntoInterfaceAccess</span><span class="hljs-params">(RowData rowData)</span> &#123;<br>    <span class="hljs-type">SimpleDateFormat</span> <span class="hljs-variable">sdf</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">SimpleDateFormat</span>(<span class="hljs-string">&quot;yyyy-MM-dd HH:mm:ss&quot;</span>);<br>    <span class="hljs-type">InterfaceAccess</span> <span class="hljs-variable">interfaceAccess</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">InterfaceAccess</span>();<br>    <span class="hljs-type">String</span> <span class="hljs-variable">accesskey</span> <span class="hljs-operator">=</span> rowData.getAfterColumns(<span class="hljs-number">0</span>).getValue();<br>    <span class="hljs-type">Integer</span> <span class="hljs-variable">verifyType</span> <span class="hljs-operator">=</span> Integer.parseInt(rowData.getAfterColumns(<span class="hljs-number">1</span>).getValue());<br>    <span class="hljs-comment">//允许为空的参数如果为空，则column.getValue().equals(&quot;&quot;)</span><br>    <span class="hljs-type">String</span> <span class="hljs-variable">secretkey</span> <span class="hljs-operator">=</span> rowData.getAfterColumns(<span class="hljs-number">2</span>).getValue().equals(<span class="hljs-string">&quot;&quot;</span>) ? <span class="hljs-literal">null</span> : rowData.getAfterColumns(<span class="hljs-number">2</span>).getValue();<br>    <span class="hljs-type">BigDecimal</span> <span class="hljs-variable">remainingAmount</span> <span class="hljs-operator">=</span> <span class="hljs-literal">null</span>;<br>    <span class="hljs-keyword">if</span> (!rowData.getAfterColumns(<span class="hljs-number">3</span>).getValue().equals(<span class="hljs-string">&quot;&quot;</span>)) &#123;<br>        remainingAmount = <span class="hljs-keyword">new</span> <span class="hljs-title class_">BigDecimal</span>(rowData.getAfterColumns(<span class="hljs-number">3</span>).getValue());<br>    &#125;<br>    <span class="hljs-type">Integer</span> <span class="hljs-variable">remainingTimes</span> <span class="hljs-operator">=</span> <span class="hljs-literal">null</span>;<br>    <span class="hljs-keyword">if</span> (!rowData.getAfterColumns(<span class="hljs-number">4</span>).getValue().equals(<span class="hljs-string">&quot;&quot;</span>)) &#123;<br>        remainingTimes = Integer.parseInt(rowData.getAfterColumns(<span class="hljs-number">4</span>).getValue());<br>    &#125;<br>    <span class="hljs-type">Long</span> <span class="hljs-variable">interfaceId</span> <span class="hljs-operator">=</span> Long.parseLong(rowData.getAfterColumns(<span class="hljs-number">5</span>).getValue());<br>    <span class="hljs-type">Long</span> <span class="hljs-variable">userid</span> <span class="hljs-operator">=</span> Long.parseLong(rowData.getAfterColumns(<span class="hljs-number">6</span>).getValue());<br>    <span class="hljs-type">Integer</span> <span class="hljs-variable">callTimes</span> <span class="hljs-operator">=</span> Integer.parseInt(rowData.getAfterColumns(<span class="hljs-number">7</span>).getValue());<br>    <span class="hljs-type">Integer</span> <span class="hljs-variable">failedCallTimes</span> <span class="hljs-operator">=</span> Integer.parseInt(rowData.getAfterColumns(<span class="hljs-number">8</span>).getValue());<br>    <span class="hljs-type">Date</span> <span class="hljs-variable">createTime</span> <span class="hljs-operator">=</span> <span class="hljs-literal">null</span>;<br>    <span class="hljs-type">Date</span> <span class="hljs-variable">updateTime</span> <span class="hljs-operator">=</span> <span class="hljs-literal">null</span>;<br>    <span class="hljs-keyword">try</span> &#123;<br>        createTime = sdf.parse(rowData.getAfterColumns(<span class="hljs-number">9</span>).getValue());<br>        updateTime = sdf.parse(rowData.getAfterColumns(<span class="hljs-number">10</span>).getValue());<br>    &#125; <span class="hljs-keyword">catch</span> (ParseException e) &#123;<br>        log.error(<span class="hljs-string">&quot;解析日期失败：&quot;</span>, e);<br>    &#125;<br>    <span class="hljs-type">Integer</span> <span class="hljs-variable">isDeleted</span> <span class="hljs-operator">=</span> Integer.parseInt(rowData.getAfterColumns(<span class="hljs-number">11</span>).getValue());<br>    interfaceAccess.setAccesskey(accesskey);<br>    interfaceAccess.setVerifyType(verifyType);<br>    interfaceAccess.setSecretkey(secretkey);<br>    interfaceAccess.setRemainingAmount(remainingAmount);<br>    interfaceAccess.setRemainingTimes(remainingTimes);<br>    interfaceAccess.setInterfaceId(interfaceId);<br>    interfaceAccess.setUserid(userid);<br>    interfaceAccess.setCallTimes(callTimes);<br>    interfaceAccess.setFailedCallTimes(failedCallTimes);<br>    interfaceAccess.setCreateTime(createTime);<br>    interfaceAccess.setUpdateTime(updateTime);<br>    interfaceAccess.setIsDeleted(isDeleted);<br>    <span class="hljs-keyword">return</span> interfaceAccess;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h2 id="效果"><a href="#效果" class="headerlink" title="效果"></a>效果</h2><h3 id="1-数据库更新后："><a href="#1-数据库更新后：" class="headerlink" title="1. 数据库更新后："></a>1. 数据库更新后：</h3><p>标准输出：</p>
+<blockquote>
+<p>正在监听canal Server: 1709812780346<br>2024-03-07 19:59:40.394  INFO 26712 — [           main] c.c.a.canal.handler.CanalMessageHandler  : &#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;binlog[mysql-bin.000354:6832] , name[api_open_platform,interface_access] , eventType : UPDATE<br>2024-03-07 19:59:40.425  INFO 26712 — [           main] c.c.a.canal.handler.CanalMessageHandler  : 在redis中同步f607abdc-c80e-4255-81d3-37ea6fe355b4<br>正在监听canal Server: 1709812780425<br>正在监听canal Server: 1709812781481</p>
+</blockquote>
+<p>查询redis：<br><img src="/2024/03/06/backend/middleware/canal/canal_MySQL&Redis/redis-update.png"></p>
+<h3 id="2-数据库删除后"><a href="#2-数据库删除后" class="headerlink" title="2. 数据库删除后"></a>2. 数据库删除后</h3><p>标准输出：</p>
+<blockquote>
+<p>正在监听canal Server: 1709812979293<br>正在监听canal Server: 1709812980340<br>2024-03-07 20:03:00.383  INFO 26712 — [           main] c.c.a.canal.handler.CanalMessageHandler  : &#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;binlog[mysql-bin.000354:7413] , name[api_open_platform,interface_access] , eventType : UPDATE<br>2024-03-07 20:03:00.384  INFO 26712 — [           main] c.c.a.canal.handler.CanalMessageHandler  : 从redis中删除f607abdc-c80e-4255-81d3-37ea6fe355b4<br>正在监听canal Server: 1709812980384</p>
+</blockquote>
+<p>查询redis：<br><img src="/2024/03/06/backend/middleware/canal/canal_MySQL&Redis/redis-delete.png"></p>
 ]]></content>
       <categories>
         <category>分布式</category>
         <category>中间件</category>
-        <category>消息队列</category>
+        <category>canal</category>
       </categories>
       <tags>
-        <tag>消息队列</tag>
-        <tag>RocketMQ</tag>
-        <tag>解耦</tag>
-        <tag>异步</tag>
-        <tag>削锋</tag>
+        <tag>canal</tag>
+        <tag>双写一致性</tag>
+        <tag>redis</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>《区块链：技术驱动金融》摘录（概念目录）</title>
+    <url>/2024/03/03/Web3/readingNotes/%E5%8C%BA%E5%9D%97%E9%93%BE%EF%BC%9A%E6%8A%80%E6%9C%AF%E9%A9%B1%E5%8A%A8%E9%87%91%E8%9E%8D/</url>
+    <content><![CDATA[<p>本文将介绍一些区块链领域的技术概念，充当一份技术目录以供备用。</p>
+<h1 id="哈希函数"><a href="#哈希函数" class="headerlink" title="哈希函数"></a>哈希函数</h1><h2 id="特性"><a href="#特性" class="headerlink" title="特性"></a>特性</h2><p>哈希函数具有以下特性：</p>
+<ul>
+<li><strong>碰撞阻力（Collision Resistance）</strong>：避免存在x，y，使H(x)&#x3D;H(y)<ul>
+<li>对于任意两个不同的输入x和y，找到满足H(x) &#x3D; H(y)的x和y在计算上应该是非常困难的。理想的哈希函数应保证对于所有可能的输入，其输出的哈希值都各不相同，但实际上因为输出空间有限而输入空间无限，理论上总是存在碰撞的可能，但在实际应用中，一个好的哈希函数设计应当使寻找碰撞的概率变得极低。</li>
+<li>特性应用：<strong>信息摘要（Message Digests）</strong>——在数据完整性校验中，哈希函数被用来生成一段数据的“数字指纹”，如MD5或SHA系列算法。当文件传输后，接收方可以通过重新计算哈希值并与发送方提供的摘要对比，确认数据在传输过程中是否被篡改。若摘要匹配，则说明数据未变；如果不匹配，则可能存在数据损坏或被恶意篡改。</li>
+</ul>
+</li>
+<li><strong>隐秘性（Pre-image Resistance &#x2F; One-wayness）</strong>：y&#x3D;H(x)，不可通过y推出x<ul>
+<li>隐秘性是指给定一个哈希值y，找到任何原输入x使得y &#x3D; H(x)在计算上是不可能或极其困难的。这体现了哈希函数的单向性，即从输出反推输入几乎不可能。</li>
+<li>特性应用：<strong>承诺（Commitment Schemes）</strong> ——在密码学中，哈希函数可用于构建承诺方案，一方可以在不暴露具体值的情况下对某个秘密值做出承诺，并在以后揭示该值时证明承诺的有效性。例如，在零知识证明中，一个参与者可以提前提交一个哈希值作为承诺，后续再公开原始数据，其他人可以通过计算哈希验证其一致性，但在此之前无法猜出原始数据。</li>
+</ul>
+</li>
+<li><strong>谜题友好（Puzzle-Friendliness 或 Puzzle-freeness）</strong>：使H(k||x)&#x3D;y成立的x无法在比2^n小很多时间内找到<ul>
+<li>（该特性主要应用于比特币挖矿中）</li>
+<li>谜题友好通常指的是哈希函数在特定条件下能够生成难以预先计算但易于验证结果的问题，即所谓的“工作量证明（Proof of Work, PoW）”。这种情况下，要求找到一个输入x（通常带有额外的随机数k）使得H(k || x) &#x3D; y成立的x在计算资源受限的情况下（比如在比穷举搜索所需时间小很多的时间内）是难以找到的。</li>
+<li>特性应用：<strong>搜索谜题（Cryptographic Puzzles or Hashcash）</strong>——在比特币挖矿中，矿工竞相解决一个基于哈希难题的PoW问题，寻找一个nonce（k）使得区块头的哈希值小于某个目标阈值。这一特性确保了挖矿过程需要大量计算资源投入，从而达到区块链系统的去中心化共识机制的安全性。只有成功解决谜题的矿工才能添加新区块并获得奖励。</li>
+</ul>
+</li>
+</ul>
+<blockquote>
+<p>谜题友好可以通俗地理解为——我很难找到符合要求的hash输入来发布一个区块并获得奖励（需要大量枚举），但是我可以很方便地验证一个新发布区块对应的hash是否是合理的，并以此判定对方是否应该获得奖励。</p>
+</blockquote>
+<p>目前主流使用的哈希函数：<strong>SHA-256</strong>。</p>
+<h2 id="哈希指针"><a href="#哈希指针" class="headerlink" title="哈希指针"></a>哈希指针</h2><p><strong>概念：哈希指针是一种数据结构。</strong><br>简单来说，哈希指针是一个指向数据存储位置及其位置数据的哈希值的指针。一个普通的指针可以告诉你数据存储的位置，哈希指针不但可以告诉你数据存储的位置，并且还可以给你一种方式，让你<strong>验证数据没有被篡改过</strong>。</p>
+<p><strong>常用应用：</strong></p>
+<ul>
+<li><strong>区块链</strong>：在区块链中，每个区块包含了区块头和区块体两部分。区块头包含了一个哈希指针，它指向的是前一个区块的哈希值。这样形成的链式结构确保了区块之间的<strong>顺序性和历史不可篡改性</strong>。<strong>如果有人试图修改某个过去的区块数据，那么该区块的哈希值会变化，并因此导致后续所有区块的哈希值都需要相应改变，因为它们都包含了前一个区块的哈希指针。</strong>这要求攻击者必须重新计算整个链条的哈希值，而这在比特币等具有足够工作量证明机制的区块链中几乎是不可能的。<br><img src="/2024/03/03/Web3/readingNotes/%E5%8C%BA%E5%9D%97%E9%93%BE%EF%BC%9A%E6%8A%80%E6%9C%AF%E9%A9%B1%E5%8A%A8%E9%87%91%E8%9E%8D/%E5%93%88%E5%B8%8C%E6%8C%87%E9%92%88_%E5%8C%BA%E5%9D%97%E9%93%BE.png"></li>
+<li><strong>梅克尔树</strong>：当任意一笔交易数据发生变化时，该交易所在叶子节点的哈希值会变，进而影响到整棵树的根哈希值。由于区块头包含了这一梅克尔根，所以<strong>任何对交易数据的篡改都会立刻反映在区块哈希值的变化</strong>上，从而<strong>保护了整个区块链账本的完整性和一致性</strong>。另外梅克尔树还应用在轻客户端验证等场景中。<br><img src="/2024/03/03/Web3/readingNotes/%E5%8C%BA%E5%9D%97%E9%93%BE%EF%BC%9A%E6%8A%80%E6%9C%AF%E9%A9%B1%E5%8A%A8%E9%87%91%E8%9E%8D/%E5%93%88%E5%B8%8C%E6%8C%87%E9%92%88_%E6%A2%85%E5%85%8B%E5%B0%94%E6%A0%91.png"></li>
+</ul>
+<h1 id="数字签名"><a href="#数字签名" class="headerlink" title="数字签名"></a>数字签名</h1><p>数字签名方案由以下三个算法构成:</p>
+<ol>
+<li>$(sk,pk):&#x3D;generateKeys(keysize)$<br><code>generateKeys</code>方法把<code>keysize</code>作为输入，来产生一对公钥和私钥。私钥<code>sk</code>被安全保存，并用来签名一段消息；公钥<code>pk</code>是人人都可以找到的，拿到它，就可以用来验证你的签名。</li>
+<li>$sig:&#x3D;sign(sk,message)$<br>签名过程是把一段消息和私钥作为一个输入，对于消息输出是签名。</li>
+<li>$isValid:&#x3D;verify(pk,message, sig)$<br>验证过程是通过把一段消息和签名消息与公钥作为输入，如果返回的结果是真，证明签名属实；如果返回的结果为假，证明签名消息为假。</li>
+</ol>
+<p>我们要求以下两个性质有效:</p>
+<ul>
+<li>有效签名可以通过验证，即<br>$$verify(pk,message,sign(sk,message))&#x3D;&#x3D;true$$</li>
+<li>签名不可伪造</li>
+</ul>
+<p>解释：</p>
+<ul>
+<li>发送方（签名者）拥有一个公钥和一个私钥。<strong>公钥任何人都可以知道，私钥则保密不公开。</strong></li>
+<li>当发送方要签署一个文档时，首先使用单向散列函数（如SHA-256）将文档转换成固定长度的<strong>摘要</strong>。</li>
+<li>发送方接着<strong>使用自己的私钥对该摘要进行加密</strong>，生成的密文就是<strong>数字签名</strong>。</li>
+<li>接收方收到原始文档和数字签名后，<strong>使用发送方的公钥来解密签名</strong>，得到摘要A。</li>
+<li>同时，接收方也会计算接收到的文档本身的散列值，得到另一个摘要B。</li>
+<li>如果摘要A与摘要B匹配，则说明文档在传输过程中<strong>未被篡改</strong>，并且确实是<strong>由拥有对应私钥的人签署</strong>的。</li>
+</ul>
+<p>流程：</p>
+<ol>
+<li>对消息生成一个唯一且不变的摘要。</li>
+<li>使用私钥对摘要进行加密形成签名。</li>
+<li>收件人使用公钥解密签名并重新计算消息摘要。</li>
+<li>比较两次计算出的摘要，如果相同，则确认签名有效，消息未被篡改且确信来自于拥有相应私钥的发送方。</li>
+</ol>
+<h1 id="去中心化"><a href="#去中心化" class="headerlink" title="去中心化"></a>去中心化</h1><p><strong>去中心化</strong>：去中心化是一种网络架构或系统<strong>设计原则</strong>，其中权力、功能和数据不在单一的中心点或权威机构手中，而是分散在网络中的各个节点之间。<strong>在去中心化的系统中，每个节点都可以作为网络的一部分参与到数据的处理、存储和验证过程中，而不是依赖单一的中心服务器。</strong>去中心化的目的是为了提高系统的鲁棒性、透明度和防篡改能力，减少单点故障的可能性，并增强用户的数据自主权和隐私保护。</p>
+<p><strong>分布式共识</strong>： 分布式共识则是去中心化系统中用于<strong>保证所有参与节点对于系统状态达成一致同意的关键机制</strong>。在区块链技术中，分布式共识算法确保了<strong>即便在网络中存在不可靠或者恶意的节点，其余的节点依然可以通过特定的规则和算法就交易的有效性、区块的顺序以及其他关键状态达成一致意见。</strong>这种共识机制是去中心化系统能够正常运作并保持数据完整性的基石。</p>
+<p>一个去中心化网络，通常需要借助分布式共识机制来确保网络中所有参与者能基于同样的规则正确地更新和验证系统状态，共同维护一个可靠的、无需信任中介的公共账本。</p>
+<h2 id="分布式共识协议"><a href="#分布式共识协议" class="headerlink" title="分布式共识协议"></a>分布式共识协议</h2><p>在一个<strong>分布式共识协议</strong>中，特别是在面对有潜在故障或恶意节点的环境（比如拜占庭将军问题的场景），有两个核心属性是用来保证系统正确性和安全性的：</p>
+<ul>
+<li><strong>输入值的中止须经所有诚实节点来确定</strong>： 这意味着在分布式系统中的决策过程不是任意节点单方面决定的，即使是有故障或恶意节点试图干扰系统，最终是否接受一个特定的输入值作为共识结果，必须经过所有“诚实”（也称为“正确”或“非拜占庭”）节点的确认或认可。换句话说，<strong>只有当大多数（通常是超过半数）诚实节点达成一致同意的情况下，一个输入值才能被认为是被系统接受了</strong>，并且这个共识过程将在有限时间内结束，即达成可终止性。</li>
+<li><strong>这个输入值必须由诚实节点来生成</strong>： 这条属性指出，最终被选为共识输出的那个输入值，应当来源于系统中诚实节点的提议或计算。在实际的分布式共识算法中，这可能意味着<strong>诚实节点提交的提案将优先被处理，或者通过某种机制确保即使在恶意节点的存在下，最终被采纳的也是诚实节点提供的有效信息</strong>。这样设计的目的在于防止恶意节点通过伪造信息影响系统共识结果的真实性。</li>
+</ul>
+<p>这两个属性结合在一起，旨在构建一个即使在部分节点出现故障或有意作恶情况下，仍能确保所有诚实节点对某一特定状态达成一致的分布式系统。这样的系统能够在各种不利条件下保持稳定运行，并确保其记录的数据或状态更新是可靠和安全的。在区块链技术中，这类分布式共识协议尤为重要，例如PoW（工作量证明）、PoS（权益证明）以及BFT（拜占庭容错）类算法都是用来实现这一目标的不同方式。</p>
+<h2 id="比特币共识算法"><a href="#比特币共识算法" class="headerlink" title="比特币共识算法"></a>比特币共识算法</h2><p>这个算法的简化假设是，可以随意选择一个节点，这些节点都不会受到女巫攻击的影响。</p>
+<blockquote>
+<p>女巫攻击（Sybil Attack）是一种在网络环境中，特别是点对点（P2P）网络和区块链系统中常见的安全威胁。这种攻击方式是指攻击者通过创建并控制多个虚假的身份、账号或节点，假装成多个独立的网络参与者，以期获得对该网络的不当影响力和控制权。在实际中，女巫攻击等安全问题会通过经济成本（如挖矿成本）和其他网络层的防御措施得以缓解。</p>
+</blockquote>
+<p>实际版：</p>
+<ol>
+<li><strong>交易传播</strong>：每当有新的比特币交易产生时，这笔交易会被立即广播给比特币网络中的所有节点。这些节点相当于网络中的各个参与者，负责接收、验证和传递交易信息。</li>
+<li><strong>交易打包</strong>：每个节点在接收到新的交易后，会将这些交易放入一个新的区块中等待验证和确认。一个区块内包含了多笔交易记录。</li>
+<li><strong>区块提议</strong>：在比特币的实际共识机制——工作量证明（Proof of Work，PoW）中，节点通过竞争的方式尝试解决一个复杂的数学难题来争取新区块的生成权。这里的简化版本假设每个回合有一个随机节点（实际上是在PoW中通过计算能力竞争获胜的节点）有权提出一个新区块。</li>
+<li><strong>区块验证</strong>：当某个节点广播它所提议的新区块时，网络中的其他节点会对区块内的所有交易进行合法性检查，包括但不限于检查交易是否有正确的数字签名、交易资金来源是否有效、交易金额是否足够等等。只有当区块中的所有交易都被认为是正当合法的，其他节点才会接受这个新区块。</li>
+<li><strong>链接区块与共识</strong>：一旦节点确认新区块合法，它们会将此区块的哈希值加入到自己即将创建的新区块的前一块哈希列表中，形成了区块链的链式结构。这意味着节点通过对新区块的引用（即在其后的区块中包含前一块的哈希值）表达对之前区块内容的认可和接受。</li>
+</ol>
+<p>简化版：</p>
+<ol>
+<li>新的交易被广播到所有节点上。</li>
+<li>每个节点都将新的交易放进一个区块。</li>
+<li>在每个回合，一个随机的节点可以广播它的区块。</li>
+<li>其他节点可以选择接受这个区块，前提是如果区块里的交易都是正当的（有真的签名）。</li>
+<li>节点们可以把以上区块的哈希值放进自己的区块里，以此来表示它们对那个新区块的认可。<blockquote>
+<p>简化版描述忽略了比特币实际采用的工作量证明（PoW）中“挖矿”的竞争过程。</p>
+</blockquote>
+</li>
+</ol>
+<h1 id="奖励机制与工作量证明"><a href="#奖励机制与工作量证明" class="headerlink" title="奖励机制与工作量证明"></a>奖励机制与工作量证明</h1><h2 id="奖励机制"><a href="#奖励机制" class="headerlink" title="奖励机制"></a>奖励机制</h2><p>比特币的奖励机制是鼓励矿工积极参与网络安全维护和交易验证的关键部分。每当一个矿工成功解决了一个区块的工作量证明难题，并且网络中的其他节点验证了该区块的有效性后，该矿工便可以将新区块链接到区块链上，并获取以下两个类型的奖励：</p>
+<ul>
+<li><strong>区块奖励</strong>：最初4年每个区块50个比特币，每4年减半（210000个区块）。</li>
+<li><strong>交易费</strong>：交易输出值小于输入值，差值作为交易费给予区块创造者。</li>
+</ul>
+<p>只要挖矿奖励&gt;挖矿成本，矿工就能赚钱。<br>挖矿奖励&#x3D;区块奖励+交易费<br>挖矿成本&#x3D;硬件成本+运营成本</p>
+<h2 id="工作量证明"><a href="#工作量证明" class="headerlink" title="工作量证明"></a>工作量证明</h2><p>在比特币网络中，工作量证明是一种共识机制，用于决定谁有权将新的区块添加到区块链上，并因此获得新区块产生的新币奖励以及交易费。PoW要求网络中的参与者（通常称为矿工）使用特殊的硬件设备执行复杂数学运算，即散列运算，以寻找满足特定条件的随机数（Nonce）。这个条件表现为找到一个Nonce使得区块头的哈希值小于或等于某个目标值，这个过程也被称为“挖矿”。</p>
+<p>矿工们不断地尝试不同的Nonce，竞争成为第一个解决这一难题的人。由于哈希函数的性质——单向不可预测和难以逆推，唯一有效的方法是通过暴力尝试来找到正确的Nonce。这意味着较大的计算力意味着更高的概率能够快速找到正确答案。对于某个特定的矿工，发现下一区块的平均时间&#x3D;10分钟&#x2F;占全部计算能力的比例。</p>
+<p>哈希函数解密的特点：</p>
+<ul>
+<li><strong>难于计算</strong>：有一定难度，计算量超大</li>
+<li><strong>可参数化成本：难度可调整</strong>，保证区块产生时间间隔为10分钟左右，每2016个区块调整一次</li>
+<li><strong>易于证明</strong>：计算结果易于检验</li>
+</ul>
+<h2 id="良性循环"><a href="#良性循环" class="headerlink" title="良性循环"></a>良性循环</h2><p>另一个微妙的概念是<strong>自举过程（bootstrapping）</strong>。<br>比特币系统里三个不同的想法——区块链的安全性、挖矿生态系统的健康程度，以及货币的价值在相互作用。<br>我们显然希望区块链安全，这样比特币才能成为一种可行的货币。想要区块链安全，就要保证黑客不能倾覆共识过程。这反过来意味着，一个黑客不能够制造一大堆挖矿节点来占据50%以上的新区块生成。<br>但如何实现这一点呢？前提条件是有一个健康的挖矿生态系统，其中大部分节点是诚实的、遵守协议的。但健康的挖矿生态系统的前提条件又是什么呢——我们什么时候可以保证大多数矿工会把大多数计算能力运用到解哈希谜题的竞争中呢？好吧，只有在比特币价位高时他们才会这么做，因为他们收到的奖励是比特币而他们的花费都是美元。所以币的价值越高，矿工就越有动力这么做。<br>那如何保障币的价值又高又稳定呢？只有用户普遍相信区块链的安全性才会发生。如果他们认为网络随时会被攻击者颠覆，那比特币作为货币将一文不值。所以你可以看到区块链的安全性、挖矿生态系统的健康程度和货币的价值这三者之间相互依赖、相互作用的关系。</p>
+<p><img src="/2024/03/03/Web3/readingNotes/%E5%8C%BA%E5%9D%97%E9%93%BE%EF%BC%9A%E6%8A%80%E6%9C%AF%E9%A9%B1%E5%8A%A8%E9%87%91%E8%9E%8D/%E8%89%AF%E6%80%A7%E5%BE%AA%E7%8E%AF.png"></p>
+<p>因为这三者之间的循环依赖关系，其中一个的存在可以用另一个的存在推测出来。在比特币初创之时，这三者都不存在。除了中本聪自己，没有人在运行挖矿软件。比特币作为货币没有什么价值。事实上，因为没有很多人挖矿区块链也很不安全，任何人都可以轻易颠覆这个过程。</p>
+<h1 id="交易"><a href="#交易" class="headerlink" title="交易"></a>交易</h1><p>在比特币中，一笔<strong>交易（Transaction）</strong>代表了一次价值转移的行为，即将一定数量的比特币从一个或多个地址转移到另一个或多个地址的过程。<strong>比特币交易是在去中心化的比特币网络中被创建、验证并最终记录在区块链上的数据结构单元。</strong></p>
+<h2 id="交易程序段"><a href="#交易程序段" class="headerlink" title="交易程序段"></a>交易程序段</h2><p><img src="/2024/03/03/Web3/readingNotes/%E5%8C%BA%E5%9D%97%E9%93%BE%EF%BC%9A%E6%8A%80%E6%9C%AF%E9%A9%B1%E5%8A%A8%E9%87%91%E8%9E%8D/%E4%BA%A4%E6%98%93%E7%A8%8B%E5%BA%8F%E6%AE%B5.jpg"></p>
+<ul>
+<li><strong>元数据</strong>：存放一些内部处理的信息——交易的规模、输入的数量、输出的数量，还有此笔交易的哈希值，也就是这个交易独一无二的ID。我们可以用哈希指针指向这个ID。最后还有一个**锁定时间(lock_time)**（定义了交易最早可以被加入区块链的时间或区块高度，它可以防止交易过早被确认。）。</li>
+<li><strong>输入</strong>：所有输入排成一个序列，每个输入的格式都是一样的。输入需要明确说明之前一笔交易的某个输出，因此它包括之前那笔交易的哈希值，使其成为指向那个特定交易的哈希指针。这个输入部分同时包括之前交易输出的索引和一个签名:我们必须有签名来证明我们有资格去支配这笔比特币。</li>
+<li><strong>输出</strong>：所有输出也排成一个序列。每个输出的内容分成两部分。所有输出的金额之和必须小于或等于输入的金额之和。当输出的总金额小于输入总金额时，输出的总金额与输人的总金额的差额部分，就作为交易费支付给为这笔交易记账的矿工。</li>
+</ul>
+<h2 id="交易过程"><a href="#交易过程" class="headerlink" title="交易过程"></a>交易过程</h2><ul>
+<li><strong>交易广播</strong>：当一个用户发起一笔比特币交易时，该交易会被广播到整个比特币网络。</li>
+<li><strong>交易验证</strong>：<ul>
+<li><strong>格式验证</strong>：每个节点接收到交易后，首先会检查交易数据结构的完整性，包括交易版本、输入数量和输出数量、交易金额是否为正数、交易签名是否存在且有效等。</li>
+<li><strong>UTXO验证</strong>：然后，节点会查询本地的未花费交易输出（UTXO）数据库，验证交易的输入是否来自于有效的、未被花费过的交易输出，并确认交易发出者有足够的余额进行支付。</li>
+<li><strong>脚本验证</strong>：比特币使用一种基于堆栈的非图灵完备脚本语言，对交易输入所引用的UTXO上的解锁脚本（ScriptSig）和UTXO本身锁定脚本（ScriptPubKey）进行执行，只有当脚本执行结果为真时，才能证明交易发起者有权花费这笔UTXO。</li>
+</ul>
+</li>
+<li><strong>区块构建与挖矿</strong>：验证成功的交易将被节点打包进新的区块中，尝试通过工作量证明机制（Proof of Work）解决一个复杂的数学难题，成功解题的矿工将新区块链接到区块链上。</li>
+<li><strong>区块链同步与确认</strong>：其他节点在接收到新区块后，会对区块中的所有交易再次进行上述验证，验证通过后将新区块添加至本地的区块链副本中，从而实现全网交易的一致性确认。</li>
+</ul>
+<h2 id="交易脚步验证过程中的堆栈状态"><a href="#交易脚步验证过程中的堆栈状态" class="headerlink" title="交易脚步验证过程中的堆栈状态"></a>交易脚步验证过程中的堆栈状态</h2><p>比特币交易的脚本验证过程涉及两个关键部分：<code>scriptSig</code> 和 <code>scriptPubKey</code>：</p>
+<ul>
+<li><strong>scriptSig (交易输入脚本)<strong>：scriptSig 是存储在比特币交易的输入部分的数据结构，它主要用于</strong>解锁之前交易的输出（即UTXO，Unspent Transaction Output）</strong>。当一个用户想要花费一个UTXO时，必须提供足够的证据来证明自己对该UTXO有合法的使用权。这种证据通常就是一个数字签名（由私钥生成），以及与之相关的公钥或其他数据。在比特币交易中，scriptSig 包含了解锁UTXO所需的信息，比如在最常见的一种交易类型P2PKH中，scriptSig包含的是交易发起者的数字签名和其对应的公钥。</li>
+<li><strong>scriptPubKey (交易输出脚本&#x2F;锁定脚本)</strong>:scriptPubKey 存储在比特币交易的输出部分，它定义了<strong>如何花费这个输出，或者说定义了谁有权利花费这个输出</strong>。每个UTXO都有一个与其关联的scriptPubKey，只有当提供的scriptSig能成功执行并通过scriptPubKey设定的条件时，这笔UTXO才能被花费。同样以P2PKH为例，scriptPubKey通常包含一个OP_DUP、OP_HASH160、公钥哈希和OP_EQUALVERIFY、OP_CHECKSIG等一串操作码，以及一个公钥哈希值。这意味着只有提供与该哈希值相对应的公钥及其正确签名的人才能解锁并花费这笔资金。<blockquote>
+<p><strong>UTXO</strong>：Unspent Transaction Output，在比特币和其他采用UTXO模型的加密货币系统中扮演着核心角色。UTXO是一种会计模式，用于跟踪和管理数字货币的所有权和价值转移。<br>在一个基于UTXO的系统中：<br>每一笔交易都有输出（outputs），这些输出包含了特定数量的数字货币，并且与一组规则（scriptPubKey）相关联，规定了谁能花费这些数字货币。<br>当用户发起一笔新的交易时，需要引用过去未被花费的交易输出作为新交易的输入（inputs）。这些未花费的交易输出就是UTXOs。<br>在花费UTXO时，发送方必须提供匹配的证明（scriptSig）来解锁UTXO，从而将其转移到新的所有者。<br>交易完成后，原始的UTXO会被标记为已花费，同时创建出新的UTXO给接收方。这样，数字货币的流动就像一系列的硬币从一个人转移到另一个人，每笔交易都会更新整个网络上的UTXO集合。<br>通过这种方式，UTXO模型确保了交易历史的透明性和安全性，并且能够防止双花问题的发生。整个比特币账本可以看作是UTXO的全局数据库，记录着所有现存、可花费的UTXO的状态。</p>
+</blockquote>
+</li>
+</ul>
+<p>在比特币交易中，每个输入包含两个内容：一个来自<strong>输出（scriptPubKey）</strong>，另一个是交易的<strong>签名（scriptSig）</strong>。当验证一个输入时，这两个脚本被组合在一起，并按照从左到右的顺序执行<strong>操作码（OP_CODEs）</strong>。</p>
+<figure class="highlight vbnet"><table><tr><td class="code"><pre><code class="hljs vbnet"><span class="hljs-symbol">scriptSig:</span> [signature] [<span class="hljs-keyword">public</span> <span class="hljs-keyword">key</span>]<br><span class="hljs-symbol">scriptPubKey:</span> OP_DUP OP_HASH160 [pubkey hash] OP_EQUALVERIFY OP_CHECKSIG<br><br>执行过程：<br><span class="hljs-number">1</span>. 先执行scriptSig的内容，[signature] 和 [<span class="hljs-keyword">public</span> <span class="hljs-keyword">key</span>] 分别压入堆栈。<br><span class="hljs-number">2</span>. 然后执行scriptPubKey，按顺序执行各个操作码：<br>   a. OP_DUP：复制堆栈顶的<span class="hljs-keyword">public</span> <span class="hljs-keyword">key</span>，堆栈变为 [signature, <span class="hljs-keyword">public</span> <span class="hljs-keyword">key</span>, <span class="hljs-keyword">public</span> <span class="hljs-keyword">key</span>]。<br>   b. OP_HASH160：计算<span class="hljs-keyword">public</span> <span class="hljs-keyword">key</span>的hash160值并压入堆栈，堆栈变为 [signature, <span class="hljs-keyword">public</span> <span class="hljs-keyword">key</span>, pubkey_hash160]。<br>   c. [pubkey hash] 由scriptPubKey推入堆栈，堆栈变为 [signature, <span class="hljs-keyword">public</span> <span class="hljs-keyword">key</span>, pubkey_hash160, pubkey_hash160_from_scriptPubKey]。<br>   d. OP_EQUALVERIFY：比较两个连续的pubkey_hash160是否相等，若相等则删除这两个项，堆栈变为 [signature]。<br>   e. OP_CHECKSIG：验证signature是否对应于<span class="hljs-keyword">public</span> <span class="hljs-keyword">key</span>对交易的有效签名，如果签名有效，堆栈剩下真值，否则脚本执行失败。<br><br>如果到最后堆栈中只剩下了真值（或空堆栈，取决于具体的脚本约定），则交易被认为通过了脚本验证。<br></code></pre></td></tr></table></figure>
+<p><img src="/2024/03/03/Web3/readingNotes/%E5%8C%BA%E5%9D%97%E9%93%BE%EF%BC%9A%E6%8A%80%E6%9C%AF%E9%A9%B1%E5%8A%A8%E9%87%91%E8%9E%8D/%E5%A0%86%E6%A0%88%E7%8A%B6%E6%80%81.jpg"></p>
+<h2 id="MULTISIG（多重签名）"><a href="#MULTISIG（多重签名）" class="headerlink" title="MULTISIG（多重签名）"></a>MULTISIG（多重签名）</h2><p>比特币的<strong>多重签名（Multisig）</strong>是指一种安全机制，它允许一个比特币交易在获得预先设定的多个密钥持有人的签名之后才能被确认和执行。多重签名技术增强了交易的安全性和资金管理灵活性，因为它要求多个独立实体共同授权才能动用资金。</p>
+<p>在比特币的多重签名方案中，可以设置一个M-of-N的条件，这里的N代表参与交易的总签名数，而M则代表至少需要多少个签名使得交易生效。例如，2-of-3多重签名意味着三个不同的密钥持有者中有任意两个的签名就足以批准交易。</p>
+<p>实施多重签名的具体流程包括：</p>
+<ol>
+<li>创建多重签名地址：首先，多个密钥持有者共同协商并创建一个多重签名地址。这个地址不是普通的公钥哈希地址，而是与一个特殊的锁定脚本（scriptPubKey）关联，该脚本描述了多重签名的规则（例如，“需要2个签名才能花费”）。</li>
+<li>设置交易条件：当资金存入到这个多重签名地址时，实际上是以满足多重签名规则的形式锁定这些资金。</li>
+<li>提取资金：当要从这个地址支出资金时，交易的输入部分（scriptSig）除了包含常规的解锁信息外，还需要附加足够数量的有效签名（达到M的数量），这些签名分别对应于N个密钥持有者中的部分或全部。</li>
+<li>验证交易：网络中的每个节点在验证交易时，会检查交易输入中的多重签名数据是否符合该地址对应的多重签名条件，只有当验证通过后，这笔交易才会被接受并最终打包进区块确认。</li>
+</ol>
+<blockquote>
+<p>比如：爱丽丝使用多重签名给鲍勃付款。爱丽丝并不直接付款给鲍勃，而是发起一个多重签名的交易，并规定：三个人中有两人签名之后，资金才能被支取。这三个人是爱丽丝、鲍勃与第三方仲裁员朱迪。朱迪负责调解可能发生的纠纷。因此，爱丽丝发起了一个2&#x2F;3的多重签名交易来付款，这个交易规定三个人中有两人签名之后，资金才能被支取这个交易被纳入区块链后，资金被第三方监管，这三个人中的任意两个人可以决定资金的去向。现在，鲍勃觉得可以给爱丽丝发货了，通常情况下，如果爱丽丝和鲍勃都是有诚信的，鲍勃会按照爱丽丝要求发货，爱丽丝收货之后和鲍勃共同签名，把资金转给鲍勃。由于三个人中有两人签名即可完成支付，此时由于没有任何争议，朱迪根本不需要参与；然而，如果出现纠纷，朱迪可以作为调解人，并根据实际情况加入进来，与爱丽丝或鲍勃之一共同签名以解决问题。和爱丽丝直接付款给鲍勃相比，第三方支付交易并不会更复杂，都只需在区块链里增加一笔交易即可。</p>
+</blockquote>
+<p>多重签名在实践中可以应用于多种场景，比如增加冷钱包的安全性（需要多人协作解锁）、提升企业内部财务管理的权限控制，或是增强联合投资账户的资金保护等。</p>
+<h2 id="高效小额支付"><a href="#高效小额支付" class="headerlink" title="高效小额支付"></a>高效小额支付</h2><p>支付通道（Payment Channels）是一种在区块链之外进行交易的方法，它允许参与者在没有直接将每笔交易写入区块链的情况下进行多次交易。支付通道的目的是提高交易速度、降低交易成本，并减轻区块链网络的负担。<br>举例：<br>我们希望可以把每分钟的费用累积起来，最后一次性支付。为了实现这种想法，爱丽丝先发起一个MULTISIG交易，把可能花费的最大金额转到MULTISIG地址，但这个交易需要爱丽丝与鲍勃两个人的签名才能生效。爱丽丝在使用流量的时候，每隔一分钟就签名一次，向鲍勃支付这分钟所产生的流量费用，然后把剩余的钱转给自己，每分钟重复一次，直到挂机为止。请注意，这些交易只有爱丽丝的签名，还没有鲍勃的签名，因此，交易还没被放进区块链里。爱丽丝挂机之后，会告诉鲍勃“我用好了，你可以切断我的服务了”，此时，爱丽丝将不再支付费用，鲍勃也将切断服务，然后在爱丽丝发送的最后一个交易里签名，把它放入区块链里。<br>随着每个交易付给鲍勃的币越来越多，爱丽丝的币就会越来越少。最后一个交易会一次性向鲍勃支付所有的流量费，然后把剩余的币还给爱丽丝。整个过程中，爱丽丝单独签名的交易不会进入区块链(上面没有鲍勃的签名)，最后它们都会被丢弃掉。</p>
+<h2 id="币基交易"><a href="#币基交易" class="headerlink" title="币基交易"></a>币基交易</h2><p>每个区块的梅克尔树上都有一个有意思的交易，叫作币基交易。这类似于财奴币里的造币交易。这个交易创造新的比特币，它看上去像是个普通的交易，但有几点不同:</p>
+<ol>
+<li>它永远只有一个单一的输入与单一的输出。</li>
+<li>这个交易并不消费之前交易输出的比特币，因此，没有指针指向“上一交易”</li>
+<li>这个输出值目前大约是25个币多一点点。这个输出值就是矿工的挖矿收它由两部分组成：一部分是奖励的25个比特币（奖励在每生产210000个区块（大概4年）后减半），另一部分是所有交易的交易手续费。</li>
+<li>还有一个特别的地方就是“币基”参数，矿工可以放任何值进去。</li>
+</ol>
+<h1 id="网络"><a href="#网络" class="headerlink" title="网络"></a>网络</h1><h2 id="1-新节点加入："><a href="#1-新节点加入：" class="headerlink" title="1. 新节点加入："></a>1. 新节点加入：</h2><p>启动一个新节点，向一个已知的节点发送消息，查询是否有其他节点，重复此过程多次，选择与哪些节点相连，加入完成。</p>
+<h2 id="2-接受新交易信息："><a href="#2-接受新交易信息：" class="headerlink" title="2. 接受新交易信息："></a>2. 接受新交易信息：</h2><p>节点接受到交易信息后将其加入到交易池，并传播到与其相连的节点，若交易池中已存在此交易，则停止传播，确保泛洪协议的自动停止。<br>（注：每个交易唯一的哈希值，所以查询是否存在效率较高）</p>
+<h2 id="3-核验新交易信息："><a href="#3-核验新交易信息：" class="headerlink" title="3. 核验新交易信息："></a>3. 核验新交易信息：</h2><ul>
+<li>检验交易有效，确保脚本返回值为真</li>
+<li>检查是否存在双重交易</li>
+<li>检验交易信息是否已经存在</li>
+<li>接受交易的脚本必须为白名单上的脚本<br>（注：竞态条件：又称紊乱情况，指双重支付中哪个交易被存入区块链，会由下一个创建区块的节点强制决定）</li>
+</ul>
+<h2 id="4-传播区块"><a href="#4-传播区块" class="headerlink" title="4. 传播区块"></a>4. 传播区块</h2><p>核验一个区块要比核验一个交易复杂得多。除了确认区块头部，确定里点还必须确认区块里的每个交易。最面的哈希值是在可以接受的范围内，节后，一个节点往外传播的区块必须是最长的一条区块链上新加人的区块（“最长的区块链”取决于节点对区块链当前状态的认识）。只有这样才可一样，节点同样可以执行它自己的逻以防止区块链分叉。但就像传播交易时以选择传递在共识链上更早加入的区辑：它可以选择传递无效的区块，也可成一个分叉，不过这种情况是协议可以承受的。<br>（注：竞态条件：两个有效区块同时被挖到，哪个区块被纳入长期共识链取决于其他节点选择在哪个节点上扩展区块链）</p>
+<h2 id="轻量节点："><a href="#轻量节点：" class="headerlink" title="轻量节点："></a>轻量节点：</h2><p>也称简单付款验证客户端，或SPV节点。SPV节点只会验证和他们相关的交易信息，只存储他们关心、需要核验的部分交易；SPV节点的区块头部大小只有区块链的千分之一，只有几十MB。</p>
+<h1 id="限制与优化"><a href="#限制与优化" class="headerlink" title="限制与优化"></a>限制与优化</h1><h2 id="比特币的限制"><a href="#比特币的限制" class="headerlink" title="比特币的限制"></a>比特币的限制</h2><p>限制：</p>
+<ul>
+<li>每秒处理交易数只有7</li>
+<li>未来比特币使用的密码算法可能被破解</li>
+</ul>
+<h2 id="如何优化比特币协议"><a href="#如何优化比特币协议" class="headerlink" title="如何优化比特币协议"></a>如何优化比特币协议</h2><ul>
+<li>硬分叉：引入新的特性，使前一版本的协议失效，会使老节点认定最长的区块链分支是无效的，认为其他分支才是最长有效的，这会使原有的链分叉，老节点会永远排除在另一条链中。</li>
+<li>软分叉：引入新的特性，使现有的核验规则更严格，老节点依旧会接受所有区块，但老节点创建的一些区块被认为是无效的，这会促使老节点更新协议。</li>
+</ul>
+<h1 id="挖矿"><a href="#挖矿" class="headerlink" title="挖矿"></a>挖矿</h1><h2 id="挖矿的步骤"><a href="#挖矿的步骤" class="headerlink" title="挖矿的步骤"></a>挖矿的步骤</h2><ul>
+<li>监听交易广播</li>
+<li>监听区块链，即同步其他节点的区块链历史记录，并监听、检验广播到网络中的新区块，</li>
+<li>组装备选区块，即将监听到的合法的交易组合放入到新区块中备用</li>
+<li>找到使备选区块合法的有效随机数</li>
+<li>希望自己的区块被全网接受，因为有可能出现竞态条件</li>
+<li>获得利润</li>
+</ul>
+<h2 id="如何寻找有效区块"><a href="#如何寻找有效区块" class="headerlink" title="如何寻找有效区块"></a>如何寻找有效区块</h2><p><img src="/2024/03/03/Web3/readingNotes/%E5%8C%BA%E5%9D%97%E9%93%BE%EF%BC%9A%E6%8A%80%E6%9C%AF%E9%A9%B1%E5%8A%A8%E9%87%91%E8%9E%8D/%E5%AF%BB%E6%89%BE%E6%9C%89%E6%95%88%E5%8C%BA%E5%9D%97.jpg"></p>
+<p>一个区块内，可变内容为头部随机数（nonce）和币基随机数（币基交易中可放入任何值），但由于币基随机数变动后计算量更大（需要额外计算梅克尔树），所以优先变动头部随机数。</p>
+]]></content>
+      <categories>
+        <category>Web3</category>
+        <category>区块链</category>
+        <category>阅读摘录</category>
+      </categories>
+      <tags>
+        <tag>区块链</tag>
+        <tag>哈希</tag>
+        <tag>去中心化</tag>
+        <tag>分布式共识</tag>
+        <tag>比特币</tag>
+        <tag>工作量证明</tag>
+        <tag>零币</tag>
+        <tag>虚拟挖矿</tag>
       </tags>
   </entry>
   <entry>
@@ -1048,9 +975,82 @@ newProxyInstance方法的三个参数：</li>
         <category>消息队列</category>
       </categories>
       <tags>
-        <tag>消息队列</tag>
         <tag>RocketMQ</tag>
+        <tag>消息队列</tag>
         <tag>Springboot</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>消息队列：认识篇</title>
+    <url>/2024/03/13/backend/middleware/messagequeue/mq-introducte/</url>
+    <content><![CDATA[<h1 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h1><p>消息队列，顾名思义，存放消息（可类比为请求）的队列（一种先进先出的数据结构）。<br>其是一种常用于分布式系统的中间件，可以在不同的应用程序、服务或系统之间传递消息，并且常用于解耦合不同部分的系统，使得系统更加可扩展和灵活。<br><strong>基本原理：发送者将消息放入队列，接收者从队列中获取消息并处理。</strong><br>消息队列实质是一种方式，一种<strong>在不同组件之间传递消息的通信方式</strong>。发送者和接收者之间不需要直接通信，它们只需了解如何发送和接收消息即可。</p>
+<h1 id="作用与优点"><a href="#作用与优点" class="headerlink" title="作用与优点"></a>作用与优点</h1><p>由上述内容，可推断出消息队列的一些作用：</p>
+<ul>
+<li><strong>解耦</strong>：发送者和接收者只需要关心发送消息和接受消息，不用关心彼此。</li>
+<li><strong>异步</strong>：发送者不关心消息的处理，即不用等待消息的响应，故支持异步。</li>
+<li><strong>削锋</strong>：某些活动的流量过大、请求过多，可能导致系统宕机；消息队列可以作为缓冲区，将这些请求暂时存储起来，以避免瞬时高流量，然后按照系统处理能力逐步消费，实现流量的平滑处理，从而降低系统的压力，避免宕机。<br>以及其身为分布式系统的固有优点：</li>
+<li><strong>可扩展性</strong>：在解耦后，可方便地单独对发送者或接收者或消息队列进行动态伸缩。</li>
+<li><strong>可靠性</strong>：由于消息队列允许多个消费者和生产者，并且通常支持消息持久化和复制，因此即使其中一个组件出现故障，系统仍然可以继续运行并且消息也不会丢失。</li>
+</ul>
+<h1 id="适用场景"><a href="#适用场景" class="headerlink" title="适用场景"></a>适用场景</h1><p>（此处仅介绍一些常见场景）</p>
+<h2 id="异步场景举例：用户注册"><a href="#异步场景举例：用户注册" class="headerlink" title="异步场景举例：用户注册"></a>异步场景举例：用户注册</h2><h3 id="需求"><a href="#需求" class="headerlink" title="需求"></a>需求</h3><p>用户注册后需向其发送注册邮件和注册短信。</p>
+<h3 id="设计"><a href="#设计" class="headerlink" title="设计"></a>设计</h3><p>用户注册后，将注册信息写入数据库；发送注册邮件；发送短信。<br>如不使用消息队列，不进行异步解耦，即注册服务器需要同步远程调用写入数据库、发送注册邮件、发送短信的三个函数，将与其他应用发生多次交互，同时还得等待响应，假设一个操作需要0.5s，则该操作会占用注册服务器一个线程的1.5s。<br>使用消息队列后，注册服务器直接向消息队列中写入三个消息（数据库写入消息、邮件发送消息、短信发送消息），并且是异步发送不用等待返回，假设一次发送消息为0.1s，也仅需0.3s。</p>
+<h2 id="解耦场景举例：订单-库存管理"><a href="#解耦场景举例：订单-库存管理" class="headerlink" title="解耦场景举例：订单-库存管理"></a>解耦场景举例：订单-库存管理</h2><h3 id="需求-1"><a href="#需求-1" class="headerlink" title="需求"></a>需求</h3><p>用户下订单后，库存系统需要减少相对数量。</p>
+<h3 id="设计-1"><a href="#设计-1" class="headerlink" title="设计"></a>设计</h3><p>用户下单后，订单系统需要通知库存系统。</p>
+<h3 id="详细设计"><a href="#详细设计" class="headerlink" title="详细设计"></a>详细设计</h3><ul>
+<li>原设计：订单系统调用库存系统的接口。<ul>
+<li>存在缺陷：假如库存系统无法访问，则订单减库存将失败，从而导致订单失败；订单系统依赖库存系统接口，存在耦合。</li>
+</ul>
+</li>
+<li>使用消息队列改进：订单系统发送订单消息（用户下单后，订单系统完成持久化处理，将消息写入消息队列，返回用户订单下单成功），库存系统读取订单消息并自行处理（订阅订单消息，采用拉&#x2F;推的方式，获取下单信息，库存系统根据下单信息，进行库存操作）。<ul>
+<li>解决缺陷：假如库存系统无法访问，订单系统仅需要发送消息，可保持运转；订单消息仅发送消息，消息解读由库存系统进行（发布-订阅或消息队列模式），降低耦合度。</li>
+</ul>
+</li>
+</ul>
+<h2 id="削锋场景举例：秒杀活动"><a href="#削锋场景举例：秒杀活动" class="headerlink" title="削锋场景举例：秒杀活动"></a>削锋场景举例：秒杀活动</h2><h3 id="需求-2"><a href="#需求-2" class="headerlink" title="需求"></a>需求</h3><p>在秒杀活动中，大量用户同时抢购商品，可能会导致系统压力激增。为了应对这一情况，需要一种机制来平稳处理激增的请求流量，避免系统崩溃或性能下降。</p>
+<h3 id="设计-2"><a href="#设计-2" class="headerlink" title="设计"></a>设计</h3><p>传统的处理方式可能会导致系统崩溃或性能下降。为了解决这个问题，可以使用消息队列来削峰填谷。</p>
+<h3 id="详细设计-1"><a href="#详细设计-1" class="headerlink" title="详细设计"></a>详细设计</h3><ol>
+<li>秒杀活动开始：当秒杀活动开始时，用户可以提交秒杀请求。</li>
+<li>请求入队：订单系统接收到用户的秒杀请求后，将请求消息写入消息队列，而不是立即处理。</li>
+<li>消息处理：秒杀请求消息被消息队列按照一定的规则（如先进先出）分发给后端处理程序。</li>
+<li>后端处理：后端处理程序逐条处理消息，检查库存并进行相应的处理（如减少库存、生成<br>订单等）。</li>
+</ol>
+<p>以此消息队列可平滑处理激增的请求流量，避免系统因突发流量而崩溃。</p>
+<h2 id="日志处理场景"><a href="#日志处理场景" class="headerlink" title="日志处理场景"></a>日志处理场景</h2><h3 id="需求-3"><a href="#需求-3" class="headerlink" title="需求"></a>需求</h3><p>需要一种解决大量日志传输和实时处理的方案，以便对日志数据进行分析和可视化展示。</p>
+<h3 id="设计-3"><a href="#设计-3" class="headerlink" title="设计"></a>设计</h3><p>设计一个分布式日志处理系统，包括以下组件：</p>
+<ol>
+<li>日志采集客户端：负责从各个日志源采集日志数据，并将数据定期写入消息队列中。</li>
+<li>消息队列：接收来自日志采集客户端的日志数据，负责数据的存储和转发。</li>
+<li>日志处理应用：订阅并消费Kafka队列中的日志数据，进行实时处理和分析。</li>
+<li>Logstash：作为日志处理应用的一部分，负责对原始日志进行解析和转换，统一输出为JSON格式的数据。</li>
+<li>Elasticsearch：作为日志处理应用的核心数据存储服务，接收Logstash处理后的JSON格式日志数据，实现实时的数据索引和查询。</li>
+<li>Kibana：基于Elasticsearch 的数据可视化组件，用于将Elasticsearch中的数据进行可视化展示和分析。</li>
+</ol>
+<h2 id="消息通讯场景"><a href="#消息通讯场景" class="headerlink" title="消息通讯场景"></a>消息通讯场景</h2><h3 id="需求-4"><a href="#需求-4" class="headerlink" title="需求"></a>需求</h3><p>需要一种高效的消息通讯机制，可以用于点对点通讯或者创建聊天室等场景，以实现实时的消息传递和交流。</p>
+<h3 id="设计-4"><a href="#设计-4" class="headerlink" title="设计"></a>设计</h3><p>设计一个基于消息队列的消息通讯系统，包括以下两种场景：</p>
+<ol>
+<li>点对点通讯：客户端A和客户端B使用同一队列进行消息通讯；消息队列负责接收和转发客户端A和客户端B的消息。</li>
+<li>客户端A、客户端B等多个客户端订阅同一主题：当有客户端发布消息时，消息队列将消息广播给所有订阅了该主题的客户端，客户端收到消息后进行展示。</li>
+</ol>
+<h1 id="常用消息队列框架"><a href="#常用消息队列框架" class="headerlink" title="常用消息队列框架"></a>常用消息队列框架</h1><ol>
+<li><strong>RabbitMQ</strong>：RabbitMQ 是一个开源的消息队列系统，实现了高级消息队列协议（AMQP），它是一个可靠、高可用、可扩展的消息代理。RabbitMQ提供了多种消息传递模式，如点对点、发布&#x2F;订阅等，适用于各种场景的应用程序。</li>
+<li><strong>RocketMQ</strong>：RocketMQ 是阿里巴巴开源的分布式消息队列系统，具有高吞吐量、低延迟、高可用性等特点。它支持丰富的消息模型，包括顺序消息、事务消息等，适用于大规模分布式系统的消息通信。</li>
+<li><strong>Kafka</strong>：Kafka是由Apache软件基金会开发的分布式流处理平台和消息队列系统。Kafka设计用于支持大规模的消息处理，具有高吞吐量、持久性、分区等特点，广泛应用于大数据领域。</li>
+<li><strong>ActiveMQ</strong>：ActiveMQ 是一个开源的消息中间件，实现了JavaMessageService(JMS)规范。它支持多种传输协议，如TCP、UDP、SSL等，提供了丰富的功能，包括消息持久化、事务支持等。</li>
+<li><strong>Amazon SQS</strong>：AmazonSQS（Simple Queue Service）是亚马逊提供的消息队列服务，可帮助构建分布式应用程序。它具有高可用性、可扩展性、灵活性等特点，适用于构建在亚马逊云平台上的应用程序。</li>
+</ol>
+]]></content>
+      <categories>
+        <category>分布式</category>
+        <category>中间件</category>
+        <category>消息队列</category>
+      </categories>
+      <tags>
+        <tag>RocketMQ</tag>
+        <tag>消息队列</tag>
+        <tag>解耦</tag>
+        <tag>异步</tag>
+        <tag>削锋</tag>
       </tags>
   </entry>
   <entry>
@@ -1074,8 +1074,8 @@ newProxyInstance方法的三个参数：</li>
         <category>消息队列</category>
       </categories>
       <tags>
-        <tag>消息队列</tag>
         <tag>RocketMQ</tag>
+        <tag>消息队列</tag>
         <tag>Producer</tag>
         <tag>NameSrv</tag>
         <tag>Broker</tag>
@@ -1090,6 +1090,52 @@ newProxyInstance方法的三个参数：</li>
         <tag>异步通信模型</tag>
         <tag>点对点模型</tag>
         <tag>发布订阅模型</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>RocketMQ：发布订阅模式</title>
+    <url>/2024/03/13/backend/middleware/messagequeue/rocket-publishsubscribe/</url>
+    <content><![CDATA[<p>本文将讲解消息队列的两种实现模式：队列模式、发布订阅模式。</p>
+<h1 id="队列模式"><a href="#队列模式" class="headerlink" title="队列模式"></a>队列模式</h1><p>作为一种数据结构，队列的特性是<strong>先进先出</strong>。<br>使用队列来存储消息时，生产者发送的消息会被放入到一个队列，然后由消费者们竞争着消费队列的信息。</p>
+<blockquote>
+<p>竞争意味着每条消息只会被一个消费者消费。</p>
+</blockquote>
+<p>在存储消息时，如果我们使用数据结构-队列对消息进行存储，就会存在一个问题：队列具有先进先出的特性，当读到后一个消息时，前一个消息就会被丢失，进而其他消费者就无法访问该消息。（即消费者之间的竞争关系导致无法合适地共享信息）</p>
+<p><img src="/2024/03/13/backend/middleware/messagequeue/rocket-publishsubscribe/%E9%98%9F%E5%88%97%E6%A8%A1%E5%BC%8F.svg"></p>
+<p>发布-订阅模式是为解决单个队列无法满足同时提供给多个消费者相同消息的需求的。</p>
+<h1 id="发布订阅模式"><a href="#发布订阅模式" class="headerlink" title="发布订阅模式"></a>发布订阅模式</h1><h2 id="支持共享"><a href="#支持共享" class="headerlink" title="支持共享"></a>支持共享</h2><p>发布-订阅模式的目的：<strong>每个消费者都能选择想要消费某个队列，消费其中指定某个位置的消息。</strong><br>发布-订阅模式中我们需要引入两个概念——Topic、offset：</p>
+<ul>
+<li>Topic：主题，用于区别不同的队列。<ul>
+<li>举例：生产者1负责生产订单记录，生产者2负责生产发货记录，消费者1负责处理订单记录，消费者2负责处理发货记录。那么自然不能只使用一个队列存储所有信息让消费者自己选择自己需要的信息，这应该是消息队列的责任。所用我们引入主题的概念，用以区别不同的队列，生产者1的消息发送、存储到订单主题的主题队列，生产者2的消息发送、存储到发货主题的主题队列；消费者1只对订单主题感兴趣，消息队列就只给它提供订单主题的主题队列中的信息……</li>
+</ul>
+</li>
+<li>offset：消息位置，用以记录消费者在队列中处理到的信息位置。<ul>
+<li>消费者每次处理一个信息，offset就+1，下一次转发给该消费者就是这个主题中的下一个消息。</li>
+</ul>
+</li>
+</ul>
+<p>示意图：<br><img src="/2024/03/13/backend/middleware/messagequeue/rocket-publishsubscribe/%E5%8F%91%E5%B8%83%E8%AE%A2%E9%98%851.png"></p>
+<h2 id="支持竞争"><a href="#支持竞争" class="headerlink" title="支持竞争"></a>支持竞争</h2><p>发布订阅模式解决了上述将全部消息提供给多个消费者的需求，但是存在一个问题，就是<strong>无法实现原先的竞争关系</strong>：某些消息不需要被同一类的不同消费者重复接收，但是只依赖offset的+1无法解决该问题。<br>可以复用原有队列的数据结构，但是原有队列处理方式还存在一个问题：竞争消费位置——<strong>同一类</strong>消费者无法同时消费多个消息，其必须一个一个地处理消息。<br>而且无论是消息粒度负载均衡策略还是队列粒度负载均衡策略，在消费者上线或下线、服务端扩缩容等场景下，都会触发短暂的重新负载均衡动作。此时可能会存在短暂的负载不一致情况，出现少量消息重复的现象。因此，还需要在下游消费逻辑中保证消息幂等以支持去重功能。<br>为了解决此问题，需要引入一个新机制：<strong>队列</strong>（消息队列-MessageQueue，在Kafka中被称为分区）。</p>
+<p>同一个主题的消息，会被分开存放到不同队列中（主题与队列的关系为一对多），不同消费者可以接收不同队列中的信息，以做到同时消费。<br>示意图：<br><img src="/2024/03/13/backend/middleware/messagequeue/rocket-publishsubscribe/%E5%8F%91%E5%B8%83%E8%AE%A2%E9%98%852.png"></p>
+<p>一个消费者可对应一到多个队列（或分区）。对应多个时需保持多个offset。且要求消费者数量少于队列数量，以避免出现闲置的消费者。</p>
+<p><img src="/2024/03/13/backend/middleware/messagequeue/rocket-publishsubscribe/%E5%8F%91%E5%B8%83%E8%AE%A2%E9%98%853.svg"></p>
+<p>改进后的发布订阅还有一个优点：可以灵活实现<strong>重复消费</strong>或者<strong>跳过部分消息不消费</strong>的功能。</p>
+<ul>
+<li><strong>重复消费</strong>：比如消费者1已经消费到 Topic-A-queue1-20，即第 20 条消息，但是消费者1一不小心把之前消费得到的结果数据弄丢了，如果按照队列模式那就找不到消息了，因为消息已经出队了没了；而在发布-订阅模式中，我们仅需把这个消息位置变更成 Topic-A-queue1-20，这样又可以让消费者1重新消费，只需要简单地改一条数据就能实现这样功能。</li>
+<li><strong>跳过部分消息不消费</strong>：假设 Topic-A-queue1 中第 21-30 这 10 条消息是错误的，我们可以修改当前的消息点位成 Topic-A-queue1-30，这样消费者1就直接跳过了这 10 条错误消息，从第 31 条消息开始消费。</li>
+</ul>
+<blockquote>
+<p>目前讲解的是队列级的负载均衡，即消费者对应到具体队列（每个队列仅支持被一个消费者消费），实际上存在消息级的负载均衡，无需关注消费者和队列的相对数量，能够更均匀地分摊消息。可自行了解。</p>
+</blockquote>
+]]></content>
+      <categories>
+        <category>分布式</category>
+        <category>中间件</category>
+        <category>消息队列</category>
+      </categories>
+      <tags>
+        <tag>队列模式</tag>
+        <tag>发布订阅模式</tag>
       </tags>
   </entry>
   <entry>
@@ -1125,8 +1171,18 @@ newProxyInstance方法的三个参数：</li>
         <category>消息队列</category>
       </categories>
       <tags>
-        <tag>消息队列</tag>
         <tag>RocketMQ</tag>
+        <tag>消息队列</tag>
       </tags>
+  </entry>
+  <entry>
+    <title>RocketMQ：消息存储原理</title>
+    <url>/2024/03/13/backend/middleware/messagequeue/rocket-storage/</url>
+    <content><![CDATA[]]></content>
+      <categories>
+        <category>分布式</category>
+        <category>中间件</category>
+        <category>消息队列</category>
+      </categories>
   </entry>
 </search>

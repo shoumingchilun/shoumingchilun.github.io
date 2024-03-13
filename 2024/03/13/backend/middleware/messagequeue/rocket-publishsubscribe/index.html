@@ -18,23 +18,28 @@
   <meta name="author" content="寿命齿轮">
   <meta name="keywords" content="">
   
-    <meta name="description" content="本文将从时代背景、发展过程、微服务特点出发，对微服务整体构建一个大致的理解： 时代背景 解决复杂性的需求——传统的单体应用架构将所有的功能和模块集中在一个单独的应用程序中，导致应用程序开发、部署和维护变得困难，并且不利于快速迭代和扩展。  对高可用性和扩展性的需求（如高并发和大规模用户访问）——用户对于应用程序的高可用性和即时响应的期望越来越高，而单体应用架构难以实现高可用性和弹性扩展（一个组件的">
+    <meta name="description" content="本文将讲解消息队列的两种实现模式：队列模式、发布订阅模式。 队列模式作为一种数据结构，队列的特性是先进先出。使用队列来存储消息时，生产者发送的消息会被放入到一个队列，然后由消费者们竞争着消费队列的信息。  竞争意味着每条消息只会被一个消费者消费。  在存储消息时，如果我们使用数据结构-队列对消息进行存储，就会存在一个问题：队列具有先进先出的特性，当读到后一个消息时，前一个消息就会被丢失，进而其他消">
 <meta property="og:type" content="article">
-<meta property="og:title" content="微服务：认识篇">
-<meta property="og:url" content="http://shoumingchilun.github.io/2024/03/13/backend/microservice/microservice-introduce/">
+<meta property="og:title" content="RocketMQ：发布订阅模式">
+<meta property="og:url" content="http://shoumingchilun.github.io/2024/03/13/backend/middleware/messagequeue/rocket-publishsubscribe/">
 <meta property="og:site_name" content="Chilun&#39;s Blogs">
-<meta property="og:description" content="本文将从时代背景、发展过程、微服务特点出发，对微服务整体构建一个大致的理解： 时代背景 解决复杂性的需求——传统的单体应用架构将所有的功能和模块集中在一个单独的应用程序中，导致应用程序开发、部署和维护变得困难，并且不利于快速迭代和扩展。  对高可用性和扩展性的需求（如高并发和大规模用户访问）——用户对于应用程序的高可用性和即时响应的期望越来越高，而单体应用架构难以实现高可用性和弹性扩展（一个组件的">
+<meta property="og:description" content="本文将讲解消息队列的两种实现模式：队列模式、发布订阅模式。 队列模式作为一种数据结构，队列的特性是先进先出。使用队列来存储消息时，生产者发送的消息会被放入到一个队列，然后由消费者们竞争着消费队列的信息。  竞争意味着每条消息只会被一个消费者消费。  在存储消息时，如果我们使用数据结构-队列对消息进行存储，就会存在一个问题：队列具有先进先出的特性，当读到后一个消息时，前一个消息就会被丢失，进而其他消">
 <meta property="og:locale" content="zh_CN">
-<meta property="article:published_time" content="2024-03-13T08:16:41.000Z">
-<meta property="article:modified_time" content="2024-03-13T12:45:01.374Z">
+<meta property="og:image" content="http://shoumingchilun.github.io/2024/03/13/backend/middleware/messagequeue/rocket-publishsubscribe/%E9%98%9F%E5%88%97%E6%A8%A1%E5%BC%8F.svg">
+<meta property="og:image" content="http://shoumingchilun.github.io/2024/03/13/backend/middleware/messagequeue/rocket-publishsubscribe/%E5%8F%91%E5%B8%83%E8%AE%A2%E9%98%851.png">
+<meta property="og:image" content="http://shoumingchilun.github.io/2024/03/13/backend/middleware/messagequeue/rocket-publishsubscribe/%E5%8F%91%E5%B8%83%E8%AE%A2%E9%98%852.png">
+<meta property="og:image" content="http://shoumingchilun.github.io/2024/03/13/backend/middleware/messagequeue/rocket-publishsubscribe/%E5%8F%91%E5%B8%83%E8%AE%A2%E9%98%853.svg">
+<meta property="article:published_time" content="2024-03-13T14:58:48.000Z">
+<meta property="article:modified_time" content="2024-03-13T17:38:51.673Z">
 <meta property="article:author" content="寿命齿轮">
-<meta property="article:tag" content="微服务">
-<meta property="article:tag" content="SOA">
+<meta property="article:tag" content="队列模式">
+<meta property="article:tag" content="发布订阅模式">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="http://shoumingchilun.github.io/2024/03/13/backend/middleware/messagequeue/rocket-publishsubscribe/%E9%98%9F%E5%88%97%E6%A8%A1%E5%BC%8F.svg">
   
   
   
-  <title>微服务：认识篇 - Chilun&#39;s Blogs</title>
+  <title>RocketMQ：发布订阅模式 - Chilun&#39;s Blogs</title>
 
   <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
 
@@ -204,7 +209,7 @@
       <div class="banner-text text-center fade-in-up">
         <div class="h2">
           
-            <span id="subtitle">微服务：认识篇</span>
+            <span id="subtitle">RocketMQ：发布订阅模式</span>
           
         </div>
 
@@ -215,8 +220,8 @@
     
       <span class="post-meta">
         <i class="iconfont icon-date-fill" aria-hidden="true"></i>
-        <time datetime="2024-03-13 16:16" pubdate>
-          2024年3月13日 下午
+        <time datetime="2024-03-13 22:58" pubdate>
+          2024年3月13日 晚上
         </time>
       </span>
     
@@ -227,7 +232,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          2.8k 字
+          1.3k 字
         
       </span>
     
@@ -238,7 +243,7 @@
         
         
         
-          23 分钟
+          12 分钟
         
       </span>
     
@@ -288,12 +293,12 @@
       <div class="container nopadding-x-md" id="board-ctn">
         <div id="board">
           <article class="post-content mx-auto">
-            <h1 id="seo-header">微服务：认识篇</h1>
+            <h1 id="seo-header">RocketMQ：发布订阅模式</h1>
             
               <p id="updated-time" class="note note-info" style="display: none">
                 
                   
-                    本文最后更新于 2024-03-13T20:45:01+08:00
+                    本文最后更新于 2024-03-14T01:38:51+08:00
                   
                   
 
@@ -303,86 +308,37 @@
             
               <div class="markdown-body">
                 
-                <p>本文将从时代背景、发展过程、微服务特点出发，对微服务整体构建一个大致的理解：</p>
-<h2 id="时代背景"><a href="#时代背景" class="headerlink" title="时代背景"></a>时代背景</h2><ol>
-<li><p>解决<strong>复杂性</strong>的需求——传统的单体应用架构将所有的功能和模块集中在一个单独的应用程序中，导致应用程序开发、部署和维护变得困难，并且不利于快速迭代和扩展。</p>
-</li>
-<li><p>对<strong>高可用性和扩展性</strong>的需求（如高并发和大规模用户访问）——用户对于应用程序的高可用性和即时响应的期望越来越高，而单体应用架构难以实现高可用性和弹性扩展（一个组件的故障可能会影响整个应用程序的可用性，并且扩展整个应用程序可能会面临技术和性能上的限制）。</p>
-</li>
-<li><p>快速迭代和团队协作的需求（可包含于1.1）——传统的单体应用架构可能不利于快速迭代，因为一个小的更改可能需要重新构建整个应用程序并进行全面的测试和部署，而且微服务为人员的分工提供了便捷，可以更好地支持快速迭代和敏捷开发。</p>
+                <p>本文将讲解消息队列的两种实现模式：队列模式、发布订阅模式。</p>
+<h1 id="队列模式"><a href="#队列模式" class="headerlink" title="队列模式"></a>队列模式</h1><p>作为一种数据结构，队列的特性是<strong>先进先出</strong>。<br>使用队列来存储消息时，生产者发送的消息会被放入到一个队列，然后由消费者们竞争着消费队列的信息。</p>
 <blockquote>
-<p>来自《凤凰架构》：譬如，制约软件质量与业务能力提升的最大因素是人而非硬件。多数企业即使有钱也很难招到大量的靠谱的开发者。此时，无论是引入外包团队，抑或是让少量技术专家带着大量普通水平的开发者去共同完成一个大型系统就成为了必然的选择。在单体架构下，没有什么有效阻断错误传播的手段，系统中“整体”与“部分”的关系没有物理的划分，系统质量只能靠研发与项目管理措施来尽可能地保障，少量的技术专家很难阻止大量螺丝钉式的程序员或者不熟悉原有技术架构的外包人员在某个不起眼的地方犯错并产生全局性的影响，并不容易做出整体可靠的大型系统。</p>
+<p>竞争意味着每条消息只会被一个消费者消费。</p>
 </blockquote>
-</li>
-<li><p><strong>新技术云计算</strong>和<strong>分布式架构</strong>的支持——云计算的兴起为分布式架构提供了理想的基础设施。云计算提供了弹性的计算资源和可扩展的基础设施，使得构建分布式系统和服务变得更加容易。</p>
-</li>
-</ol>
-<h2 id="发展过程："><a href="#发展过程：" class="headerlink" title="发展过程："></a>发展过程：</h2><ol>
-<li>早期阶段：<ol>
-<li>SOA的出现：在这个阶段，服务导向架构（SOA）的概念开始引起关注。SOA提倡将应用程序拆分为一组可重用的服务，通过标准化的接口进行通信。这为后来微服务架构的发展奠定了基础。</li>
-</ol>
-</li>
-<li>兴起阶段：<ol>
-<li>架构模式的探索：微服务架构作为一种新兴的架构风格（更灵活、可维护和可扩展）开始受到关注。</li>
-<li>云计算和虚拟化技术的发展：云计算和虚拟化技术的兴起为微服务架构的发展提供了理想的基础设施。这些技术为构建分布式系统和部署微服务提供了更好的支持。</li>
-</ol>
-</li>
-<li>推广阶段：<ol>
-<li>微服务的推广：微服务架构开始广泛被采用并得到推广。越来越多的组织开始采用微服务架构，以应对复杂性增加、快速迭代和团队协作的挑战。</li>
-<li>开源和商业化工具的涌现：随着微服务的普及，大量的开源和商业化工具、框架和平台涌现，用于辅助微服务架构的开发、部署和管理。这些工具提供了服务注册与发现、负载均衡、容器化和编排、监控和日志等功能，为微服务架构提供了更好的支持。</li>
-<li>实践经验的积累：随着实际应用的增多，对于微服务架构的实践经验也在不断积累。开发人员和组织逐渐摸索出一些最佳实践、设计模式和解决方案，以应对微服务架构中的挑战和复杂性。</li>
-</ol>
-</li>
-<li>演进阶段（将来）：微服务架构是一个动态的领域，仍在不断演进和发展中。它的发展历史仍在进行中，将随着技术的进步和业务需求的变化而不断推进。因此，微服务架构的未来发展将会受到更多新技术、实践经验和业务需求的影响。</li>
-</ol>
-<h2 id="微服务特点："><a href="#微服务特点：" class="headerlink" title="微服务特点："></a>微服务特点：</h2><table>
-<thead>
-<tr>
-<th>不同点</th>
-<th>微服务架构</th>
-<th>单体架构</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>团队规模</td>
-<td>微服务架构可以将传统模式下的单个应用拆分为多个独立的服务，每个微服务都可以单独开发、部署和维护。<strong>每个服务从设计、开发到维护所需的团队规模小，团队管理成本小。</strong></td>
-<td>单体架构的应用程序通常需要一个大型团队，围绕一个庞大的应用程序工作，团队管理的成本大。</td>
-</tr>
-<tr>
-<td>项目结构（部署方式）</td>
-<td>微服务架构中<strong>每个服务都可以独立开发、部署和维护</strong>，也可以独立于其他服务进行扩展。如果部署得当，基于微服务的架构可以帮助企业提高应用程序的部署效率。</td>
-<td>采用单体架构的应用程序的每一次功能更改或 bug 修复都必须对整个应用程序重新进行部署（所有的业务逻辑都集中在同一个工程中）。</td>
-</tr>
-<tr>
-<td>开发模式</td>
-<td>在采用微服务架构的应用程序中，<strong>不同模块可以使用不同的技术或语言进行开发，开发模式更加灵活</strong>。</td>
-<td>在采用单体架构的应用程序中，所有模块使用的技术和语言必须相同，开发模式受限。</td>
-</tr>
-<tr>
-<td>故障隔离</td>
-<td>在微服务架构中，<strong>故障被隔离在单个服务中</strong>，避免系统的整体崩溃。</td>
-<td>在单体架构中，当一个组件出现故障时，故障很可能会在进程中蔓延，导致系统全局不可用。</td>
-</tr>
-</tbody></table>
-<p>优点：</p>
+<p>在存储消息时，如果我们使用数据结构-队列对消息进行存储，就会存在一个问题：队列具有先进先出的特性，当读到后一个消息时，前一个消息就会被丢失，进而其他消费者就无法访问该消息。（即消费者之间的竞争关系导致无法合适地共享信息）</p>
+<p><img src="/2024/03/13/backend/middleware/messagequeue/rocket-publishsubscribe/%E9%98%9F%E5%88%97%E6%A8%A1%E5%BC%8F.svg" srcset="/img/loading.gif" lazyload></p>
+<p>发布-订阅模式是为解决单个队列无法满足同时提供给多个消费者相同消息的需求的。</p>
+<h1 id="发布订阅模式"><a href="#发布订阅模式" class="headerlink" title="发布订阅模式"></a>发布订阅模式</h1><h2 id="支持共享"><a href="#支持共享" class="headerlink" title="支持共享"></a>支持共享</h2><p>发布-订阅模式的目的：<strong>每个消费者都能选择想要消费某个队列，消费其中指定某个位置的消息。</strong><br>发布-订阅模式中我们需要引入两个概念——Topic、offset：</p>
 <ul>
-<li><strong>松耦合</strong>：微服务架构通过将应用程序拆分为多个独立的服务来实现松耦合。每个服务都是自治的，可以独立开发、部署、扩展和维护。这种松耦合性使团队能够独立开发和部署不同的服务，降低了开发的复杂性，并且更容易实现敏捷开发和持续交付。</li>
-<li><strong>可伸缩性（扩展性）</strong>：由于微服务架构中的每个服务都是独立的，可以根据需求对每个服务进行单独的扩展。这意味着可以根据流量和负载的变化，只需对需要扩展的服务进行扩展，而无需扩展整个应用程序。这种可伸缩性使系统能够更好地应对高流量和大规模的并发请求。</li>
-<li><strong>技术多样性</strong>：微服务架构允许使用不同的编程语言、框架和技术栈来构建不同的服务。这使得团队可以选择最适合其需求和技术能力的工具和技术，从而实现更好的灵活性和创新性。</li>
+<li>Topic：主题，用于区别不同的队列。<ul>
+<li>举例：生产者1负责生产订单记录，生产者2负责生产发货记录，消费者1负责处理订单记录，消费者2负责处理发货记录。那么自然不能只使用一个队列存储所有信息让消费者自己选择自己需要的信息，这应该是消息队列的责任。所用我们引入主题的概念，用以区别不同的队列，生产者1的消息发送、存储到订单主题的主题队列，生产者2的消息发送、存储到发货主题的主题队列；消费者1只对订单主题感兴趣，消息队列就只给它提供订单主题的主题队列中的信息……</li>
 </ul>
-<p>缺点：</p>
-<ul>
-<li><strong>分布式系统复杂性</strong>：微服务架构引入了分布式系统的复杂性。服务之间的通信和协调需要考虑网络延迟、服务发现、故障处理等因素。这增加了系统的复杂性，并需要适当的工具和技术来管理分布式环境。</li>
-<li><strong>运维复杂性</strong>：由于微服务架构中存在大量的服务实例和组件，运维和监控这些服务变得更加复杂。需要适当的工具和流程来管理和监控每个服务的性能、可用性和健康状态。</li>
-<li><strong>分布式事务管理</strong>：微服务架构中的服务可能需要进行跨服务的事务操作。由于每个服务都是自治的，保持一致的事务管理变得复杂。需要使用一些机制（如分布式事务或补偿性事务）来管理分布式事务的一致性和可靠性。<br>此外，微服务还有其他一些特点，比如可以与容器（Docker）配合使用，可以进行链路追踪等，但是我们主要的目的，还是为了解决复杂性（实现独立开发、部署和维护，保证敏捷开发和持续交付）和提高可用性和扩展性（故障隔离、对服务进行扩展、可使用多种技术和语言），所以仅列出上述优缺点和特点。</li>
+</li>
+<li>offset：消息位置，用以记录消费者在队列中处理到的信息位置。<ul>
+<li>消费者每次处理一个信息，offset就+1，下一次转发给该消费者就是这个主题中的下一个消息。</li>
 </ul>
-<h2 id="与SOA的区别："><a href="#与SOA的区别：" class="headerlink" title="与SOA的区别："></a>与SOA的区别：</h2><p>微服务 VS SOA：</p>
+</li>
+</ul>
+<p>示意图：<br><img src="/2024/03/13/backend/middleware/messagequeue/rocket-publishsubscribe/%E5%8F%91%E5%B8%83%E8%AE%A2%E9%98%851.png" srcset="/img/loading.gif" lazyload></p>
+<h2 id="支持竞争"><a href="#支持竞争" class="headerlink" title="支持竞争"></a>支持竞争</h2><p>发布订阅模式解决了上述将全部消息提供给多个消费者的需求，但是存在一个问题，就是<strong>无法实现原先的竞争关系</strong>：某些消息不需要被同一类的不同消费者重复接收，但是只依赖offset的+1无法解决该问题。<br>可以复用原有队列的数据结构，但是原有队列处理方式还存在一个问题：竞争消费位置——<strong>同一类</strong>消费者无法同时消费多个消息，其必须一个一个地处理消息。<br>而且无论是消息粒度负载均衡策略还是队列粒度负载均衡策略，在消费者上线或下线、服务端扩缩容等场景下，都会触发短暂的重新负载均衡动作。此时可能会存在短暂的负载不一致情况，出现少量消息重复的现象。因此，还需要在下游消费逻辑中保证消息幂等以支持去重功能。<br>为了解决此问题，需要引入一个新机制：<strong>队列</strong>（消息队列-MessageQueue，在Kafka中被称为分区）。</p>
+<p>同一个主题的消息，会被分开存放到不同队列中（主题与队列的关系为一对多），不同消费者可以接收不同队列中的信息，以做到同时消费。<br>示意图：<br><img src="/2024/03/13/backend/middleware/messagequeue/rocket-publishsubscribe/%E5%8F%91%E5%B8%83%E8%AE%A2%E9%98%852.png" srcset="/img/loading.gif" lazyload></p>
+<p>一个消费者可对应一到多个队列（或分区）。对应多个时需保持多个offset。且要求消费者数量少于队列数量，以避免出现闲置的消费者。</p>
+<p><img src="/2024/03/13/backend/middleware/messagequeue/rocket-publishsubscribe/%E5%8F%91%E5%B8%83%E8%AE%A2%E9%98%853.svg" srcset="/img/loading.gif" lazyload></p>
+<p>改进后的发布订阅还有一个优点：可以灵活实现<strong>重复消费</strong>或者<strong>跳过部分消息不消费</strong>的功能。</p>
 <ul>
-<li>相同：面向服务；</li>
-<li>不同：强约束 VS 软指导；强一致 VS 自由；规范标准 VS 实践标准。<br>微服务丢掉了 SOA 的强标准，换来了自由。自由的代价是工程师需根据业务情况选择适合的技术，过程中可能会犯错。微服务带来自由，也带来迷茫。微服务只是一种思想，它丢掉了 SOA 的包袱，却没带来什么具体的东西。RPC 等分布式的问题重新出现，交由社区解决；一时间，百花齐放，百家争鸣。</li>
+<li><strong>重复消费</strong>：比如消费者1已经消费到 Topic-A-queue1-20，即第 20 条消息，但是消费者1一不小心把之前消费得到的结果数据弄丢了，如果按照队列模式那就找不到消息了，因为消息已经出队了没了；而在发布-订阅模式中，我们仅需把这个消息位置变更成 Topic-A-queue1-20，这样又可以让消费者1重新消费，只需要简单地改一条数据就能实现这样功能。</li>
+<li><strong>跳过部分消息不消费</strong>：假设 Topic-A-queue1 中第 21-30 这 10 条消息是错误的，我们可以修改当前的消息点位成 Topic-A-queue1-30，这样消费者1就直接跳过了这 10 条错误消息，从第 31 条消息开始消费。</li>
 </ul>
 <blockquote>
-<p>引自《凤凰架构》：<br>SOA 在 21 世纪最初的十年里曾经盛行一时，有 IBM 等一众行业巨头厂商为其呐喊冲锋，吸引了不少软件开发商、尤其是企业级软件的开发商的跟随，最终却还是偃旗息鼓，沉寂了下去。在稍后的远程服务调用一节，笔者会提到 SOAP 协议被逐渐边缘化的本质原因：过于严格的规范定义带来过度的复杂性。而构建在 SOAP 基础之上的 ESB、BPM、SCA、SDO 等诸多上层建筑，进一步加剧了这种复杂性。开发信息系统毕竟不是作八股文章，过于精密的流程和理论也需要懂得复杂概念的专业人员才能够驾驭。SOA 诞生的那一天起，就已经注定了它只能是少数系统阳春白雪式的精致奢侈品，它可以实现多个异构大型系统之间的复杂集成交互，却很难作为一种具有广泛普适性的软件架构风格来推广。SOA 最终没有获得成功的致命伤与当年的EJB (opens new window)如出一辙，尽管有 Sun Microsystems 和 IBM 等一众巨头在背后力挺，EJB 仍然败于以 Spring、Hibernate 为代表的“草根框架”，可见一旦脱离人民群众，终究会淹没在群众的海洋之中，连信息技术也不曾例外过。</p>
+<p>目前讲解的是队列级的负载均衡，即消费者对应到具体队列（每个队列仅支持被一个消费者消费），实际上存在消息级的负载均衡，无需关注消费者和队列的相对数量，能够更均匀地分摊消息。可自行了解。</p>
 </blockquote>
 
                 
@@ -407,8 +363,15 @@
   
     <span>></span>
     
-  <a href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" class="category-chain-item">微服务</a>
+  <a href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F/%E4%B8%AD%E9%97%B4%E4%BB%B6/" class="category-chain-item">中间件</a>
   
+  
+    <span>></span>
+    
+  <a href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F/%E4%B8%AD%E9%97%B4%E4%BB%B6/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" class="category-chain-item">消息队列</a>
+  
+  
+
   
 
   
@@ -424,9 +387,9 @@
     <div class="post-meta">
       <i class="iconfont icon-tags"></i>
       
-        <a href="/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" class="print-no-link">#微服务</a>
+        <a href="/tags/%E9%98%9F%E5%88%97%E6%A8%A1%E5%BC%8F/" class="print-no-link">#队列模式</a>
       
-        <a href="/tags/SOA/" class="print-no-link">#SOA</a>
+        <a href="/tags/%E5%8F%91%E5%B8%83%E8%AE%A2%E9%98%85%E6%A8%A1%E5%BC%8F/" class="print-no-link">#发布订阅模式</a>
       
     </div>
   
@@ -438,8 +401,8 @@
 
   <div class="license-box my-3">
     <div class="license-title">
-      <div>微服务：认识篇</div>
-      <div>http://shoumingchilun.github.io/2024/03/13/backend/microservice/microservice-introduce/</div>
+      <div>RocketMQ：发布订阅模式</div>
+      <div>http://shoumingchilun.github.io/2024/03/13/backend/middleware/messagequeue/rocket-publishsubscribe/</div>
     </div>
     <div class="license-meta">
       
@@ -542,17 +505,17 @@
     
     
     <div class="category-sub row nomargin-x">
-      <a class="category-subitem collapsed
+      <a class="category-subitem 
           list-group-item category-item-action col-10 col-md-11 col-xm-11" title="中间件"
         id="heading-3cbfec336978067fe5295fb69a0ca202" role="tab" data-toggle="collapse" href="#collapse-3cbfec336978067fe5295fb69a0ca202"
-        aria-expanded="false"
+        aria-expanded="true"
       >
         中间件
         <span class="list-group-count">(8)</span>
         <i class="iconfont icon-arrowright"></i>
       </a>
       
-      <div class="category-collapse collapse " id="collapse-3cbfec336978067fe5295fb69a0ca202"
+      <div class="category-collapse collapse show" id="collapse-3cbfec336978067fe5295fb69a0ca202"
            role="tabpanel" aria-labelledby="heading-3cbfec336978067fe5295fb69a0ca202">
         
         
@@ -615,17 +578,17 @@
     
     
     <div class="category-sub row nomargin-x">
-      <a class="category-subitem collapsed
+      <a class="category-subitem 
           list-group-item category-item-action col-10 col-md-11 col-xm-11" title="消息队列"
         id="heading-8bedb7aae7ae74964d0363a1556c7a59" role="tab" data-toggle="collapse" href="#collapse-8bedb7aae7ae74964d0363a1556c7a59"
-        aria-expanded="false"
+        aria-expanded="true"
       >
         消息队列
         <span class="list-group-count">(6)</span>
         <i class="iconfont icon-arrowright"></i>
       </a>
       
-      <div class="category-collapse collapse " id="collapse-8bedb7aae7ae74964d0363a1556c7a59"
+      <div class="category-collapse collapse show" id="collapse-8bedb7aae7ae74964d0363a1556c7a59"
            role="tabpanel" aria-labelledby="heading-8bedb7aae7ae74964d0363a1556c7a59">
         
         
@@ -637,7 +600,7 @@
       
         <a href="/2024/03/13/backend/middleware/messagequeue/rocket-publishsubscribe/" title="RocketMQ：发布订阅模式"
            class="list-group-item list-group-item-action
-           ">
+           active">
           <span class="category-post">RocketMQ：发布订阅模式</span>
         </a>
       
@@ -701,17 +664,17 @@
     
     
     <div class="category-sub row nomargin-x">
-      <a class="category-subitem 
+      <a class="category-subitem collapsed
           list-group-item category-item-action col-10 col-md-11 col-xm-11" title="微服务"
         id="heading-79c287218d34050f6bd19986cd05b499" role="tab" data-toggle="collapse" href="#collapse-79c287218d34050f6bd19986cd05b499"
-        aria-expanded="true"
+        aria-expanded="false"
       >
         微服务
         <span class="list-group-count">(1)</span>
         <i class="iconfont icon-arrowright"></i>
       </a>
       
-      <div class="category-collapse collapse show" id="collapse-79c287218d34050f6bd19986cd05b499"
+      <div class="category-collapse collapse " id="collapse-79c287218d34050f6bd19986cd05b499"
            role="tabpanel" aria-labelledby="heading-79c287218d34050f6bd19986cd05b499">
         
         
@@ -723,7 +686,7 @@
       
         <a href="/2024/03/13/backend/microservice/microservice-introduce/" title="微服务：认识篇"
            class="list-group-item list-group-item-action
-           active">
+           ">
           <span class="category-post">微服务：认识篇</span>
         </a>
       
