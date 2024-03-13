@@ -21,20 +21,20 @@
     <meta name="description" content="本文将介绍如何使用canal实现MySQl和Redis的双写一致性。前文为：canal入门篇：介绍&amp;配置&amp;启动。  github仓库链接  canalAPI讲解本文将使用SpringBoot框架搭建一个应用，通过canal获得数据库的更改消息，并将发生变更的实体同步更新到Redis中。 优点使用canal的好处：  透明性与低侵入：使用 Canal 通常不需要对既有业务逻辑进行大规">
 <meta property="og:type" content="article">
 <meta property="og:title" content="canal入门篇：实现MySQL&amp;Redis双写一致性">
-<meta property="og:url" content="http://shoumingchilun.github.io/2024/03/06/backend/canal_MySQL&Redis/">
+<meta property="og:url" content="http://shoumingchilun.github.io/2024/03/06/backend/middleware/canal/canal_MySQL&Redis/">
 <meta property="og:site_name" content="Chilun&#39;s Blogs">
 <meta property="og:description" content="本文将介绍如何使用canal实现MySQl和Redis的双写一致性。前文为：canal入门篇：介绍&amp;配置&amp;启动。  github仓库链接  canalAPI讲解本文将使用SpringBoot框架搭建一个应用，通过canal获得数据库的更改消息，并将发生变更的实体同步更新到Redis中。 优点使用canal的好处：  透明性与低侵入：使用 Canal 通常不需要对既有业务逻辑进行大规">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="http://shoumingchilun.github.io/2024/03/06/backend/canal_MySQL&Redis/redis-update.png">
-<meta property="og:image" content="http://shoumingchilun.github.io/2024/03/06/backend/canal_MySQL&Redis/redis-delete.png">
+<meta property="og:image" content="http://shoumingchilun.github.io/2024/03/06/backend/middleware/canal/canal_MySQL&Redis/redis-update.png">
+<meta property="og:image" content="http://shoumingchilun.github.io/2024/03/06/backend/middleware/canal/canal_MySQL&Redis/redis-delete.png">
 <meta property="article:published_time" content="2024-03-06T12:22:47.000Z">
-<meta property="article:modified_time" content="2024-03-08T04:12:31.161Z">
+<meta property="article:modified_time" content="2024-03-13T08:22:05.245Z">
 <meta property="article:author" content="寿命齿轮">
 <meta property="article:tag" content="canal">
 <meta property="article:tag" content="双写一致性">
 <meta property="article:tag" content="redis">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="http://shoumingchilun.github.io/2024/03/06/backend/canal_MySQL&Redis/redis-update.png">
+<meta name="twitter:image" content="http://shoumingchilun.github.io/2024/03/06/backend/middleware/canal/canal_MySQL&Redis/redis-update.png">
   
   
   
@@ -297,7 +297,7 @@
               <p id="updated-time" class="note note-info" style="display: none">
                 
                   
-                    本文最后更新于 2024-03-08T12:12:31+08:00
+                    本文最后更新于 2024-03-13T16:22:05+08:00
                   
                   
 
@@ -307,7 +307,7 @@
             
               <div class="markdown-body">
                 
-                <p>本文将介绍如何使用canal实现MySQl和Redis的双写一致性。前文为：<a href="/2024/03/06/backend/canal_config/" title="canal入门篇：介绍&amp;配置&amp;启动">canal入门篇：介绍&amp;配置&amp;启动</a>。</p>
+                <p>本文将介绍如何使用canal实现MySQl和Redis的双写一致性。前文为：<a href="/2024/03/06/backend/middleware/canal/canal_config/" title="canal入门篇：介绍&amp;配置&amp;启动">canal入门篇：介绍&amp;配置&amp;启动</a>。</p>
 <blockquote>
 <p><a target="_blank" rel="noopener" href="https://github.com/shoumingchilun/API_OPEN_SPACE_CANAL">github仓库链接</a></p>
 </blockquote>
@@ -382,12 +382,12 @@
 <blockquote>
 <p>正在监听canal Server: 1709812780346<br>2024-03-07 19:59:40.394  INFO 26712 — [           main] c.c.a.canal.handler.CanalMessageHandler  : &#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;binlog[mysql-bin.000354:6832] , name[api_open_platform,interface_access] , eventType : UPDATE<br>2024-03-07 19:59:40.425  INFO 26712 — [           main] c.c.a.canal.handler.CanalMessageHandler  : 在redis中同步f607abdc-c80e-4255-81d3-37ea6fe355b4<br>正在监听canal Server: 1709812780425<br>正在监听canal Server: 1709812781481</p>
 </blockquote>
-<p>查询redis：<br><img src="/2024/03/06/backend/canal_MySQL&Redis/redis-update.png" srcset="/img/loading.gif" lazyload></p>
+<p>查询redis：<br><img src="/2024/03/06/backend/middleware/canal/canal_MySQL&Redis/redis-update.png" srcset="/img/loading.gif" lazyload></p>
 <h3 id="2-数据库删除后"><a href="#2-数据库删除后" class="headerlink" title="2. 数据库删除后"></a>2. 数据库删除后</h3><p>标准输出：</p>
 <blockquote>
 <p>正在监听canal Server: 1709812979293<br>正在监听canal Server: 1709812980340<br>2024-03-07 20:03:00.383  INFO 26712 — [           main] c.c.a.canal.handler.CanalMessageHandler  : &#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;binlog[mysql-bin.000354:7413] , name[api_open_platform,interface_access] , eventType : UPDATE<br>2024-03-07 20:03:00.384  INFO 26712 — [           main] c.c.a.canal.handler.CanalMessageHandler  : 从redis中删除f607abdc-c80e-4255-81d3-37ea6fe355b4<br>正在监听canal Server: 1709812980384</p>
 </blockquote>
-<p>查询redis：<br><img src="/2024/03/06/backend/canal_MySQL&Redis/redis-delete.png" srcset="/img/loading.gif" lazyload></p>
+<p>查询redis：<br><img src="/2024/03/06/backend/middleware/canal/canal_MySQL&Redis/redis-delete.png" srcset="/img/loading.gif" lazyload></p>
 
                 
               </div>
@@ -452,7 +452,7 @@
   <div class="license-box my-3">
     <div class="license-title">
       <div>canal入门篇：实现MySQL&amp;Redis双写一致性</div>
-      <div>http://shoumingchilun.github.io/2024/03/06/backend/canal_MySQL&amp;Redis/</div>
+      <div>http://shoumingchilun.github.io/2024/03/06/backend/middleware/canal/canal_MySQL&amp;Redis/</div>
     </div>
     <div class="license-meta">
       
@@ -534,7 +534,7 @@
         aria-expanded="true"
       >
         分布式
-        <span class="list-group-count">(2)</span>
+        <span class="list-group-count">(3)</span>
         <i class="iconfont icon-arrowright"></i>
       </a>
       
@@ -602,7 +602,7 @@
     
       
       
-        <a href="/2024/03/06/backend/canal_config/" title="canal入门篇：介绍&amp;配置&amp;启动"
+        <a href="/2024/03/06/backend/middleware/canal/canal_config/" title="canal入门篇：介绍&amp;配置&amp;启动"
            class="list-group-item list-group-item-action
            ">
           <span class="category-post">canal入门篇：介绍&amp;配置&amp;启动</span>
@@ -611,7 +611,7 @@
     
       
       
-        <a href="/2024/03/06/backend/canal_MySQL&amp;Redis/" title="canal入门篇：实现MySQL&amp;Redis双写一致性"
+        <a href="/2024/03/06/backend/middleware/canal/canal_MySQL&amp;Redis/" title="canal入门篇：实现MySQL&amp;Redis双写一致性"
            class="list-group-item list-group-item-action
            active">
           <span class="category-post">canal入门篇：实现MySQL&amp;Redis双写一致性</span>
@@ -624,6 +624,43 @@
       </div>
     </div>
   
+        
+      </div>
+    </div>
+  
+    
+    
+    
+    <div class="category-sub row nomargin-x">
+      <a class="category-subitem collapsed
+          list-group-item category-item-action col-10 col-md-11 col-xm-11" title="微服务"
+        id="heading-79c287218d34050f6bd19986cd05b499" role="tab" data-toggle="collapse" href="#collapse-79c287218d34050f6bd19986cd05b499"
+        aria-expanded="false"
+      >
+        微服务
+        <span class="list-group-count">(1)</span>
+        <i class="iconfont icon-arrowright"></i>
+      </a>
+      
+      <div class="category-collapse collapse " id="collapse-79c287218d34050f6bd19986cd05b499"
+           role="tabpanel" aria-labelledby="heading-79c287218d34050f6bd19986cd05b499">
+        
+        
+          
+  <div class="category-post-list">
+    
+    
+      
+      
+        <a href="/2024/03/13/backend/microservice/microservice-introduce/" title="微服务：认识篇"
+           class="list-group-item list-group-item-action
+           ">
+          <span class="category-post">微服务：认识篇</span>
+        </a>
+      
+    
+  </div>
+
         
       </div>
     </div>
