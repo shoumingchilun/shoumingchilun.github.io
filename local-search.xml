@@ -4,7 +4,48 @@
   
   
   <entry>
-    <title>RocketMQ：发布订阅模式</title>
+    <title>消息队列：消息存储原理</title>
+    <link href="/2024/03/13/backend/middleware/messagequeue/rocket-storage/"/>
+    <url>/2024/03/13/backend/middleware/messagequeue/rocket-storage/</url>
+    
+    <content type="html"><![CDATA[<p>消息队列必须保证消息存储的可靠性，这是消息队列可以做到异步、削峰填谷的基础。<br>本文将讲解消息队列是如何实现消息的存储的。</p><h1 id="存储设备与存储方式"><a href="#存储设备与存储方式" class="headerlink" title="存储设备与存储方式"></a>存储设备与存储方式</h1><h2 id="硬盘"><a href="#硬盘" class="headerlink" title="硬盘"></a>硬盘</h2><p>类似MySQL或Redis，RocketMQ的消息持久化也是直接存储到<strong>本地硬盘</strong>中的。<br>在面对削峰填谷的需求下，可靠性、性能、存储量都无比重要：消息不能丢失，消息得快速写入（但是不急着读取），并且需要存储大量消息。<br>硬盘非常适合满足上述需求：</p><ul><li><strong>可靠性</strong>：可以通过设置RAID等级来保证数据可靠性。</li><li><strong>快速写入</strong>：硬盘支持顺序写入，能够快速写入大量数据。</li><li><strong>存储量</strong>：硬盘是存储量非常大的存储介质，要想超越硬盘只能使用云盘，但云盘的速度较慢。</li></ul><blockquote><p>为什么不使用类似MySQL或Redis的软件作为存储层？原因很简单，引入额外的软件作为中介会降低性能和可靠性。在削峰填谷、超高并发的场景下，减少中间层可以显著提升性能和可靠性。</p></blockquote><h2 id="commitlog"><a href="#commitlog" class="headerlink" title="commitlog"></a>commitlog</h2><p>RocketMQ将消息存储到一个commitlog文件中，不同Topic的消息会被存储在同一个commitlog文件中，每个消息都会占据一行。<br>示意图：<br><img src="/2024/03/13/backend/middleware/messagequeue/rocket-storage/commitlog.svg"></p><p>将不同Topic的消息存在一块呢，是为了充足利用硬盘的<strong>顺序写</strong>的特性。虽然硬盘可能支持同时写入多个文件来保持顺序写入，但如果同时写入的文件数等于topic的数量，且Topic数量较多，就无法保证顺序写入（因为不同文件通常会存储在不同扇区，导致随机写入；而在硬盘空间充足的情况下，将不同topic的消息存储在同一个文件中可以确保顺序写入）。</p><h1 id="读取"><a href="#读取" class="headerlink" title="读取"></a>读取</h1><p>将不同的Topic存入同一个commitlog文件中，会带来一个问题：消费者如何快速找到commitlog里的消息呢？</p><h2 id="消费队列（ConsumeQueue）"><a href="#消费队列（ConsumeQueue）" class="headerlink" title="消费队列（ConsumeQueue）"></a><strong>消费队列（ConsumeQueue）</strong></h2><p>这里就要用到一个非常重要的概念：<strong>消费队列（ConsumeQueue）</strong>。<br>当消费者获得一个消息时，其是从通过ConsumeQueue获得这个消息的具体地址；一个主题会包含多个消息队列，一个消息队列对应一个ConsumeQueue…</p><p>那么消息队列是如何获得消息的呢？自然是从commitlog中来的。RocketMQ会定时分发commitlog中的消息到ConsumeQueue（大概是1ms解析一条），分发程序会根据消息行中的信息，将消息的<strong>起始偏移量</strong>和<strong>消息长度</strong>放入ConsumeQueue，对应到MessageQueue就是放入了一条消息；等到消费者读取这条消息时，就会再次访问硬盘获得该消息并发送到消费者。</p><blockquote><p>为什么不直接在ConsumeQueue中存储消息，随机读取硬盘不是很慢吗？这是为了减少内存的空间使用，以时间换空间，分发消息没有那么高的时间性能要求，因此这里决定使用时间换空间。</p></blockquote><p>示意图：<br><img src="/2024/03/13/backend/middleware/messagequeue/rocket-storage/%E6%B6%88%E8%B4%B9%E9%98%9F%E5%88%97.svg"></p><blockquote><p>注意：ConsumeQueue也是需要持久化的，否则会丢失消息的位置。</p></blockquote><h2 id="读取流程"><a href="#读取流程" class="headerlink" title="读取流程"></a>读取流程</h2><p>在之前的<a href="/2024/03/13/backend/middleware/messagequeue/rocket-publishsubscribe/" title="消息队列：发布订阅模式">消息队列：发布订阅模式</a>中，我们就提到过一个概念：<strong>offset</strong>，用来记录消费到哪个位置。该词的全称是<strong>consumerOffset</strong>，需要区别于前面提到过的消息存储的起始偏移量<strong>commitlog offset</strong>。</p><p><strong>消费者消费消息的流程</strong>：</p><ol><li>根据订阅关系，找到订阅的consumerQueue。</li><li>通过consumerOffset获得consumerQueue中对应的消息指针。</li><li>根据消息指针中的commitlog offset和size（或length）信息，访问硬盘，获得完整消息。</li></ol><h2 id="索引"><a href="#索引" class="headerlink" title="索引"></a>索引</h2><p>一个消息中可以添加key属性，以此记录在索引表中，当需要检索该消息时快速找到。<br>该索引表文件，即为<strong>indexFile</strong>。</p><p>indexFile的格式如下图所示：<br><img src="/2024/03/13/backend/middleware/messagequeue/rocket-storage/indexFile.svg"></p><p>给新消息建立索引的过程：</p><ol><li>获得新消息的key。</li><li>计算新消息的keyhash&#x3D;hash(key)。</li><li>取余，获得对应的槽位：slotpos&#x3D;keyhash%500w。</li><li>查看该槽位是否被占用。<ol><li>如果未被占用，这将该消息的commitlog offset、size、keyhash信息存到一个空的index item位置，然后将该index item的下标放入slot。</li></ol></li><li>如果被占用，查看该slot记录的index item的下标，寻找一个空的index item，将当前消息存入，并将冲突消息的下标存到当前index item的prevIndex字段，然后重置slot的下标为当前消息的index item的下标。（类似链表的头插法）。</li></ol><p>索引消息的过程：</p><ol><li>获得key。</li><li>计算keyhash。</li><li>计算slotpos。</li><li>查看该槽位记录下标的index item中的keyhash是否对应，如果不对应就看prevIndex字段对应的index item中的keyhash是否对应，一直找到对应的那个，然后返回。如果没有对应的，就是不存在。</li></ol><blockquote><p>这样的设计有些类似简单文件系统中superblock、inode table、data region的设计。</p></blockquote>]]></content>
+    
+    
+    <categories>
+      
+      <category>分布式</category>
+      
+      <category>中间件</category>
+      
+      <category>消息队列</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>消息队列</tag>
+      
+      <tag>RocketMQ</tag>
+      
+      <tag>commitlog</tag>
+      
+      <tag>ConsumeQueue</tag>
+      
+      <tag>consumerOffset</tag>
+      
+      <tag>commitlog offset</tag>
+      
+      <tag>indexFile</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>消息队列：发布订阅模式</title>
     <link href="/2024/03/13/backend/middleware/messagequeue/rocket-publishsubscribe/"/>
     <url>/2024/03/13/backend/middleware/messagequeue/rocket-publishsubscribe/</url>
     
@@ -24,9 +65,15 @@
     
     <tags>
       
+      <tag>Topic</tag>
+      
+      <tag>MessageQueue</tag>
+      
       <tag>队列模式</tag>
       
       <tag>发布订阅模式</tag>
+      
+      <tag>offset</tag>
       
     </tags>
     
@@ -35,30 +82,7 @@
   
   
   <entry>
-    <title>RocketMQ：消息存储原理</title>
-    <link href="/2024/03/13/backend/middleware/messagequeue/rocket-storage/"/>
-    <url>/2024/03/13/backend/middleware/messagequeue/rocket-storage/</url>
-    
-    <content type="html"><![CDATA[]]></content>
-    
-    
-    <categories>
-      
-      <category>分布式</category>
-      
-      <category>中间件</category>
-      
-      <category>消息队列</category>
-      
-    </categories>
-    
-    
-  </entry>
-  
-  
-  
-  <entry>
-    <title>RocketMQ：集成Springboot</title>
+    <title>消息队列：集成Springboot</title>
     <link href="/2024/03/13/backend/middleware/messagequeue/rocket-Springboot/"/>
     <url>/2024/03/13/backend/middleware/messagequeue/rocket-Springboot/</url>
     
@@ -78,9 +102,9 @@
     
     <tags>
       
-      <tag>RocketMQ</tag>
-      
       <tag>消息队列</tag>
+      
+      <tag>RocketMQ</tag>
       
       <tag>Springboot</tag>
       
@@ -91,7 +115,7 @@
   
   
   <entry>
-    <title>RocketMQ：领域模型</title>
+    <title>消息队列：领域模型</title>
     <link href="/2024/03/13/backend/middleware/messagequeue/rocket-domainmodel/"/>
     <url>/2024/03/13/backend/middleware/messagequeue/rocket-domainmodel/</url>
     
@@ -111,9 +135,9 @@
     
     <tags>
       
-      <tag>RocketMQ</tag>
-      
       <tag>消息队列</tag>
+      
+      <tag>RocketMQ</tag>
       
       <tag>Producer</tag>
       
@@ -150,7 +174,7 @@
   
   
   <entry>
-    <title>RocketMQ：启动</title>
+    <title>消息队列：启动RocketMQ</title>
     <link href="/2024/03/13/backend/middleware/messagequeue/rocket-start/"/>
     <url>/2024/03/13/backend/middleware/messagequeue/rocket-start/</url>
     
@@ -170,9 +194,9 @@
     
     <tags>
       
-      <tag>RocketMQ</tag>
-      
       <tag>消息队列</tag>
+      
+      <tag>RocketMQ</tag>
       
     </tags>
     
@@ -201,9 +225,9 @@
     
     <tags>
       
-      <tag>RocketMQ</tag>
-      
       <tag>消息队列</tag>
+      
+      <tag>RocketMQ</tag>
       
       <tag>解耦</tag>
       
@@ -442,7 +466,7 @@
   
   
   <entry>
-    <title>分类</title>
+    <title>标签</title>
     <link href="/"/>
     <url>/</url>
     
@@ -453,7 +477,7 @@
   
   
   <entry>
-    <title>标签</title>
+    <title>分类</title>
     <link href="/"/>
     <url>/</url>
     

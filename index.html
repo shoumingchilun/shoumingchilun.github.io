@@ -228,92 +228,15 @@
     <article class="col-12 col-md-12 mx-auto index-info">
       <h2 class="index-header">
         
-        <a href="/2024/03/13/backend/middleware/messagequeue/rocket-publishsubscribe/" target="_self">
-          RocketMQ：发布订阅模式
-        </a>
-      </h2>
-
-      
-      <a class="index-excerpt index-excerpt__noimg" href="/2024/03/13/backend/middleware/messagequeue/rocket-publishsubscribe/" target="_self">
-        <div>
-          本文将讲解消息队列的两种实现模式：队列模式、发布订阅模式。 队列模式作为一种数据结构，队列的特性是先进先出。使用队列来存储消息时，生产者发送的消息会被放入到一个队列，然后由消费者们竞争着消费队列的信息。  竞争意味着每条消息只会被一个消费者消费。  在存储消息时，如果我们使用数据结构-队列对消息进行存储，就会存在一个问题：队列具有先进先出的特性，当读到后一个消息时，前一个消息就会被丢失，进而其他消
-        </div>
-      </a>
-
-      <div class="index-btm post-metas">
-        
-          <div class="post-meta mr-3">
-            <i class="iconfont icon-date"></i>
-            <time datetime="2024-03-13 22:58" pubdate>
-              2024-03-13
-            </time>
-          </div>
-        
-        
-          <div class="post-meta mr-3 d-flex align-items-center">
-            <i class="iconfont icon-category"></i>
-            
-
-<span class="category-chains">
-  
-  
-    
-      <span class="category-chain">
-        
-  <a href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F/" class="category-chain-item">分布式</a>
-  
-  
-    <span>></span>
-    
-  <a href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F/%E4%B8%AD%E9%97%B4%E4%BB%B6/" class="category-chain-item">中间件</a>
-  
-  
-    <span>></span>
-    
-  <a href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F/%E4%B8%AD%E9%97%B4%E4%BB%B6/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" class="category-chain-item">消息队列</a>
-  
-  
-
-  
-
-  
-
-      </span>
-    
-  
-</span>
-
-          </div>
-        
-        
-          <div class="post-meta">
-            <i class="iconfont icon-tags"></i>
-            
-              <a href="/tags/%E9%98%9F%E5%88%97%E6%A8%A1%E5%BC%8F/">#队列模式</a>
-            
-              <a href="/tags/%E5%8F%91%E5%B8%83%E8%AE%A2%E9%98%85%E6%A8%A1%E5%BC%8F/">#发布订阅模式</a>
-            
-          </div>
-        
-      </div>
-    </article>
-  </div>
-
-  <div class="row mx-auto index-card">
-    
-    
-    <article class="col-12 col-md-12 mx-auto index-info">
-      <h2 class="index-header">
-        
         <a href="/2024/03/13/backend/middleware/messagequeue/rocket-storage/" target="_self">
-          RocketMQ：消息存储原理
+          消息队列：消息存储原理
         </a>
       </h2>
 
       
       <a class="index-excerpt index-excerpt__noimg" href="/2024/03/13/backend/middleware/messagequeue/rocket-storage/" target="_self">
         <div>
-          
+          消息队列必须保证消息存储的可靠性，这是消息队列可以做到异步、削峰填谷的基础。本文将讲解消息队列是如何实现消息的存储的。 存储设备与存储方式硬盘类似MySQL或Redis，RocketMQ的消息持久化也是直接存储到本地硬盘中的。在面对削峰填谷的需求下，可靠性、性能、存储量都无比重要：消息不能丢失，消息得快速写入（但是不急着读取），并且需要存储大量消息。硬盘非常适合满足上述需求：  可靠性：可以通过设
         </div>
       </a>
 
@@ -363,6 +286,108 @@
           </div>
         
         
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/">#消息队列</a>
+            
+              <a href="/tags/RocketMQ/">#RocketMQ</a>
+            
+              <a href="/tags/commitlog/">#commitlog</a>
+            
+              <a href="/tags/ConsumeQueue/">#ConsumeQueue</a>
+            
+              <a href="/tags/consumerOffset/">#consumerOffset</a>
+            
+              <a href="/tags/commitlog-offset/">#commitlog offset</a>
+            
+              <a href="/tags/indexFile/">#indexFile</a>
+            
+          </div>
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h2 class="index-header">
+        
+        <a href="/2024/03/13/backend/middleware/messagequeue/rocket-publishsubscribe/" target="_self">
+          消息队列：发布订阅模式
+        </a>
+      </h2>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2024/03/13/backend/middleware/messagequeue/rocket-publishsubscribe/" target="_self">
+        <div>
+          本文将讲解消息队列的两种实现模式：队列模式、发布订阅模式。 队列模式作为一种数据结构，队列的特性是先进先出。使用队列来存储消息时，生产者发送的消息会被放入到一个队列，然后由消费者们竞争着消费队列的信息。  竞争意味着每条消息只会被一个消费者消费。  在存储消息时，如果我们使用数据结构-队列对消息进行存储，就会存在一个问题：队列具有先进先出的特性，当读到后一个消息时，前一个消息就会被丢失，进而其他消
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2024-03-13 22:50" pubdate>
+              2024-03-13
+            </time>
+          </div>
+        
+        
+          <div class="post-meta mr-3 d-flex align-items-center">
+            <i class="iconfont icon-category"></i>
+            
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F/" class="category-chain-item">分布式</a>
+  
+  
+    <span>></span>
+    
+  <a href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F/%E4%B8%AD%E9%97%B4%E4%BB%B6/" class="category-chain-item">中间件</a>
+  
+  
+    <span>></span>
+    
+  <a href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F/%E4%B8%AD%E9%97%B4%E4%BB%B6/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" class="category-chain-item">消息队列</a>
+  
+  
+
+  
+
+  
+
+      </span>
+    
+  
+</span>
+
+          </div>
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/Topic/">#Topic</a>
+            
+              <a href="/tags/MessageQueue/">#MessageQueue</a>
+            
+              <a href="/tags/%E9%98%9F%E5%88%97%E6%A8%A1%E5%BC%8F/">#队列模式</a>
+            
+              <a href="/tags/%E5%8F%91%E5%B8%83%E8%AE%A2%E9%98%85%E6%A8%A1%E5%BC%8F/">#发布订阅模式</a>
+            
+              <a href="/tags/offset/">#offset</a>
+            
+          </div>
+        
       </div>
     </article>
   </div>
@@ -374,7 +399,7 @@
       <h2 class="index-header">
         
         <a href="/2024/03/13/backend/middleware/messagequeue/rocket-Springboot/" target="_self">
-          RocketMQ：集成Springboot
+          消息队列：集成Springboot
         </a>
       </h2>
 
@@ -434,9 +459,9 @@
           <div class="post-meta">
             <i class="iconfont icon-tags"></i>
             
-              <a href="/tags/RocketMQ/">#RocketMQ</a>
-            
               <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/">#消息队列</a>
+            
+              <a href="/tags/RocketMQ/">#RocketMQ</a>
             
               <a href="/tags/Springboot/">#Springboot</a>
             
@@ -453,7 +478,7 @@
       <h2 class="index-header">
         
         <a href="/2024/03/13/backend/middleware/messagequeue/rocket-domainmodel/" target="_self">
-          RocketMQ：领域模型
+          消息队列：领域模型
         </a>
       </h2>
 
@@ -513,9 +538,9 @@
           <div class="post-meta">
             <i class="iconfont icon-tags"></i>
             
-              <a href="/tags/RocketMQ/">#RocketMQ</a>
-            
               <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/">#消息队列</a>
+            
+              <a href="/tags/RocketMQ/">#RocketMQ</a>
             
               <a href="/tags/Producer/">#Producer</a>
             
@@ -558,7 +583,7 @@
       <h2 class="index-header">
         
         <a href="/2024/03/13/backend/middleware/messagequeue/rocket-start/" target="_self">
-          RocketMQ：启动
+          消息队列：启动RocketMQ
         </a>
       </h2>
 
@@ -618,9 +643,9 @@
           <div class="post-meta">
             <i class="iconfont icon-tags"></i>
             
-              <a href="/tags/RocketMQ/">#RocketMQ</a>
-            
               <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/">#消息队列</a>
+            
+              <a href="/tags/RocketMQ/">#RocketMQ</a>
             
           </div>
         
@@ -695,9 +720,9 @@
           <div class="post-meta">
             <i class="iconfont icon-tags"></i>
             
-              <a href="/tags/RocketMQ/">#RocketMQ</a>
-            
               <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/">#消息队列</a>
+            
+              <a href="/tags/RocketMQ/">#RocketMQ</a>
             
               <a href="/tags/%E8%A7%A3%E8%80%A6/">#解耦</a>
             
