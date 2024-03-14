@@ -4,6 +4,47 @@
   
   
   <entry>
+    <title>消息队列：8.消息功能特性</title>
+    <link href="/2024/03/14/backend/middleware/messagequeue/rocket-message/"/>
+    <url>/2024/03/14/backend/middleware/messagequeue/rocket-message/</url>
+    
+    <content type="html"><![CDATA[<h1 id="普通消息"><a href="#普通消息" class="headerlink" title="普通消息"></a>普通消息</h1><p>普通消息是RocketMQ中最基础的消息。常用于微服务解耦、数据集成等场景。</p><blockquote><p>数据集成：在不同系统、应用程序或数据存储之间传输、转换、共享和同步数据的情况。</p></blockquote><h2 id="生命周期"><a href="#生命周期" class="headerlink" title="生命周期"></a>生命周期</h2><ol><li><strong>初始化</strong>：消息被生产者构建并完成初始化，待发送到服务端的状态。</li><li><strong>待消费</strong>：消息被发送到服务端，对消费者可见，等待消费者消费的状态。</li><li><strong>消费中</strong>：消息被消费者获取，并按照消费者本地的业务逻辑进行处理的过程。</li><li><strong>消费提交</strong>：消费者完成消费处理，并向服务端提交消费结果，服务端标记当前消息已经被<br>处理（包括消费成功和失败）。</li><li><strong>消息删除</strong>：RocketMQ 按照消息保存机制滚动清理最早的消息数据，将消息从物理文件中<br>删除。</li></ol><h2 id="使用方式"><a href="#使用方式" class="headerlink" title="使用方式"></a>使用方式</h2><ul><li>在broker中先提前创建NORMAL类型的消息主题：<code>sh mqadmin updateTopic-n &lt;nameserver_address&gt;-t &lt;topic_name&gt;-c &lt;cluster_name&gt;-a +message.type=NORMAL</code></li><li>在客户端SDK中向该主题发送消息即可。</li></ul><p>普通消息没什么好讲的，补充一下同步消息和异步消息的概念吧。</p><h2 id="同步消息"><a href="#同步消息" class="headerlink" title="同步消息"></a>同步消息</h2><p><strong>同步消息</strong>：生产者发送一条消息给Broker，需要阻塞等待Broker返回响应，然后才会继续发送后续的消息。</p><p>示意图：<br><img src="/2024/03/14/backend/middleware/messagequeue/rocket-message/%E5%90%8C%E6%AD%A5%E6%B6%88%E6%81%AF.svg"></p><p>如果在发行消息时，发送消息未送达，或未接受到Broker的ack响应，都会重新发送，直到失误一定次数后抛出异常。</p><h2 id="异步消息"><a href="#异步消息" class="headerlink" title="异步消息"></a>异步消息</h2><p><strong>异步消息</strong>：发送一条消息给Broker，不需要阻塞等待Broker返回响应，可直接继续发送后续的消息。<br>当异步消息发送成功或失败时，会回调在发送时设置的回调函数进行操作。</p><p>示意图：<br><img src="/2024/03/14/backend/middleware/messagequeue/rocket-message/%E5%BC%82%E6%AD%A5%E6%B6%88%E6%81%AF.svg"></p><h1 id="延时消息"><a href="#延时消息" class="headerlink" title="延时消息"></a>延时消息</h1><p><strong>延时消息</strong>为RocketMQ中的高级特性消息。常用于分布式定时调度、任务超时处理场景。</p><blockquote><p>分布式定时调度：如每天5点执行文件清理<br>任务超时处理：订单下单后暂未支付，需要等待一段时间后关闭订单</p></blockquote><p>RocketMQ延时消息设置的延时时间是当前系统时间后的某一个时间戳，而不是一段延时时长，定时时间的格式为毫秒级的Unix时间戳。</p><p>社区版的定时消息支持18个等级的延迟：</p><table><thead><tr><th>延迟等级</th><th>延迟时间</th><th>延迟等级</th><th>延迟时间</th></tr></thead><tbody><tr><td>1</td><td>1s</td><td>10</td><td>6min</td></tr><tr><td>2</td><td>5s</td><td>11</td><td>7min</td></tr><tr><td>3</td><td>15s</td><td>12</td><td>8min</td></tr><tr><td>4</td><td>30s</td><td>13</td><td>9min</td></tr><tr><td>5</td><td>1min</td><td>14</td><td>10min</td></tr><tr><td>6</td><td>2min</td><td>15</td><td>20min</td></tr><tr><td>7</td><td>3min</td><td>16</td><td>30min</td></tr><tr><td>8</td><td>4min</td><td>17</td><td>1h</td></tr><tr><td>9</td><td>5min</td><td>18</td><td>2h</td></tr></tbody></table><h2 id="生命周期-1"><a href="#生命周期-1" class="headerlink" title="生命周期"></a>生命周期</h2><ol><li>初始化：消息被生产者构建并完成初始化，待发送到服务端的状态。</li><li><strong>定时中：消息被发送到服务端，和普通消息不同的是，服务端不会直接构建消息索引，而是会将定时消息单独存储在定时存储系统中，等待定时时刻到达。</strong></li><li>待消费：定时时刻到达后，服务端将消息重新写入普通存储引擎，对下游消费者可见，等待消费者消费的状态。</li><li>消费中：消息被消费者获取，并按照消费者本地的业务逻辑进行处理的过程。</li><li>消费提交：消费者完成消费处理，并向服务端提交消费结果，服务端标记当前消息已经被处理（包括消费成功和失败）。</li><li>消息删除：RocketMQ 按照消息保存机制滚动清理最早的消息数据，将消息从物理文件中删除。</li></ol><h2 id="使用方式-1"><a href="#使用方式-1" class="headerlink" title="使用方式"></a>使用方式</h2><p>使用mqadmin工具创建延迟类型的主题：<code>sh mqadmin updateTopic-n &lt;nameserver_address&gt;-t &lt;topic_name&gt;-c &lt;cluster_name&gt;-a +message.type=DELAY</code></p><h2 id="实现原理"><a href="#实现原理" class="headerlink" title="实现原理"></a>实现原理</h2><h3 id="1-SCHEDULE-TOPIC-XXXX"><a href="#1-SCHEDULE-TOPIC-XXXX" class="headerlink" title="1.SCHEDULE_TOPIC_XXXX"></a>1.SCHEDULE_TOPIC_XXXX</h3><p>当Broker接收到延迟消息时，会将该消息的Topic和MessageQueueID等属性作为消息扩展属性存储起来，然后将该消息存储到<strong>SCHEDULE_TOPIC_XXXX</strong>主题中，根据延时等级存储到对应的18个消息队列。</p><h3 id="2-定时线程池"><a href="#2-定时线程池" class="headerlink" title="2.定时线程池"></a>2.定时线程池</h3><p>Broker 会开启一个定时线程池，里面一共有18个核心线程，这个线程池的任务就是定时调度（间隔100ms）查看SCHEDULE_TOPIC_XXXX下的每个队列的消息，一旦有到期的消息，就分发到原Topic的队列中供消费者消费。</p><p>示意图：<br><img src="/2024/03/14/backend/middleware/messagequeue/rocket-message/delayMessage.svg"></p>]]></content>
+    
+    
+    <categories>
+      
+      <category>分布式</category>
+      
+      <category>中间件</category>
+      
+      <category>消息队列</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>消息队列</tag>
+      
+      <tag>RocketMQ</tag>
+      
+      <tag>普通消息</tag>
+      
+      <tag>同步消息</tag>
+      
+      <tag>异步消息</tag>
+      
+      <tag>延时消息</tag>
+      
+      <tag>SCHEDULE_TOPIC_XXXX</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
     <title>消息队列：7.消息消费</title>
     <link href="/2024/03/14/backend/middleware/messagequeue/rocket-consume/"/>
     <url>/2024/03/14/backend/middleware/messagequeue/rocket-consume/</url>
