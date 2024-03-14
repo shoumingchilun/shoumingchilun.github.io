@@ -33,8 +33,10 @@
 <meta property="og:image" content="http://shoumingchilun.github.io/2024/03/13/backend/middleware/messagequeue/rocket-storage/sendFile+DMAGather.svg">
 <meta property="og:image" content="http://shoumingchilun.github.io/2024/03/13/backend/middleware/messagequeue/rocket-storage/mmap.svg">
 <meta property="og:image" content="http://shoumingchilun.github.io/2024/03/13/backend/middleware/messagequeue/rocket-storage/mmap+write.svg">
+<meta property="og:image" content="http://shoumingchilun.github.io/2024/03/13/backend/middleware/messagequeue/rocket-storage/kafka-storage.svg">
+<meta property="og:image" content="http://shoumingchilun.github.io/2024/03/13/backend/middleware/messagequeue/rocket-storage/kafka%E5%86%B7%E7%83%AD%E5%88%86%E5%8C%BA.svg">
 <meta property="article:published_time" content="2024-03-13T14:52:04.000Z">
-<meta property="article:modified_time" content="2024-03-14T03:01:09.051Z">
+<meta property="article:modified_time" content="2024-03-14T04:31:18.559Z">
 <meta property="article:author" content="寿命齿轮">
 <meta property="article:tag" content="消息队列">
 <meta property="article:tag" content="RocketMQ">
@@ -49,6 +51,8 @@
 <meta property="article:tag" content="sendFile">
 <meta property="article:tag" content="DMA Gather">
 <meta property="article:tag" content="mmap">
+<meta property="article:tag" content="稠密索引">
+<meta property="article:tag" content="稀疏索引">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:image" content="http://shoumingchilun.github.io/2024/03/13/backend/middleware/messagequeue/rocket-storage/commitlog.svg">
   
@@ -247,7 +251,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          3.3k 字
+          4.1k 字
         
       </span>
     
@@ -258,7 +262,7 @@
         
         
         
-          28 分钟
+          35 分钟
         
       </span>
     
@@ -313,7 +317,7 @@
               <p id="updated-time" class="note note-info" style="display: none">
                 
                   
-                    本文最后更新于 2024-03-14T11:01:09+08:00
+                    本文最后更新于 2024-03-14T12:31:18+08:00
                   
                   
 
@@ -454,6 +458,26 @@
 <li>write操作：当消费者拉取信息时，使用<code>write</code>从用户缓存写入到网络缓冲区，实际上由于mmap的原因，是直接从内核的磁盘缓存区write到网络缓存区。</li>
 </ol>
 <p>示意图：<br><img src="/2024/03/13/backend/middleware/messagequeue/rocket-storage/mmap+write.svg" srcset="/img/loading.gif" lazyload></p>
+<h1 id="对比RocketMQ与Kafka"><a href="#对比RocketMQ与Kafka" class="headerlink" title="对比RocketMQ与Kafka"></a>对比RocketMQ与Kafka</h1><h2 id="RocketMQ"><a href="#RocketMQ" class="headerlink" title="RocketMQ"></a>RocketMQ</h2><p>RocketMQ采用多Topic混合存储一个文件的方式来保存消息，即一个CommitLog文件中会包含分给此Broker的所有消息，不论消息属于哪个Topic的哪个Queue。</p>
+<p>然后再以Topic+队列维度，存储ConsumeQueue（一个MessageQueue对应一个ConsumeQueue文件）。消费者具体是通过ConsumeQueue得到消息的真实物理地址再去访问CommitLog获取消息的，所有ConsumeQueue可理解为消息的索引。</p>
+<p><strong>每条消息存储至commitlog，都会在对应的ConsumeQueue生成一条记录</strong>，因此这个索引也叫<strong>稠密索引</strong>。</p>
+<h2 id="Kafka"><a href="#Kafka" class="headerlink" title="Kafka"></a>Kafka</h2><h3 id="分区（Partition）"><a href="#分区（Partition）" class="headerlink" title="分区（Partition）"></a>分区（Partition）</h3><p>Kafka和RocketMQ一样，Topic下也分了多个队列提高消费的并发度，但是在Kafka中不叫队列，叫<strong>分区（Partition）</strong>。<br>Kafka是以Partition为单位来存储消息的：</p>
+<p><img src="/2024/03/13/backend/middleware/messagequeue/rocket-storage/kafka-storage.svg" srcset="/img/loading.gif" lazyload></p>
+<p>每个Topic的每个分区都会拥有自己的消息文件，且对应会有索引文件（还有一个时间索引文件这里不多介绍），它们的文件名一样（以第一条消息的offset命名，后缀为.log和.index）。</p>
+<h3 id="稀疏索引"><a href="#稀疏索引" class="headerlink" title="稀疏索引"></a>稀疏索引</h3><p>Kafka不会为每条消息都对应生成一个索引，而是每隔几条消息再创建一条索引，这样能节省存储空间，能在内存中保存更多的索引，这样的索引叫<strong>稀疏索引</strong>。</p>
+<p>索引逻辑：</p>
+<ol>
+<li>首先通过 offset 找到对应的索引文件。</li>
+<li>再通过二分法遍历索引文件找到离目标消息最近的索引。</li>
+<li>再利用这个索引内容从消息文件找到最近这条消息的位置。</li>
+<li>再从这个位置开始顺序遍历消息文件找到目标消息。</li>
+</ol>
+<p>这样一次寻址的时间复杂度为$O(log_2n)+O(m)$，其中 n 为索引文件中的索引个数，m 为索引的稀疏程度。</p>
+<blockquote>
+<p>Kafka选择 用更少的空间，就需要花费更多的时间；而 RocketMQ 用的时间更少则花了更多的空间。</p>
+</blockquote>
+<h3 id="冷热分区"><a href="#冷热分区" class="headerlink" title="冷热分区"></a>冷热分区</h3><p>其实这个 Kafka 索引的二分查找是经过工程优化<strong>冷热分区的二分查找</strong>。如果按照正常的二分查找，那么需要读取索引的头和尾内容，尾的内容是最新写入的，很有可能已经在 pageCache ，而头的内容可能是很久之前的，很大概率不在 pageCache 中，因此需要从磁盘加载读取到 pageCache。</p>
+<p>而内存是有限的，操作系统会通过类 LRU 机制进行页替换，当内存不足，很有可能因为加载这些很久以前的数据，导致内存中一些最近的 pageCache 被置换到磁盘中，而最近的 pageCache 的消息正常而言是近期会被消费者读取消费的，但这些消息又被挤出了内存，这样一来会频繁触发页中断，对性能很不好。且按照一般的逻辑，消费者要拉取的消息肯定是在索引文件的尾部，也就是最近写入的，而不是时间久远的头部，从头部找意义不大。<br><img src="/2024/03/13/backend/middleware/messagequeue/rocket-storage/kafka%E5%86%B7%E7%83%AD%E5%88%86%E5%8C%BA.svg" srcset="/img/loading.gif" lazyload><br>因此 Kafka 给索引文件做了<strong>冷热分区</strong>，修改过的二分是先查热区的二分，如果查不到再从冷区开始，由于热区的数据本身都已经在 pageCache 中，因此对缓存友好，不会污染缓存，且很大可能性能找到对应的消息。</p>
 
                 
               </div>
@@ -526,6 +550,10 @@
         <a href="/tags/DMA-Gather/" class="print-no-link">#DMA Gather</a>
       
         <a href="/tags/mmap/" class="print-no-link">#mmap</a>
+      
+        <a href="/tags/%E7%A8%A0%E5%AF%86%E7%B4%A2%E5%BC%95/" class="print-no-link">#稠密索引</a>
+      
+        <a href="/tags/%E7%A8%80%E7%96%8F%E7%B4%A2%E5%BC%95/" class="print-no-link">#稀疏索引</a>
       
     </div>
   
