@@ -228,6 +228,109 @@
     <article class="col-12 col-md-12 mx-auto index-info">
       <h2 class="index-header">
         
+        <a href="/2024/03/14/backend/middleware/messagequeue/rocket-consume/" target="_self">
+          消息队列：7.消息消费
+        </a>
+      </h2>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2024/03/14/backend/middleware/messagequeue/rocket-consume/" target="_self">
+        <div>
+          推模式与拉模式推消息推消息是指，当Broker接受到消息后，会主动将消息推送给消费者。  该模式的优缺点：  优点：实时性高，消费者简单。 缺点：Broker无法得知消费者状态，可能导致推送过多消息。  改进推模式上述模式中，Broker无法得知消费者的状态，因此添加反馈机制：  Broker在推送消息前，先获得消费者的状态，再进行消息推送。 优缺点：  优点：可以实现削峰填谷，及时性高。 缺点：
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2024-03-14 19:47" pubdate>
+              2024-03-14
+            </time>
+          </div>
+        
+        
+          <div class="post-meta mr-3 d-flex align-items-center">
+            <i class="iconfont icon-category"></i>
+            
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F/" class="category-chain-item">分布式</a>
+  
+  
+    <span>></span>
+    
+  <a href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F/%E4%B8%AD%E9%97%B4%E4%BB%B6/" class="category-chain-item">中间件</a>
+  
+  
+    <span>></span>
+    
+  <a href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F/%E4%B8%AD%E9%97%B4%E4%BB%B6/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" class="category-chain-item">消息队列</a>
+  
+  
+
+  
+
+  
+
+      </span>
+    
+  
+</span>
+
+          </div>
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/">#消息队列</a>
+            
+              <a href="/tags/RocketMQ/">#RocketMQ</a>
+            
+              <a href="/tags/%E6%8E%A8%E6%B6%88%E6%81%AF/">#推消息</a>
+            
+              <a href="/tags/%E6%8B%89%E6%B6%88%E6%81%AF/">#拉消息</a>
+            
+              <a href="/tags/%E9%95%BF%E8%BD%AE%E8%AF%A2/">#长轮询</a>
+            
+              <a href="/tags/%E9%98%9F%E5%88%97%E7%B2%92%E5%BA%A6%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1/">#队列粒度负载均衡</a>
+            
+              <a href="/tags/%E6%B6%88%E6%81%AF%E7%B2%92%E5%BA%A6%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1/">#消息粒度负载均衡</a>
+            
+              <a href="/tags/PullMessageService/">#PullMessageService</a>
+            
+              <a href="/tags/ProcessQueue/">#ProcessQueue</a>
+            
+              <a href="/tags/ConsumeMessageService/">#ConsumeMessageService</a>
+            
+              <a href="/tags/%E6%B6%88%E8%B4%B9%E9%87%8D%E8%AF%95/">#消费重试</a>
+            
+              <a href="/tags/%E6%B6%88%E6%81%AF%E9%87%8D%E8%AF%95%E9%97%B4%E9%9A%94/">#消息重试间隔</a>
+            
+              <a href="/tags/Wait-Retry/">#Wait Retry</a>
+            
+              <a href="/tags/%E4%B8%8D%E5%8F%AF%E8%A7%81%E6%97%B6%E9%97%B4/">#不可见时间</a>
+            
+              <a href="/tags/InvisibleDuration/">#InvisibleDuration</a>
+            
+          </div>
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h2 class="index-header">
+        
         <a href="/2024/03/13/backend/middleware/messagequeue/rocket-storage/" target="_self">
           消息队列：6.消息存储原理
         </a>
@@ -415,7 +518,7 @@
       <h2 class="index-header">
         
         <a href="/2024/03/13/backend/middleware/messagequeue/rocket-Springboot/" target="_self">
-          消息队列：4.集成Springboot
+          消息队列：4.Springboot集成RocketMQ
         </a>
       </h2>
 
@@ -974,85 +1077,6 @@
               <a href="/tags/Binary-log/">#Binary log</a>
             
               <a href="/tags/mysql-slave/">#mysql slave</a>
-            
-          </div>
-        
-      </div>
-    </article>
-  </div>
-
-  <div class="row mx-auto index-card">
-    
-    
-    <article class="col-12 col-md-12 mx-auto index-info">
-      <h2 class="index-header">
-        
-        <a href="/2024/03/06/backend/middleware/canal/canal_MySQL&amp;Redis/" target="_self">
-          canal入门篇：2.实现MySQL&amp;Redis双写一致性
-        </a>
-      </h2>
-
-      
-      <a class="index-excerpt index-excerpt__noimg" href="/2024/03/06/backend/middleware/canal/canal_MySQL&amp;Redis/" target="_self">
-        <div>
-          本文将介绍如何使用canal实现MySQl和Redis的双写一致性。前文为：canal入门篇：1.介绍&amp;配置&amp;启动。  github仓库链接  canalAPI讲解本文将使用SpringBoot框架搭建一个应用，通过canal获得数据库的更改消息，并将发生变更的实体同步更新到Redis中。 优点使用canal的好处：  透明性与低侵入：使用 Canal 通常不需要对既有业务逻辑进行
-        </div>
-      </a>
-
-      <div class="index-btm post-metas">
-        
-          <div class="post-meta mr-3">
-            <i class="iconfont icon-date"></i>
-            <time datetime="2024-03-06 20:22" pubdate>
-              2024-03-06
-            </time>
-          </div>
-        
-        
-          <div class="post-meta mr-3 d-flex align-items-center">
-            <i class="iconfont icon-category"></i>
-            
-
-<span class="category-chains">
-  
-  
-    
-      <span class="category-chain">
-        
-  <a href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F/" class="category-chain-item">分布式</a>
-  
-  
-    <span>></span>
-    
-  <a href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F/%E4%B8%AD%E9%97%B4%E4%BB%B6/" class="category-chain-item">中间件</a>
-  
-  
-    <span>></span>
-    
-  <a href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F/%E4%B8%AD%E9%97%B4%E4%BB%B6/canal/" class="category-chain-item">canal</a>
-  
-  
-
-  
-
-  
-
-      </span>
-    
-  
-</span>
-
-          </div>
-        
-        
-          <div class="post-meta">
-            <i class="iconfont icon-tags"></i>
-            
-              <a href="/tags/canal/">#canal</a>
-            
-              <a href="/tags/%E5%8F%8C%E5%86%99%E4%B8%80%E8%87%B4%E6%80%A7/">#双写一致性</a>
-            
-              <a href="/tags/redis/">#redis</a>
             
           </div>
         
