@@ -236,7 +236,7 @@
       
       <a class="index-excerpt index-excerpt__noimg" href="/2024/03/13/backend/middleware/messagequeue/rocket-storage/" target="_self">
         <div>
-          消息队列必须保证消息存储的可靠性，这是消息队列可以做到异步、削峰填谷的基础。本文将讲解消息队列是如何实现消息的存储的。 存储设备与存储方式硬盘类似MySQL或Redis，RocketMQ的消息持久化也是直接存储到本地硬盘中的。在面对削峰填谷的需求下，可靠性、性能、存储量都无比重要：消息不能丢失，消息得快速写入（但是不急着读取），并且需要存储大量消息。硬盘非常适合满足上述需求：  可靠性：可以通过设
+          消息队列必须保证消息存储的可靠性，这是消息队列可以做到异步、削峰填谷的基础。本文将讲解消息队列是如何实现消息的存储的。 写入硬盘类似MySQL或Redis，RocketMQ的消息持久化也是直接存储到本地硬盘中的。在面对削峰填谷的需求下，可靠性、性能、存储量都无比重要：消息不能丢失，消息得快速写入（但是不急着读取），并且需要存储大量消息。硬盘非常适合满足上述需求：  可靠性：可以通过设置RAID等级
         </div>
       </a>
 
@@ -302,6 +302,18 @@
               <a href="/tags/commitlog-offset/">#commitlog offset</a>
             
               <a href="/tags/indexFile/">#indexFile</a>
+            
+              <a href="/tags/%E7%94%A8%E6%88%B7%E7%A9%BA%E9%97%B4/">#用户空间</a>
+            
+              <a href="/tags/%E5%86%85%E6%A0%B8%E7%A9%BA%E9%97%B4/">#内核空间</a>
+            
+              <a href="/tags/%E9%9B%B6%E6%8B%B7%E8%B4%9D/">#零拷贝</a>
+            
+              <a href="/tags/sendFile/">#sendFile</a>
+            
+              <a href="/tags/DMA-Gather/">#DMA Gather</a>
+            
+              <a href="/tags/mmap/">#mmap</a>
             
           </div>
         

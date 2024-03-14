@@ -71,100 +71,6 @@
       </tags>
   </entry>
   <entry>
-    <title>微服务：认识篇</title>
-    <url>/2024/03/13/backend/microservice/microservice-introduce/</url>
-    <content><![CDATA[<p>本文将从时代背景、发展过程、微服务特点出发，对微服务整体构建一个大致的理解：</p>
-<h2 id="时代背景"><a href="#时代背景" class="headerlink" title="时代背景"></a>时代背景</h2><ol>
-<li><p>解决<strong>复杂性</strong>的需求——传统的单体应用架构将所有的功能和模块集中在一个单独的应用程序中，导致应用程序开发、部署和维护变得困难，并且不利于快速迭代和扩展。</p>
-</li>
-<li><p>对<strong>高可用性和扩展性</strong>的需求（如高并发和大规模用户访问）——用户对于应用程序的高可用性和即时响应的期望越来越高，而单体应用架构难以实现高可用性和弹性扩展（一个组件的故障可能会影响整个应用程序的可用性，并且扩展整个应用程序可能会面临技术和性能上的限制）。</p>
-</li>
-<li><p>快速迭代和团队协作的需求（可包含于1.1）——传统的单体应用架构可能不利于快速迭代，因为一个小的更改可能需要重新构建整个应用程序并进行全面的测试和部署，而且微服务为人员的分工提供了便捷，可以更好地支持快速迭代和敏捷开发。</p>
-<blockquote>
-<p>来自《凤凰架构》：譬如，制约软件质量与业务能力提升的最大因素是人而非硬件。多数企业即使有钱也很难招到大量的靠谱的开发者。此时，无论是引入外包团队，抑或是让少量技术专家带着大量普通水平的开发者去共同完成一个大型系统就成为了必然的选择。在单体架构下，没有什么有效阻断错误传播的手段，系统中“整体”与“部分”的关系没有物理的划分，系统质量只能靠研发与项目管理措施来尽可能地保障，少量的技术专家很难阻止大量螺丝钉式的程序员或者不熟悉原有技术架构的外包人员在某个不起眼的地方犯错并产生全局性的影响，并不容易做出整体可靠的大型系统。</p>
-</blockquote>
-</li>
-<li><p><strong>新技术云计算</strong>和<strong>分布式架构</strong>的支持——云计算的兴起为分布式架构提供了理想的基础设施。云计算提供了弹性的计算资源和可扩展的基础设施，使得构建分布式系统和服务变得更加容易。</p>
-</li>
-</ol>
-<h2 id="发展过程："><a href="#发展过程：" class="headerlink" title="发展过程："></a>发展过程：</h2><ol>
-<li>早期阶段：<ol>
-<li>SOA的出现：在这个阶段，服务导向架构（SOA）的概念开始引起关注。SOA提倡将应用程序拆分为一组可重用的服务，通过标准化的接口进行通信。这为后来微服务架构的发展奠定了基础。</li>
-</ol>
-</li>
-<li>兴起阶段：<ol>
-<li>架构模式的探索：微服务架构作为一种新兴的架构风格（更灵活、可维护和可扩展）开始受到关注。</li>
-<li>云计算和虚拟化技术的发展：云计算和虚拟化技术的兴起为微服务架构的发展提供了理想的基础设施。这些技术为构建分布式系统和部署微服务提供了更好的支持。</li>
-</ol>
-</li>
-<li>推广阶段：<ol>
-<li>微服务的推广：微服务架构开始广泛被采用并得到推广。越来越多的组织开始采用微服务架构，以应对复杂性增加、快速迭代和团队协作的挑战。</li>
-<li>开源和商业化工具的涌现：随着微服务的普及，大量的开源和商业化工具、框架和平台涌现，用于辅助微服务架构的开发、部署和管理。这些工具提供了服务注册与发现、负载均衡、容器化和编排、监控和日志等功能，为微服务架构提供了更好的支持。</li>
-<li>实践经验的积累：随着实际应用的增多，对于微服务架构的实践经验也在不断积累。开发人员和组织逐渐摸索出一些最佳实践、设计模式和解决方案，以应对微服务架构中的挑战和复杂性。</li>
-</ol>
-</li>
-<li>演进阶段（将来）：微服务架构是一个动态的领域，仍在不断演进和发展中。它的发展历史仍在进行中，将随着技术的进步和业务需求的变化而不断推进。因此，微服务架构的未来发展将会受到更多新技术、实践经验和业务需求的影响。</li>
-</ol>
-<h2 id="微服务特点："><a href="#微服务特点：" class="headerlink" title="微服务特点："></a>微服务特点：</h2><table>
-<thead>
-<tr>
-<th>不同点</th>
-<th>微服务架构</th>
-<th>单体架构</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>团队规模</td>
-<td>微服务架构可以将传统模式下的单个应用拆分为多个独立的服务，每个微服务都可以单独开发、部署和维护。<strong>每个服务从设计、开发到维护所需的团队规模小，团队管理成本小。</strong></td>
-<td>单体架构的应用程序通常需要一个大型团队，围绕一个庞大的应用程序工作，团队管理的成本大。</td>
-</tr>
-<tr>
-<td>项目结构（部署方式）</td>
-<td>微服务架构中<strong>每个服务都可以独立开发、部署和维护</strong>，也可以独立于其他服务进行扩展。如果部署得当，基于微服务的架构可以帮助企业提高应用程序的部署效率。</td>
-<td>采用单体架构的应用程序的每一次功能更改或 bug 修复都必须对整个应用程序重新进行部署（所有的业务逻辑都集中在同一个工程中）。</td>
-</tr>
-<tr>
-<td>开发模式</td>
-<td>在采用微服务架构的应用程序中，<strong>不同模块可以使用不同的技术或语言进行开发，开发模式更加灵活</strong>。</td>
-<td>在采用单体架构的应用程序中，所有模块使用的技术和语言必须相同，开发模式受限。</td>
-</tr>
-<tr>
-<td>故障隔离</td>
-<td>在微服务架构中，<strong>故障被隔离在单个服务中</strong>，避免系统的整体崩溃。</td>
-<td>在单体架构中，当一个组件出现故障时，故障很可能会在进程中蔓延，导致系统全局不可用。</td>
-</tr>
-</tbody></table>
-<p>优点：</p>
-<ul>
-<li><strong>松耦合</strong>：微服务架构通过将应用程序拆分为多个独立的服务来实现松耦合。每个服务都是自治的，可以独立开发、部署、扩展和维护。这种松耦合性使团队能够独立开发和部署不同的服务，降低了开发的复杂性，并且更容易实现敏捷开发和持续交付。</li>
-<li><strong>可伸缩性（扩展性）</strong>：由于微服务架构中的每个服务都是独立的，可以根据需求对每个服务进行单独的扩展。这意味着可以根据流量和负载的变化，只需对需要扩展的服务进行扩展，而无需扩展整个应用程序。这种可伸缩性使系统能够更好地应对高流量和大规模的并发请求。</li>
-<li><strong>技术多样性</strong>：微服务架构允许使用不同的编程语言、框架和技术栈来构建不同的服务。这使得团队可以选择最适合其需求和技术能力的工具和技术，从而实现更好的灵活性和创新性。</li>
-</ul>
-<p>缺点：</p>
-<ul>
-<li><strong>分布式系统复杂性</strong>：微服务架构引入了分布式系统的复杂性。服务之间的通信和协调需要考虑网络延迟、服务发现、故障处理等因素。这增加了系统的复杂性，并需要适当的工具和技术来管理分布式环境。</li>
-<li><strong>运维复杂性</strong>：由于微服务架构中存在大量的服务实例和组件，运维和监控这些服务变得更加复杂。需要适当的工具和流程来管理和监控每个服务的性能、可用性和健康状态。</li>
-<li><strong>分布式事务管理</strong>：微服务架构中的服务可能需要进行跨服务的事务操作。由于每个服务都是自治的，保持一致的事务管理变得复杂。需要使用一些机制（如分布式事务或补偿性事务）来管理分布式事务的一致性和可靠性。<br>此外，微服务还有其他一些特点，比如可以与容器（Docker）配合使用，可以进行链路追踪等，但是我们主要的目的，还是为了解决复杂性（实现独立开发、部署和维护，保证敏捷开发和持续交付）和提高可用性和扩展性（故障隔离、对服务进行扩展、可使用多种技术和语言），所以仅列出上述优缺点和特点。</li>
-</ul>
-<h2 id="与SOA的区别："><a href="#与SOA的区别：" class="headerlink" title="与SOA的区别："></a>与SOA的区别：</h2><p>微服务 VS SOA：</p>
-<ul>
-<li>相同：面向服务；</li>
-<li>不同：强约束 VS 软指导；强一致 VS 自由；规范标准 VS 实践标准。<br>微服务丢掉了 SOA 的强标准，换来了自由。自由的代价是工程师需根据业务情况选择适合的技术，过程中可能会犯错。微服务带来自由，也带来迷茫。微服务只是一种思想，它丢掉了 SOA 的包袱，却没带来什么具体的东西。RPC 等分布式的问题重新出现，交由社区解决；一时间，百花齐放，百家争鸣。</li>
-</ul>
-<blockquote>
-<p>引自《凤凰架构》：<br>SOA 在 21 世纪最初的十年里曾经盛行一时，有 IBM 等一众行业巨头厂商为其呐喊冲锋，吸引了不少软件开发商、尤其是企业级软件的开发商的跟随，最终却还是偃旗息鼓，沉寂了下去。在稍后的远程服务调用一节，笔者会提到 SOAP 协议被逐渐边缘化的本质原因：过于严格的规范定义带来过度的复杂性。而构建在 SOAP 基础之上的 ESB、BPM、SCA、SDO 等诸多上层建筑，进一步加剧了这种复杂性。开发信息系统毕竟不是作八股文章，过于精密的流程和理论也需要懂得复杂概念的专业人员才能够驾驭。SOA 诞生的那一天起，就已经注定了它只能是少数系统阳春白雪式的精致奢侈品，它可以实现多个异构大型系统之间的复杂集成交互，却很难作为一种具有广泛普适性的软件架构风格来推广。SOA 最终没有获得成功的致命伤与当年的EJB (opens new window)如出一辙，尽管有 Sun Microsystems 和 IBM 等一众巨头在背后力挺，EJB 仍然败于以 Spring、Hibernate 为代表的“草根框架”，可见一旦脱离人民群众，终究会淹没在群众的海洋之中，连信息技术也不曾例外过。</p>
-</blockquote>
-]]></content>
-      <categories>
-        <category>分布式</category>
-        <category>微服务</category>
-      </categories>
-      <tags>
-        <tag>微服务</tag>
-        <tag>SOA</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>《区块链：技术驱动金融》摘录（概念目录）</title>
     <url>/2024/03/03/Web3/readingNotes/%E5%8C%BA%E5%9D%97%E9%93%BE%EF%BC%9A%E6%8A%80%E6%9C%AF%E9%A9%B1%E5%8A%A8%E9%87%91%E8%9E%8D/</url>
     <content><![CDATA[<p>本文将介绍一些区块链领域的技术概念，充当一份技术目录以供备用。</p>
@@ -367,6 +273,100 @@
         <tag>工作量证明</tag>
         <tag>零币</tag>
         <tag>虚拟挖矿</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>微服务：认识篇</title>
+    <url>/2024/03/13/backend/microservice/microservice-introduce/</url>
+    <content><![CDATA[<p>本文将从时代背景、发展过程、微服务特点出发，对微服务整体构建一个大致的理解：</p>
+<h2 id="时代背景"><a href="#时代背景" class="headerlink" title="时代背景"></a>时代背景</h2><ol>
+<li><p>解决<strong>复杂性</strong>的需求——传统的单体应用架构将所有的功能和模块集中在一个单独的应用程序中，导致应用程序开发、部署和维护变得困难，并且不利于快速迭代和扩展。</p>
+</li>
+<li><p>对<strong>高可用性和扩展性</strong>的需求（如高并发和大规模用户访问）——用户对于应用程序的高可用性和即时响应的期望越来越高，而单体应用架构难以实现高可用性和弹性扩展（一个组件的故障可能会影响整个应用程序的可用性，并且扩展整个应用程序可能会面临技术和性能上的限制）。</p>
+</li>
+<li><p>快速迭代和团队协作的需求（可包含于1.1）——传统的单体应用架构可能不利于快速迭代，因为一个小的更改可能需要重新构建整个应用程序并进行全面的测试和部署，而且微服务为人员的分工提供了便捷，可以更好地支持快速迭代和敏捷开发。</p>
+<blockquote>
+<p>来自《凤凰架构》：譬如，制约软件质量与业务能力提升的最大因素是人而非硬件。多数企业即使有钱也很难招到大量的靠谱的开发者。此时，无论是引入外包团队，抑或是让少量技术专家带着大量普通水平的开发者去共同完成一个大型系统就成为了必然的选择。在单体架构下，没有什么有效阻断错误传播的手段，系统中“整体”与“部分”的关系没有物理的划分，系统质量只能靠研发与项目管理措施来尽可能地保障，少量的技术专家很难阻止大量螺丝钉式的程序员或者不熟悉原有技术架构的外包人员在某个不起眼的地方犯错并产生全局性的影响，并不容易做出整体可靠的大型系统。</p>
+</blockquote>
+</li>
+<li><p><strong>新技术云计算</strong>和<strong>分布式架构</strong>的支持——云计算的兴起为分布式架构提供了理想的基础设施。云计算提供了弹性的计算资源和可扩展的基础设施，使得构建分布式系统和服务变得更加容易。</p>
+</li>
+</ol>
+<h2 id="发展过程："><a href="#发展过程：" class="headerlink" title="发展过程："></a>发展过程：</h2><ol>
+<li>早期阶段：<ol>
+<li>SOA的出现：在这个阶段，服务导向架构（SOA）的概念开始引起关注。SOA提倡将应用程序拆分为一组可重用的服务，通过标准化的接口进行通信。这为后来微服务架构的发展奠定了基础。</li>
+</ol>
+</li>
+<li>兴起阶段：<ol>
+<li>架构模式的探索：微服务架构作为一种新兴的架构风格（更灵活、可维护和可扩展）开始受到关注。</li>
+<li>云计算和虚拟化技术的发展：云计算和虚拟化技术的兴起为微服务架构的发展提供了理想的基础设施。这些技术为构建分布式系统和部署微服务提供了更好的支持。</li>
+</ol>
+</li>
+<li>推广阶段：<ol>
+<li>微服务的推广：微服务架构开始广泛被采用并得到推广。越来越多的组织开始采用微服务架构，以应对复杂性增加、快速迭代和团队协作的挑战。</li>
+<li>开源和商业化工具的涌现：随着微服务的普及，大量的开源和商业化工具、框架和平台涌现，用于辅助微服务架构的开发、部署和管理。这些工具提供了服务注册与发现、负载均衡、容器化和编排、监控和日志等功能，为微服务架构提供了更好的支持。</li>
+<li>实践经验的积累：随着实际应用的增多，对于微服务架构的实践经验也在不断积累。开发人员和组织逐渐摸索出一些最佳实践、设计模式和解决方案，以应对微服务架构中的挑战和复杂性。</li>
+</ol>
+</li>
+<li>演进阶段（将来）：微服务架构是一个动态的领域，仍在不断演进和发展中。它的发展历史仍在进行中，将随着技术的进步和业务需求的变化而不断推进。因此，微服务架构的未来发展将会受到更多新技术、实践经验和业务需求的影响。</li>
+</ol>
+<h2 id="微服务特点："><a href="#微服务特点：" class="headerlink" title="微服务特点："></a>微服务特点：</h2><table>
+<thead>
+<tr>
+<th>不同点</th>
+<th>微服务架构</th>
+<th>单体架构</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>团队规模</td>
+<td>微服务架构可以将传统模式下的单个应用拆分为多个独立的服务，每个微服务都可以单独开发、部署和维护。<strong>每个服务从设计、开发到维护所需的团队规模小，团队管理成本小。</strong></td>
+<td>单体架构的应用程序通常需要一个大型团队，围绕一个庞大的应用程序工作，团队管理的成本大。</td>
+</tr>
+<tr>
+<td>项目结构（部署方式）</td>
+<td>微服务架构中<strong>每个服务都可以独立开发、部署和维护</strong>，也可以独立于其他服务进行扩展。如果部署得当，基于微服务的架构可以帮助企业提高应用程序的部署效率。</td>
+<td>采用单体架构的应用程序的每一次功能更改或 bug 修复都必须对整个应用程序重新进行部署（所有的业务逻辑都集中在同一个工程中）。</td>
+</tr>
+<tr>
+<td>开发模式</td>
+<td>在采用微服务架构的应用程序中，<strong>不同模块可以使用不同的技术或语言进行开发，开发模式更加灵活</strong>。</td>
+<td>在采用单体架构的应用程序中，所有模块使用的技术和语言必须相同，开发模式受限。</td>
+</tr>
+<tr>
+<td>故障隔离</td>
+<td>在微服务架构中，<strong>故障被隔离在单个服务中</strong>，避免系统的整体崩溃。</td>
+<td>在单体架构中，当一个组件出现故障时，故障很可能会在进程中蔓延，导致系统全局不可用。</td>
+</tr>
+</tbody></table>
+<p>优点：</p>
+<ul>
+<li><strong>松耦合</strong>：微服务架构通过将应用程序拆分为多个独立的服务来实现松耦合。每个服务都是自治的，可以独立开发、部署、扩展和维护。这种松耦合性使团队能够独立开发和部署不同的服务，降低了开发的复杂性，并且更容易实现敏捷开发和持续交付。</li>
+<li><strong>可伸缩性（扩展性）</strong>：由于微服务架构中的每个服务都是独立的，可以根据需求对每个服务进行单独的扩展。这意味着可以根据流量和负载的变化，只需对需要扩展的服务进行扩展，而无需扩展整个应用程序。这种可伸缩性使系统能够更好地应对高流量和大规模的并发请求。</li>
+<li><strong>技术多样性</strong>：微服务架构允许使用不同的编程语言、框架和技术栈来构建不同的服务。这使得团队可以选择最适合其需求和技术能力的工具和技术，从而实现更好的灵活性和创新性。</li>
+</ul>
+<p>缺点：</p>
+<ul>
+<li><strong>分布式系统复杂性</strong>：微服务架构引入了分布式系统的复杂性。服务之间的通信和协调需要考虑网络延迟、服务发现、故障处理等因素。这增加了系统的复杂性，并需要适当的工具和技术来管理分布式环境。</li>
+<li><strong>运维复杂性</strong>：由于微服务架构中存在大量的服务实例和组件，运维和监控这些服务变得更加复杂。需要适当的工具和流程来管理和监控每个服务的性能、可用性和健康状态。</li>
+<li><strong>分布式事务管理</strong>：微服务架构中的服务可能需要进行跨服务的事务操作。由于每个服务都是自治的，保持一致的事务管理变得复杂。需要使用一些机制（如分布式事务或补偿性事务）来管理分布式事务的一致性和可靠性。<br>此外，微服务还有其他一些特点，比如可以与容器（Docker）配合使用，可以进行链路追踪等，但是我们主要的目的，还是为了解决复杂性（实现独立开发、部署和维护，保证敏捷开发和持续交付）和提高可用性和扩展性（故障隔离、对服务进行扩展、可使用多种技术和语言），所以仅列出上述优缺点和特点。</li>
+</ul>
+<h2 id="与SOA的区别："><a href="#与SOA的区别：" class="headerlink" title="与SOA的区别："></a>与SOA的区别：</h2><p>微服务 VS SOA：</p>
+<ul>
+<li>相同：面向服务；</li>
+<li>不同：强约束 VS 软指导；强一致 VS 自由；规范标准 VS 实践标准。<br>微服务丢掉了 SOA 的强标准，换来了自由。自由的代价是工程师需根据业务情况选择适合的技术，过程中可能会犯错。微服务带来自由，也带来迷茫。微服务只是一种思想，它丢掉了 SOA 的包袱，却没带来什么具体的东西。RPC 等分布式的问题重新出现，交由社区解决；一时间，百花齐放，百家争鸣。</li>
+</ul>
+<blockquote>
+<p>引自《凤凰架构》：<br>SOA 在 21 世纪最初的十年里曾经盛行一时，有 IBM 等一众行业巨头厂商为其呐喊冲锋，吸引了不少软件开发商、尤其是企业级软件的开发商的跟随，最终却还是偃旗息鼓，沉寂了下去。在稍后的远程服务调用一节，笔者会提到 SOAP 协议被逐渐边缘化的本质原因：过于严格的规范定义带来过度的复杂性。而构建在 SOAP 基础之上的 ESB、BPM、SCA、SDO 等诸多上层建筑，进一步加剧了这种复杂性。开发信息系统毕竟不是作八股文章，过于精密的流程和理论也需要懂得复杂概念的专业人员才能够驾驭。SOA 诞生的那一天起，就已经注定了它只能是少数系统阳春白雪式的精致奢侈品，它可以实现多个异构大型系统之间的复杂集成交互，却很难作为一种具有广泛普适性的软件架构风格来推广。SOA 最终没有获得成功的致命伤与当年的EJB (opens new window)如出一辙，尽管有 Sun Microsystems 和 IBM 等一众巨头在背后力挺，EJB 仍然败于以 Spring、Hibernate 为代表的“草根框架”，可见一旦脱离人民群众，终究会淹没在群众的海洋之中，连信息技术也不曾例外过。</p>
+</blockquote>
+]]></content>
+      <categories>
+        <category>分布式</category>
+        <category>微服务</category>
+      </categories>
+      <tags>
+        <tag>微服务</tag>
+        <tag>SOA</tag>
       </tags>
   </entry>
   <entry>
@@ -739,222 +739,6 @@ newProxyInstance方法的三个参数：</li>
       </tags>
   </entry>
   <entry>
-    <title>canal入门篇：2.实现MySQL&amp;Redis双写一致性</title>
-    <url>/2024/03/06/backend/middleware/canal/canal_MySQL&amp;Redis/</url>
-    <content><![CDATA[<p>本文将介绍如何使用canal实现MySQl和Redis的双写一致性。前文为：<a href="/2024/03/06/backend/middleware/canal/canal_config/" title="canal入门篇：1.介绍&amp;配置&amp;启动">canal入门篇：1.介绍&amp;配置&amp;启动</a>。</p>
-<blockquote>
-<p><a href="https://github.com/shoumingchilun/API_OPEN_SPACE_CANAL">github仓库链接</a></p>
-</blockquote>
-<h1 id="canalAPI讲解"><a href="#canalAPI讲解" class="headerlink" title="canalAPI讲解"></a>canalAPI讲解</h1><p>本文将使用SpringBoot框架搭建一个应用，通过canal获得数据库的更改消息，并将发生变更的实体同步更新到Redis中。</p>
-<h2 id="优点"><a href="#优点" class="headerlink" title="优点"></a>优点</h2><p>使用canal的好处：</p>
-<ol>
-<li><strong>透明性与低侵入</strong>：使用 Canal 通常不需要对既有业务逻辑进行大规模改造，因为它作为独立的服务组件，可以透明地监听和处理数据库的变化，将更新事件推送给相应的缓存系统，实现数据同步，降低了对业务代码的入侵性。</li>
-<li><strong>扩展性与灵活性</strong>：Canal 支持多种数据源以及不同的消费方式，可以根据实际需求构建灵活的消息处理和分发机制。它可以与各种消息队列或数据处理系统集成，实现复杂的数据同步和多级缓存更新。</li>
-<li><strong>可靠性</strong>：由于 Canal 是基于 MySQL 的主从复制协议设计的，它继承了数据库层面的数据可靠性保障。同时，消息投递失败时（未进行ACK）可以通过重试机制确保最终一致性，而且可以支持幂等处理，避免重复消费造成的问题。</li>
-</ol>
-<h2 id="类说明"><a href="#类说明" class="headerlink" title="类说明"></a>类说明</h2><h3 id="canal-Client"><a href="#canal-Client" class="headerlink" title="canal Client"></a>canal Client</h3><p>先介绍一下canal Client相关的一些配置类：</p>
-<ul>
-<li><strong>ClientIdentity</strong>：canal client和server交互之间的身份标识。</li>
-<li><strong>CanalConnector</strong>：SimpleCanalConnector&#x2F;ClusterCanalConnector是两种connector的实现。simple针对的是简单的ip直连模式，cluster针对多ip的模式，可依赖CanalNodeAccessStrategy进行failover控制。（确保 Canal 在发生故障时能够无缝地切换到备份节点或者恢复服务，暂时不关注）</li>
-<li><strong>CanalNodeAccessStrategy</strong>：SimpleNodeAccessStrategy&#x2F;ClusterNodeAccessStrategy是两种failover的实现。simple针对给定的初始ip列表进行failover选择，cluster基于zookeeper上的cluster节点动态选择正在运行的canal server。（暂时不关注）</li>
-</ul>
-<p>然后即可从<code>connector</code>中通过<code>get</code>&#x2F;<code>getWithoutAck</code>获得的<code>Message</code>的这个类，该类主要的功能就是使用<code>getEntries</code>函数获得包装好的<code>List&lt;Entry&gt;</code>对象。</p>
-<h3 id="Entry"><a href="#Entry" class="headerlink" title="Entry"></a>Entry</h3><p>介绍一下Entry、RowChange、rowdata、column的概念。</p>
-<ol>
-<li><strong>Entry</strong>：Entry 是 Canal 解析 MySQL Binlog 后产生的基本单元，它<strong>代表了Binlog中的一条记录</strong>。每个Entry对象对应了MySQL数据库的一个事务或一个GTID事件（如果启用了GTID）。Entry包含了事务的相关元数据如执行时间、事务ID等，以及实际的数据库更改内容。</li>
-<li><strong>RowChange</strong>： RowChange 是更进一步封装的事件变更细节，它描述了<strong>一次数据库表级别的行级别数据变化</strong>。一个RowChange对象对应binlog中的一次行变更事件，它可以包含多行数据的插入、更新或删除操作。</li>
-<li><strong>RowData</strong>：RowData 表示<strong>单行数据的变更内容</strong>。对于RowChange中的每一次行操作（insert&#x2F;update&#x2F;delete），都会有对应的RowData对象来具体描述变更前后的列值信息。<ol>
-<li>RowData有两个重要的字段：<ul>
-<li>beforeColumnsList：在UPDATE或DELETE事件中，存储的是变更前的列数据集合。</li>
-<li>afterColumnsList：在INSERT或UPDATE事件中，存储的是变更后的列数据集合。</li>
-</ul>
-</li>
-<li>对于INSERT、UPDATE和DELETE事件，其表现形式不同：<ul>
-<li>INSERT事件：RowData会包含这一行插入后的所有列值。</li>
-<li>UPDATE事件：RowData包含两部分，即变更前的列值（beforeColumns）和变更后的列值（afterColumns）。</li>
-<li>DELETE事件：RowData仅包含被删除前的那一行的所有列值。</li>
-</ul>
-</li>
-</ol>
-</li>
-<li><strong>Column</strong>：Column 对象更加细致地表示了数据库表中某一列的数据变化情况，包括列名、列值、是否为空、是否是主键等属性信息。在RowData的beforeColumns和afterColumns列表中，每一项就是一个Column对象。</li>
-</ol>
-<h3 id="解析Entry"><a href="#解析Entry" class="headerlink" title="解析Entry"></a>解析Entry</h3><p>在获得一个<code>List&lt;Entry&gt;</code>后，我们需要对其中每个条目进行逐步解析：</p>
-<ol>
-<li><strong>判断类型</strong>：通过调用<code>getEntryType()</code>获得该<code>Entry</code>的<code>EntryType</code>，常见的类型有**事务开始(BEGIN)、事务结束(COMMIT)、行数据(ROWDATA)**等。</li>
-<li>对于 <strong>ROWDATA 类型</strong>的 Entry，可以从中提取 <strong>RowChange 对象</strong>（包含了数据库行级别的变更详情）：通过调用<code>CanalEntry.RowChange.parseFrom(entry.getStoreValue())</code>获得 RowChange 对象。</li>
-<li>获得 RowChange 对象后，可根据<code>EventType</code>获得具体操作的类型，如<code>INSERT</code>、<code>UPDATE</code>、<code>ALTER</code>等，如： <code>rowChage.getEventType()==EventType.DELETE</code>。</li>
-<li>可从 <code>RowChange</code> 对象中获得 <code>RowData</code> 对象，并从后者中获得一行数据变更前的状态和变更后的状态，再从中获得单独的<code>column</code>进行解析： <figure class="highlight java"><table><tr><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">for</span> (RowData rowData : rowChage.getRowDatasList()) &#123;<br>    rowData.getBeforeColumnsList().forEach(column -&gt; System.out.println(column.getName() + <span class="hljs-string">&quot; : &quot;</span> + column.getValue()));<br>    rowData.getAfterColumnsList().forEach(column -&gt; System.out.println(column.getName() + <span class="hljs-string">&quot; : &quot;</span> + column.getValue()));<br></code></pre></td></tr></table></figure></li>
-</ol>
-<h1 id="实现双写一致性"><a href="#实现双写一致性" class="headerlink" title="实现双写一致性"></a>实现双写一致性</h1><p>（省略启动类）</p>
-<h2 id="添加依赖"><a href="#添加依赖" class="headerlink" title="添加依赖"></a>添加依赖</h2><p>需要添加Springboot和连接Redis、canal的依赖。<br>pom.xml：</p>
-<figure class="highlight xml"><table><tr><td class="code"><pre><code class="hljs xml"><span class="hljs-tag">&lt;<span class="hljs-name">dependencyManagement</span>&gt;</span><br>    <span class="hljs-tag">&lt;<span class="hljs-name">dependencies</span>&gt;</span><br>        <span class="hljs-tag">&lt;<span class="hljs-name">dependency</span>&gt;</span><br>            <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>org.springframework.boot<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span><br>            <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>spring-boot-dependencies<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span><br>            <span class="hljs-tag">&lt;<span class="hljs-name">version</span>&gt;</span>2.7.9<span class="hljs-tag">&lt;/<span class="hljs-name">version</span>&gt;</span><br>            <span class="hljs-tag">&lt;<span class="hljs-name">type</span>&gt;</span>pom<span class="hljs-tag">&lt;/<span class="hljs-name">type</span>&gt;</span><br>            <span class="hljs-tag">&lt;<span class="hljs-name">scope</span>&gt;</span>import<span class="hljs-tag">&lt;/<span class="hljs-name">scope</span>&gt;</span><br>        <span class="hljs-tag">&lt;/<span class="hljs-name">dependency</span>&gt;</span><br>    <span class="hljs-tag">&lt;/<span class="hljs-name">dependencies</span>&gt;</span><br><span class="hljs-tag">&lt;/<span class="hljs-name">dependencyManagement</span>&gt;</span><br><span class="hljs-tag">&lt;<span class="hljs-name">dependencies</span>&gt;</span><br>    <span class="hljs-tag">&lt;<span class="hljs-name">dependency</span>&gt;</span><br>        <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>org.springframework.boot<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span><br>        <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>spring-boot-starter-web<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span><br>    <span class="hljs-tag">&lt;/<span class="hljs-name">dependency</span>&gt;</span><br>    <span class="hljs-tag">&lt;<span class="hljs-name">dependency</span>&gt;</span><br>        <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>org.springframework.boot<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span><br>        <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>spring-boot-starter-data-redis<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span><br>    <span class="hljs-tag">&lt;/<span class="hljs-name">dependency</span>&gt;</span><br>    <span class="hljs-tag">&lt;<span class="hljs-name">dependency</span>&gt;</span><br>        <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>com.alibaba.otter<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span><br>        <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>canal.client<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span><br>        <span class="hljs-tag">&lt;<span class="hljs-name">version</span>&gt;</span>1.1.0<span class="hljs-tag">&lt;/<span class="hljs-name">version</span>&gt;</span><br>    <span class="hljs-tag">&lt;/<span class="hljs-name">dependency</span>&gt;</span><br><span class="hljs-tag">&lt;/<span class="hljs-name">dependencies</span>&gt;</span><br></code></pre></td></tr></table></figure>
-
-<h2 id="注册CanalConnector-Bean"><a href="#注册CanalConnector-Bean" class="headerlink" title="注册CanalConnector Bean"></a>注册CanalConnector Bean</h2><p>使用配置文件注入依赖。</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><code class="hljs java"><span class="hljs-meta">@Configuration</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">CanalConfig</span> &#123;<br>    <span class="hljs-meta">@Value(&quot;$&#123;mycanal.hostname&#125;&quot;)</span><br>    <span class="hljs-keyword">private</span> String hostname;<br>    <span class="hljs-meta">@Value(&quot;$&#123;mycanal.port&#125;&quot;)</span><br>    <span class="hljs-keyword">private</span> Integer port;<br>    <span class="hljs-meta">@Value(&quot;$&#123;mycanal.destination&#125;&quot;)</span><br>    <span class="hljs-keyword">private</span> String destination;<br>    <span class="hljs-meta">@Value(&quot;$&#123;mycanal.username&#125;&quot;)</span><br>    <span class="hljs-keyword">private</span> <span class="hljs-type">String</span> <span class="hljs-variable">username</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;&quot;</span>;<br>    <span class="hljs-meta">@Value(&quot;$&#123;mycanal.password&#125;&quot;)</span><br>    <span class="hljs-keyword">private</span> <span class="hljs-type">String</span> <span class="hljs-variable">password</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;&quot;</span>;<br><br><br>    <span class="hljs-meta">@Bean</span><br>    <span class="hljs-keyword">public</span> CanalConnector <span class="hljs-title function_">createCanalConnector</span><span class="hljs-params">()</span> &#123;<br>        <span class="hljs-keyword">return</span> CanalConnectors.newSingleConnector(<span class="hljs-keyword">new</span> <span class="hljs-title class_">InetSocketAddress</span>(hostname,<br>                port), destination, username, password);<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
-
-<p>配置文件application.yml：</p>
-<figure class="highlight dts"><table><tr><td class="code"><pre><code class="hljs dts"><span class="hljs-symbol">mycanal:</span><br><span class="hljs-symbol">  hostname:</span> <span class="hljs-number">192.168</span><span class="hljs-number">.146</span><span class="hljs-number">.132</span><br><span class="hljs-symbol">  port:</span> <span class="hljs-number">11111</span><br><span class="hljs-symbol">  destination:</span> example<br><span class="hljs-symbol">  username:</span><br><span class="hljs-symbol">  password:</span><br></code></pre></td></tr></table></figure>
-
-<h2 id="设置Redis转码方式"><a href="#设置Redis转码方式" class="headerlink" title="设置Redis转码方式"></a>设置Redis转码方式</h2><figure class="highlight java"><table><tr><td class="code"><pre><code class="hljs java"><span class="hljs-meta">@Configuration</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">RedisConfig</span> &#123;<br>    <span class="hljs-meta">@Bean</span><br>    <span class="hljs-keyword">public</span> RedisTemplate&lt;String, Object&gt; <span class="hljs-title function_">redisTemplate</span><span class="hljs-params">(LettuceConnectionFactory lettuceConnectionFactory)</span> &#123;<br>        RedisTemplate&lt;String, Object&gt; redisTemplate = <span class="hljs-keyword">new</span> <span class="hljs-title class_">RedisTemplate</span>&lt;&gt;();<br><br>        redisTemplate.setConnectionFactory(lettuceConnectionFactory);<br>        <span class="hljs-comment">//设置key序列化方式string</span><br>        redisTemplate.setKeySerializer(<span class="hljs-keyword">new</span> <span class="hljs-title class_">StringRedisSerializer</span>());<br>        <span class="hljs-comment">//设置value的序列化方式json，使用GenericJackson2JsonRedisSerializer替换默认序列化</span><br>        redisTemplate.setValueSerializer(<span class="hljs-keyword">new</span> <span class="hljs-title class_">GenericJackson2JsonRedisSerializer</span>());<br>        redisTemplate.setHashKeySerializer(<span class="hljs-keyword">new</span> <span class="hljs-title class_">StringRedisSerializer</span>());<br>        redisTemplate.setHashValueSerializer(<span class="hljs-keyword">new</span> <span class="hljs-title class_">GenericJackson2JsonRedisSerializer</span>());<br><br>        redisTemplate.afterPropertiesSet();<br>        <span class="hljs-keyword">return</span> redisTemplate;<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
-
-<blockquote>
-<p>补充：如果使用GenericJackson2JsonRedisSerializer充当序列化&#x2F;反序列化工具的话<code>redisTemplate.setValueSerializer(new GenericJackson2JsonRedisSerializer());</code>，请保证各组件内类名一致（包含包路径）。</p>
-</blockquote>
-<h2 id="创建实体类"><a href="#创建实体类" class="headerlink" title="创建实体类"></a>创建实体类</h2><p>Redis中value对应的实体。</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><code class="hljs java"><span class="hljs-meta">@Data</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">InterfaceAccess</span> <span class="hljs-keyword">implements</span> <span class="hljs-title class_">Serializable</span> &#123;<br>    <span class="hljs-keyword">private</span> String accesskey;<br>    <span class="hljs-keyword">private</span> Integer verifyType;<br>    <span class="hljs-keyword">private</span> String secretkey;<br>    <span class="hljs-keyword">private</span> BigDecimal remainingAmount;<br>    <span class="hljs-keyword">private</span> Integer remainingTimes;<br>    <span class="hljs-keyword">private</span> Long interfaceId;<br>    <span class="hljs-keyword">private</span> Long userid;<br>    <span class="hljs-keyword">private</span> Integer callTimes;<br>    <span class="hljs-keyword">private</span> Integer failedCallTimes;<br>    <span class="hljs-keyword">private</span> Date createTime;<br>    <span class="hljs-keyword">private</span> Date updateTime;<br>    <span class="hljs-keyword">private</span> Integer isDeleted;<br>    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-type">long</span> <span class="hljs-variable">serialVersionUID</span> <span class="hljs-operator">=</span> <span class="hljs-number">1L</span>;<br>&#125;<br></code></pre></td></tr></table></figure>
-
-<h2 id="设计Redis服务接口并实现"><a href="#设计Redis服务接口并实现" class="headerlink" title="设计Redis服务接口并实现"></a>设计Redis服务接口并实现</h2><figure class="highlight java"><table><tr><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">interface</span> <span class="hljs-title class_">RedisService</span> &#123;<br>    <span class="hljs-type">String</span> <span class="hljs-variable">ACCESS_PREFIX</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;InterfaceAccess_&quot;</span>;<br>    <span class="hljs-keyword">void</span> <span class="hljs-title function_">updateInterfaceAccess</span><span class="hljs-params">(InterfaceAccess interfaceAccess)</span>;<br>    <span class="hljs-keyword">void</span> <span class="hljs-title function_">deleteInterfaceAccess</span><span class="hljs-params">(InterfaceAccess interfaceAccess)</span>;<br>&#125;<br><br><span class="hljs-meta">@Service</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">RedisServiceImpl</span> <span class="hljs-keyword">implements</span> <span class="hljs-title class_">RedisService</span> &#123;<br>    <span class="hljs-meta">@Resource</span><br>    <span class="hljs-keyword">private</span> RedisTemplate&lt;String, InterfaceAccess&gt; redisTemplate;<br><br>    <span class="hljs-meta">@Override</span><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">updateInterfaceAccess</span><span class="hljs-params">(InterfaceAccess interfaceAccess)</span> &#123;<br>        redisTemplate.opsForValue().set(RedisService.ACCESS_PREFIX + interfaceAccess.getAccesskey(), interfaceAccess, <span class="hljs-number">2</span>, TimeUnit.MINUTES);<br>    &#125;<br><br>    <span class="hljs-meta">@Override</span><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">deleteInterfaceAccess</span><span class="hljs-params">(InterfaceAccess interfaceAccess)</span> &#123;<br>        redisTemplate.delete(RedisService.ACCESS_PREFIX + interfaceAccess.getAccesskey());<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
-
-<h2 id="创建CanalMessageHandler类"><a href="#创建CanalMessageHandler类" class="headerlink" title="创建CanalMessageHandler类"></a>创建CanalMessageHandler类</h2><p>使用ApplicationRunner接口实现容器启动后开始监听。</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><code class="hljs java"><span class="hljs-meta">@Slf4j</span><br><span class="hljs-meta">@Component</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">CanalMessageHandler</span> <span class="hljs-keyword">implements</span> <span class="hljs-title class_">ApplicationRunner</span> &#123;<br>    <span class="hljs-meta">@Resource</span><br>    <span class="hljs-keyword">private</span> CanalConnector connector;<br><br>    <span class="hljs-meta">@Resource</span><br>    <span class="hljs-keyword">private</span> RedisService redisService;<br><br>    <span class="hljs-meta">@Override</span><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">run</span><span class="hljs-params">(ApplicationArguments args)</span> &#123;<br>        <span class="hljs-type">int</span> <span class="hljs-variable">batchSize</span> <span class="hljs-operator">=</span> <span class="hljs-number">1000</span>;<br>        <span class="hljs-comment">//空闲空转计数器</span><br>        <span class="hljs-type">int</span> <span class="hljs-variable">emptyCount</span> <span class="hljs-operator">=</span> <span class="hljs-number">0</span>;<br>        <span class="hljs-keyword">try</span> &#123;<br>            connector.connect();<br>            <span class="hljs-comment">// 监听api_open_platform数据库下的interface_access表</span><br>            connector.subscribe(<span class="hljs-string">&quot;api_open_platform.interface_access&quot;</span>);<br>            <span class="hljs-comment">// 回滚到未进行 ack 的地方，下次fetch的时候，可以从最后一个没有 ack 的地方开始拿</span><br>            connector.rollback();<br>            <span class="hljs-comment">// 如果3600s内没有监听到更改，则报错并停止运行</span><br>            <span class="hljs-type">int</span> <span class="hljs-variable">totalEmptyCount</span> <span class="hljs-operator">=</span> <span class="hljs-number">3600</span>;<br>            <span class="hljs-keyword">while</span> (emptyCount &lt; totalEmptyCount) &#123;<br>                System.out.println(<span class="hljs-string">&quot;正在监听canal Server: &quot;</span> + System.currentTimeMillis());<br>                <span class="hljs-type">Message</span> <span class="hljs-variable">message</span> <span class="hljs-operator">=</span> connector.getWithoutAck(batchSize); <span class="hljs-comment">// 获取指定数量的数据</span><br>                <span class="hljs-type">long</span> <span class="hljs-variable">batchId</span> <span class="hljs-operator">=</span> message.getId();<br>                <span class="hljs-type">int</span> <span class="hljs-variable">size</span> <span class="hljs-operator">=</span> message.getEntries().size();<br>                <span class="hljs-keyword">if</span> (batchId == -<span class="hljs-number">1</span> || size == <span class="hljs-number">0</span>) &#123;<br>                    emptyCount++;<br>                    <span class="hljs-keyword">try</span> &#123;<br>                        TimeUnit.SECONDS.sleep(<span class="hljs-number">1</span>);<br>                    &#125; <span class="hljs-keyword">catch</span> (InterruptedException e) &#123;<br>                        e.printStackTrace();<br>                    &#125;<br>                &#125; <span class="hljs-keyword">else</span> &#123;<br>                    <span class="hljs-comment">//计数器重新置零</span><br>                    emptyCount = <span class="hljs-number">0</span>;<br>                    handlerMessage(message.getEntries());<br>                &#125;<br>                connector.ack(batchId); <span class="hljs-comment">// 提交确认</span><br>                <span class="hljs-comment">// connector.rollback(batchId); // 处理失败, 回滚数据</span><br>            &#125;<br>            log.error(<span class="hljs-string">&quot;已经监听了&quot;</span> + totalEmptyCount + <span class="hljs-string">&quot;秒，无任何消息，请检查canal是否正常运行或连接是否成功......&quot;</span>);<br>        &#125; <span class="hljs-keyword">finally</span> &#123;<br>            connector.disconnect();<br>        &#125;<br>    &#125;<br><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">handlerMessage</span><span class="hljs-params">(List&lt;Entry&gt; entrys)</span> &#123;<br>        <span class="hljs-comment">//...</span><br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
-
-<h2 id="实现handlerMessage方法"><a href="#实现handlerMessage方法" class="headerlink" title="实现handlerMessage方法"></a>实现handlerMessage方法</h2><p>对消息进行处理，并通过调用<code>RedisService</code>的方法同步到redis。</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">handlerMessage</span><span class="hljs-params">(List&lt;Entry&gt; entrys)</span> &#123;<br>    <span class="hljs-type">ObjectMapper</span> <span class="hljs-variable">objectMapper</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">ObjectMapper</span>();<br>    <span class="hljs-type">SimpleDateFormat</span> <span class="hljs-variable">sdf</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">SimpleDateFormat</span>(<span class="hljs-string">&quot;yyyy-MM-dd HH:mm:ss&quot;</span>);<br>    <span class="hljs-keyword">for</span> (Entry entry : entrys) &#123;<br>        <span class="hljs-comment">//如果不是ROWDATA，则忽略</span><br>        <span class="hljs-keyword">if</span> (entry.getEntryType() != EntryType.ROWDATA) &#123;<br>            <span class="hljs-keyword">continue</span>;<br>        &#125;<br>        <span class="hljs-type">RowChange</span> <span class="hljs-variable">rowchange</span> <span class="hljs-operator">=</span> <span class="hljs-literal">null</span>;<br>        <span class="hljs-keyword">try</span> &#123;<br>            <span class="hljs-comment">//获取变更的row数据</span><br>            rowchange = CanalEntry.RowChange.parseFrom(entry.getStoreValue());<br>        &#125; <span class="hljs-keyword">catch</span> (Exception e) &#123;<br>            log.error(<span class="hljs-string">&quot;解析Entry获得RowChange失败：&quot;</span> + entry, e);<br>            <span class="hljs-keyword">return</span>;<br>        &#125;<br>        <span class="hljs-comment">//获取变动类型</span><br>        <span class="hljs-type">EventType</span> <span class="hljs-variable">eventType</span> <span class="hljs-operator">=</span> rowchange.getEventType();<br>        log.info(String.format(<span class="hljs-string">&quot;================binlog[%s:%s] , name[%s,%s] , eventType : %s&quot;</span>,<br>                entry.getHeader().getLogfileName(), entry.getHeader().getLogfileOffset(),<br>                entry.getHeader().getSchemaName(), entry.getHeader().getTableName(), eventType));<br><br>        <span class="hljs-keyword">for</span> (RowData rowData : rowchange.getRowDatasList()) &#123;<br>            <span class="hljs-comment">//由于使用逻辑删除，delete实现方式为将is_deleted属性设置为1，所以删除逻辑写在update中</span><br>            <span class="hljs-keyword">if</span> (eventType == EventType.UPDATE) &#123;<br>                <span class="hljs-comment">//可使用该方式查看各个index对应的列名是什么</span><br>                <span class="hljs-comment">//rowData.getAfterColumnsList().stream().forEach(column -&gt; &#123;</span><br>                <span class="hljs-comment">//    System.out.println(column.getName());</span><br>                <span class="hljs-comment">//&#125;);</span><br>                <span class="hljs-type">InterfaceAccess</span> <span class="hljs-variable">interfaceAccess</span> <span class="hljs-operator">=</span> parseRowDateIntoInterfaceAccess(rowData);<br>                <span class="hljs-keyword">if</span> (interfaceAccess.getIsDeleted() == <span class="hljs-number">1</span>) &#123;<br>                    <span class="hljs-comment">//说明已经删除，需要同步删除</span><br>                    redisService.deleteInterfaceAccess(interfaceAccess);<br>                &#125; <span class="hljs-keyword">else</span> &#123;<br>                    <span class="hljs-comment">//说明未删除，需要同步更新</span><br>                    redisService.updateInterfaceAccess(interfaceAccess);<br>                &#125;<br>            &#125;<br>        &#125;<br>    &#125;<br>&#125;<br><br><span class="hljs-keyword">private</span> InterfaceAccess <span class="hljs-title function_">parseRowDateIntoInterfaceAccess</span><span class="hljs-params">(RowData rowData)</span> &#123;<br>    <span class="hljs-type">SimpleDateFormat</span> <span class="hljs-variable">sdf</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">SimpleDateFormat</span>(<span class="hljs-string">&quot;yyyy-MM-dd HH:mm:ss&quot;</span>);<br>    <span class="hljs-type">InterfaceAccess</span> <span class="hljs-variable">interfaceAccess</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">InterfaceAccess</span>();<br>    <span class="hljs-type">String</span> <span class="hljs-variable">accesskey</span> <span class="hljs-operator">=</span> rowData.getAfterColumns(<span class="hljs-number">0</span>).getValue();<br>    <span class="hljs-type">Integer</span> <span class="hljs-variable">verifyType</span> <span class="hljs-operator">=</span> Integer.parseInt(rowData.getAfterColumns(<span class="hljs-number">1</span>).getValue());<br>    <span class="hljs-comment">//允许为空的参数如果为空，则column.getValue().equals(&quot;&quot;)</span><br>    <span class="hljs-type">String</span> <span class="hljs-variable">secretkey</span> <span class="hljs-operator">=</span> rowData.getAfterColumns(<span class="hljs-number">2</span>).getValue().equals(<span class="hljs-string">&quot;&quot;</span>) ? <span class="hljs-literal">null</span> : rowData.getAfterColumns(<span class="hljs-number">2</span>).getValue();<br>    <span class="hljs-type">BigDecimal</span> <span class="hljs-variable">remainingAmount</span> <span class="hljs-operator">=</span> <span class="hljs-literal">null</span>;<br>    <span class="hljs-keyword">if</span> (!rowData.getAfterColumns(<span class="hljs-number">3</span>).getValue().equals(<span class="hljs-string">&quot;&quot;</span>)) &#123;<br>        remainingAmount = <span class="hljs-keyword">new</span> <span class="hljs-title class_">BigDecimal</span>(rowData.getAfterColumns(<span class="hljs-number">3</span>).getValue());<br>    &#125;<br>    <span class="hljs-type">Integer</span> <span class="hljs-variable">remainingTimes</span> <span class="hljs-operator">=</span> <span class="hljs-literal">null</span>;<br>    <span class="hljs-keyword">if</span> (!rowData.getAfterColumns(<span class="hljs-number">4</span>).getValue().equals(<span class="hljs-string">&quot;&quot;</span>)) &#123;<br>        remainingTimes = Integer.parseInt(rowData.getAfterColumns(<span class="hljs-number">4</span>).getValue());<br>    &#125;<br>    <span class="hljs-type">Long</span> <span class="hljs-variable">interfaceId</span> <span class="hljs-operator">=</span> Long.parseLong(rowData.getAfterColumns(<span class="hljs-number">5</span>).getValue());<br>    <span class="hljs-type">Long</span> <span class="hljs-variable">userid</span> <span class="hljs-operator">=</span> Long.parseLong(rowData.getAfterColumns(<span class="hljs-number">6</span>).getValue());<br>    <span class="hljs-type">Integer</span> <span class="hljs-variable">callTimes</span> <span class="hljs-operator">=</span> Integer.parseInt(rowData.getAfterColumns(<span class="hljs-number">7</span>).getValue());<br>    <span class="hljs-type">Integer</span> <span class="hljs-variable">failedCallTimes</span> <span class="hljs-operator">=</span> Integer.parseInt(rowData.getAfterColumns(<span class="hljs-number">8</span>).getValue());<br>    <span class="hljs-type">Date</span> <span class="hljs-variable">createTime</span> <span class="hljs-operator">=</span> <span class="hljs-literal">null</span>;<br>    <span class="hljs-type">Date</span> <span class="hljs-variable">updateTime</span> <span class="hljs-operator">=</span> <span class="hljs-literal">null</span>;<br>    <span class="hljs-keyword">try</span> &#123;<br>        createTime = sdf.parse(rowData.getAfterColumns(<span class="hljs-number">9</span>).getValue());<br>        updateTime = sdf.parse(rowData.getAfterColumns(<span class="hljs-number">10</span>).getValue());<br>    &#125; <span class="hljs-keyword">catch</span> (ParseException e) &#123;<br>        log.error(<span class="hljs-string">&quot;解析日期失败：&quot;</span>, e);<br>    &#125;<br>    <span class="hljs-type">Integer</span> <span class="hljs-variable">isDeleted</span> <span class="hljs-operator">=</span> Integer.parseInt(rowData.getAfterColumns(<span class="hljs-number">11</span>).getValue());<br>    interfaceAccess.setAccesskey(accesskey);<br>    interfaceAccess.setVerifyType(verifyType);<br>    interfaceAccess.setSecretkey(secretkey);<br>    interfaceAccess.setRemainingAmount(remainingAmount);<br>    interfaceAccess.setRemainingTimes(remainingTimes);<br>    interfaceAccess.setInterfaceId(interfaceId);<br>    interfaceAccess.setUserid(userid);<br>    interfaceAccess.setCallTimes(callTimes);<br>    interfaceAccess.setFailedCallTimes(failedCallTimes);<br>    interfaceAccess.setCreateTime(createTime);<br>    interfaceAccess.setUpdateTime(updateTime);<br>    interfaceAccess.setIsDeleted(isDeleted);<br>    <span class="hljs-keyword">return</span> interfaceAccess;<br>&#125;<br></code></pre></td></tr></table></figure>
-
-<h2 id="效果"><a href="#效果" class="headerlink" title="效果"></a>效果</h2><h3 id="1-数据库更新后："><a href="#1-数据库更新后：" class="headerlink" title="1. 数据库更新后："></a>1. 数据库更新后：</h3><p>标准输出：</p>
-<blockquote>
-<p>正在监听canal Server: 1709812780346<br>2024-03-07 19:59:40.394  INFO 26712 — [           main] c.c.a.canal.handler.CanalMessageHandler  : &#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;binlog[mysql-bin.000354:6832] , name[api_open_platform,interface_access] , eventType : UPDATE<br>2024-03-07 19:59:40.425  INFO 26712 — [           main] c.c.a.canal.handler.CanalMessageHandler  : 在redis中同步f607abdc-c80e-4255-81d3-37ea6fe355b4<br>正在监听canal Server: 1709812780425<br>正在监听canal Server: 1709812781481</p>
-</blockquote>
-<p>查询redis：<br><img src="/2024/03/06/backend/middleware/canal/canal_MySQL&Redis/redis-update.png"></p>
-<h3 id="2-数据库删除后"><a href="#2-数据库删除后" class="headerlink" title="2. 数据库删除后"></a>2. 数据库删除后</h3><p>标准输出：</p>
-<blockquote>
-<p>正在监听canal Server: 1709812979293<br>正在监听canal Server: 1709812980340<br>2024-03-07 20:03:00.383  INFO 26712 — [           main] c.c.a.canal.handler.CanalMessageHandler  : &#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;binlog[mysql-bin.000354:7413] , name[api_open_platform,interface_access] , eventType : UPDATE<br>2024-03-07 20:03:00.384  INFO 26712 — [           main] c.c.a.canal.handler.CanalMessageHandler  : 从redis中删除f607abdc-c80e-4255-81d3-37ea6fe355b4<br>正在监听canal Server: 1709812980384</p>
-</blockquote>
-<p>查询redis：<br><img src="/2024/03/06/backend/middleware/canal/canal_MySQL&Redis/redis-delete.png"></p>
-]]></content>
-      <categories>
-        <category>分布式</category>
-        <category>中间件</category>
-        <category>canal</category>
-      </categories>
-      <tags>
-        <tag>canal</tag>
-        <tag>双写一致性</tag>
-        <tag>redis</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>canal入门篇：1.介绍&amp;配置&amp;启动</title>
-    <url>/2024/03/06/backend/middleware/canal/canal_config/</url>
-    <content><![CDATA[<p>本文将讲述canal的安装、配置、启动以及验证监听是否成功。</p>
-<h1 id="介绍-1"><a href="#介绍-1" class="headerlink" title="介绍[1]"></a>介绍<sup id="fnref:1" class="footnote-ref"><a href="#fn:1" rel="footnote"><span class="hint--top hint--rounded" aria-label="本文基于canalv1.1.7版本。">[1]</span></a></sup></h1><p><strong>中间件功能：基于数据库增量日志解析，提供增量数据的订阅&amp;消费。</strong>（目前主要支持了mysql）</p>
-<p>使用canal的优点：</p>
-<ul>
-<li><strong>实时性</strong>：Canal 直接对接 MySQL 的二进制日志（Binlog），实现了近乎实时的数据同步，可以实现实时数据流处理和近实时的数据集成。</li>
-<li><strong>轻量级</strong>：作为一个开源组件，Canal 采用 Java 编写，具有较好的跨平台性和扩展性，部署相对简单，资源占用较小，适合大规模分布式环境下的部署与使用。</li>
-<li><strong>可靠性</strong>：基于 MySQL 的 Binlog 记录机制，Canal 可以确保数据的完整性，不会丢失任何有效的数据库更改操作。</li>
-<li><strong>灵活性</strong>：Canal 提供了丰富的过滤和路由策略，允许用户根据需求精确配置需要同步的数据库、表甚至是字段级别的数据变更。</li>
-<li><strong>低侵入性</strong>：无需在业务代码中插入额外逻辑，就能实现数据的实时抓取，业务代码与数据同步逻辑完全解耦。</li>
-<li><strong>易用性</strong>：提供了简洁易懂的配置方式，支持多种输出方式，如消息队列、HTTP API 推送等，方便与其他系统进行集成。</li>
-</ul>
-<h2 id="工作原理"><a href="#工作原理" class="headerlink" title="工作原理"></a>工作原理</h2><h3 id="1-MySQL主从复制原理"><a href="#1-MySQL主从复制原理" class="headerlink" title="1. MySQL主从复制原理"></a>1. MySQL主从复制原理</h3><ol>
-<li><strong>主库 Binlog 日志</strong>：在主数据库（Master）中，所有对数据库的更改操作都被记录在<strong>二进制日志（Binary Log，即binlog）</strong>中。这个日志包含了所有数据修改语句（如INSERT、UPDATE、DELETE），或者更底层的事件，如行格式的二进制日志。</li>
-<li><strong>日志传输</strong>：从数据库（Slave）连接到主数据库，请求主数据库发送 binlog 中的更新事件。主数据库有一个名为 <strong>Binlog Dump Thread</strong> 的线程，它负责读取 binlog 并将这些事件传送给从数据库。</li>
-<li><strong>中继日志 Relay Log</strong>：从数据库接收到主数据库的更新事件后，将它们存储在自己的中继日志（Relay Log）中。</li>
-<li><strong>事件重放</strong>：从数据库有自己的** SQL 线程（也称 I&#x2F;O 线程和 SQL 线程）**，I&#x2F;O 线程负责接收并写入 relay log，而 SQL 线程则负责读取 relay log 中的事件并在从数据库上重新执行（即重放）这些事件。</li>
-</ol>
-<p><img src="/2024/03/06/backend/middleware/canal/canal_config/MySQL%E4%B8%BB%E4%BB%8E%E5%A4%8D%E5%88%B6.png"></p>
-<p>这个过程保证了主数据库的每一次更新操作都能在从数据库上按照同样的顺序执行一次，从而让从数据库的数据与主数据库保持一致。</p>
-<blockquote>
-<p>复制模式(MySQL 支持多种复制模式)：</p>
-<ul>
-<li>异步复制是最常见的模式，主库不等待从库确认就继续处理新的事务，因此可能存在一定的数据延迟。</li>
-<li>半同步复制在主库提交事务之前至少需要一个从库确认已接收事件，提供了一定程度的数据一致性保障。</li>
-<li>全同步复制要求所有从库都确认事务后，主库才提交事务，提供了最强的数据一致性，但可能会影响性能。</li>
-</ul>
-</blockquote>
-<h3 id="2-canal工作原理"><a href="#2-canal工作原理" class="headerlink" title="2. canal工作原理"></a>2. canal工作原理</h3><p><img src="/2024/03/06/backend/middleware/canal/canal_config/canal%E5%B7%A5%E4%BD%9C%E5%8E%9F%E7%90%86.png"></p>
-<ol>
-<li><strong>模拟MySQL Slave</strong>： Canal通过模拟MySQL的Slave节点行为，连接到MySQL Master节点，并遵循MySQL的复制协议。它会像真正的MySQL slave那样，向MySQL master发送dump binlog的请求。</li>
-<li><strong>获取Binary Log</strong>： 当MySQL Master接收到这个dump请求后，它会开始将自身的二进制日志（Binary Log）推送给Canal。Binary Log中记录了所有对数据库的更改操作，如INSERT、UPDATE、DELETE等。</li>
-<li><strong>解析Binary Log</strong>： Canal接收并解析Master推送过来的Binary Log数据流，将其转换成结构化的事件（event）。这些事件包含了数据库变更的具体内容，如变更前后的行数据、执行的SQL语句等。</li>
-</ol>
-<h2 id="架构"><a href="#架构" class="headerlink" title="架构"></a>架构</h2><p><img src="/2024/03/06/backend/middleware/canal/canal_config/canal%E6%9E%B6%E6%9E%84.png"></p>
-<ol>
-<li>server：一个canal运行实例，对应于一个jvm</li>
-<li>instance：对应于一个数据队列（1个server对应1..n个instance）<ol>
-<li>eventParser：数据源接入，模拟slave协议和master进行交互，协议解析。</li>
-<li>eventSink：Parser和Store链接器，进行数据过滤，加工，分发的工作。</li>
-<li>eventStore：数据存储。</li>
-<li>metaManager：增量订阅&amp;消费信息管理器。</li>
-</ol>
-</li>
-</ol>
-<blockquote>
-<p>具体各个模块的功能请参考<a href="https://github.com/alibaba/canal/wiki/%E7%AE%80%E4%BB%8B">canal仓库</a></p>
-</blockquote>
-<h1 id="配置（快速启动canal）"><a href="#配置（快速启动canal）" class="headerlink" title="配置（快速启动canal）"></a>配置（快速启动canal）</h1><h2 id="1-更改MySQL配置"><a href="#1-更改MySQL配置" class="headerlink" title="1. 更改MySQL配置"></a>1. 更改MySQL配置</h2><p>修改MySQL配置文件my.ini，开启 Binlog 写入功能，并配置 binlog-format 为 ROW 模式：</p>
-<figure class="highlight ini"><table><tr><td class="code"><pre><code class="hljs ini"><span class="hljs-attr">log-bin</span>=mysql-bin <span class="hljs-comment"># 开启 binlog</span><br><span class="hljs-attr">binlog-format</span>=ROW <span class="hljs-comment"># 选择 ROW 模式</span><br><span class="hljs-attr">server-id</span>=<span class="hljs-number">1</span> <span class="hljs-comment"># 配置 MySQL replaction 需要定义，不要和 canal 的 slaveId 重复</span><br></code></pre></td></tr></table></figure>
-
-<blockquote>
-<p>Windows修改MySQL配置文件的方式：</p>
-<ol>
-<li><code>Win+R</code>打开<strong>运行</strong>，输入<code>services.msc</code>，进入服务页面。</li>
-<li>找到对应的MySQL服务，双击查看<strong>可执行文件的路径：</strong>条目下的<code>--default-file=</code>后的my.ini文件位置。</li>
-<li>修改该文件。</li>
-<li>右键MySQL服务条目，点击<strong>重新启动</strong>，重启MySQL服务。</li>
-</ol>
-</blockquote>
-<h2 id="2-安装canal"><a href="#2-安装canal" class="headerlink" title="2. 安装canal"></a>2. 安装canal</h2><p>进入Ubuntu安装canal：</p>
-<ol>
-<li>进入canal的<a href="https://github.com/alibaba/canal/releases">release页面</a>，选择对应版本的压缩包。（我下载的是canal.deployer-1.1.7.tar.gz<br>）</li>
-<li>在ubuntu中拉取该压缩包：<code>wget https://github.com/alibaba/canal/releases/download/canal-1.1.7/canal.deployer-1.1.7.tar.gz</code></li>
-<li>解压该压缩包<code>tar -zxf canal.deployer-1.1.7.tar.gz</code></li>
-<li>修改配置文件<code>vim conf/example/instance.properties</code></li>
-</ol>
-<p>修改配置：</p>
-<figure class="highlight routeros"><table><tr><td class="code"><pre><code class="hljs routeros">canal.instance.master.<span class="hljs-attribute">address</span>=192.168.112.1:3306<br>canal.instance.master.journal.<span class="hljs-attribute">name</span>=mysql-bin.000353<br>canal.instance.master.<span class="hljs-attribute">position</span>=1<br><span class="hljs-built_in">..</span>.<br>canal.instance.<span class="hljs-attribute">dbUsername</span>=canal<br>canal.instance.<span class="hljs-attribute">dbPassword</span>=canal<br><span class="hljs-built_in">..</span>.<br>canal.instance.filter.<span class="hljs-attribute">regex</span>=api_open_platform\\..*<br></code></pre></td></tr></table></figure>
-<ul>
-<li>address: 数据库地址</li>
-<li>journal.name: 日志文件名，去MySQL运行文件目录旁边找一下就能找到了</li>
-<li>position: 从日志的第几个字节开始读取</li>
-<li>dbUsername: 用户名</li>
-<li>dbPassword: 用户密码</li>
-<li>filter.regex：使用正则表达式选择数据库表（我设置的是监听api_open_platform数据库下所有的表）</li>
-</ul>
-<h2 id="3-启动canal"><a href="#3-启动canal" class="headerlink" title="3. 启动canal"></a>3. 启动canal</h2><ol>
-<li><strong>开启命令</strong>：<code>bash bin/startup.sh</code>。</li>
-<li><strong>查看日志命令</strong>：<code>vim logs/canal/canal.log</code>、<code>vim logs/example/example.log</code>。</li>
-<li><strong>关闭命令</strong>：<code>bash bin/stop.sh</code>。</li>
-</ol>
-<p>成功后的运行日志：</p>
-<ul>
-<li>canal.log：<blockquote>
-<p>2024-03-06 22:16:46.110 [main] INFO  com.alibaba.otter.canal.deployer.CanalLauncher - ## set default uncaught exception handler<br>2024-03-06 22:16:46.117 [main] INFO  com.alibaba.otter.canal.deployer.CanalLauncher - ## load canal configurations<br>2024-03-06 22:16:46.126 [main] INFO  com.alibaba.otter.canal.deployer.CanalStarter - ## start the canal server.<br>2024-03-06 22:16:46.152 [main] INFO  com.alibaba.otter.canal.deployer.CanalController - ## start the canal server[172.20.0.1(172.20.0.1):11111]<br>2024-03-06 22:16:47.076 [main] INFO  com.alibaba.otter.canal.deployer.CanalStarter - ## the canal server is running now ……</p>
-</blockquote>
-</li>
-<li>example.log：<blockquote>
-<p>2024-03-06 22:16:46.589 [main] INFO  c.a.otter.canal.instance.spring.CanalInstanceWithSpring - start CannalInstance for 1-example<br>2024-03-06 22:16:47.044 [main] WARN  c.a.o.canal.parse.inbound.mysql.dbsync.LogEventConvert - –&gt; init table filter : ^api_open_platform..<em>$<br>2024-03-06 22:16:47.044 [main] WARN  c.a.o.canal.parse.inbound.mysql.dbsync.LogEventConvert - –&gt; init table black filter : ^mysql.slave_.</em>$<br>2024-03-06 22:16:47.048 [main] INFO  c.a.otter.canal.instance.core.AbstractCanalInstance - start successful….<br>2024-03-06 22:16:47.116 [destination &#x3D; example , address &#x3D; &#x2F;192.168.112.1:3306 , EventParser] WARN  c.a.o.c.p.inbound.mysql.rds.RdsBinlogEventParserProxy - —&gt; begin to find start position, it will be long time for reset or first position<br>2024-03-06 22:16:47.132 [destination &#x3D; example , address &#x3D; &#x2F;192.168.112.1:3306 , EventParser] WARN  c.a.o.c.p.inbound.mysql.rds.RdsBinlogEventParserProxy - prepare to find start position mysql-bin.000353:4:1709690365000<br>2024-03-06 22:16:47.437 [destination &#x3D; example , address &#x3D; &#x2F;192.168.112.1:3306 , EventParser] WARN  c.a.o.c.p.inbound.mysql.rds.RdsBinlogEventParserProxy - —&gt; find start position successfully, EntryPosition[included&#x3D;false,journalName&#x3D;mysql-bin.000353,position&#x3D;4,serverId&#x3D;1,gtid&#x3D;<null>,timestamp&#x3D;1709690365000] cost : 292ms , the next step is binlog dump</p>
-</blockquote>
-</li>
-</ul>
-<h1 id="java连接canal"><a href="#java连接canal" class="headerlink" title="java连接canal"></a>java连接canal</h1><h2 id="添加maven依赖"><a href="#添加maven依赖" class="headerlink" title="添加maven依赖"></a>添加maven依赖</h2><figure class="highlight xml"><table><tr><td class="code"><pre><code class="hljs xml"><span class="hljs-tag">&lt;<span class="hljs-name">dependency</span>&gt;</span><br>        <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>com.alibaba.otter<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span><br>        <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>canal.client<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span><br>        <span class="hljs-tag">&lt;<span class="hljs-name">version</span>&gt;</span>1.1.0<span class="hljs-tag">&lt;/<span class="hljs-name">version</span>&gt;</span><br><span class="hljs-tag">&lt;/<span class="hljs-name">dependency</span>&gt;</span><br></code></pre></td></tr></table></figure>
-<h2 id="main函数"><a href="#main函数" class="headerlink" title="main函数"></a>main函数</h2><blockquote>
-<p>注：该函数仅用于测试能否连接。</p>
-</blockquote>
-<figure class="highlight java"><table><tr><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">main</span><span class="hljs-params">(String[] args)</span>&#123;<br>    System.out.println(<span class="hljs-string">&quot;---------O(∩_∩)O哈哈~ initCanal() main方法-----------&quot;</span>);<br>    <span class="hljs-comment">//=================================</span><br>    <span class="hljs-comment">// 创建链接canal服务端</span><br>    <span class="hljs-type">CanalConnector</span> <span class="hljs-variable">connector</span> <span class="hljs-operator">=</span> CanalConnectors.newSingleConnector(<span class="hljs-keyword">new</span> <span class="hljs-title class_">InetSocketAddress</span>(<span class="hljs-string">&quot;192.168.146.132&quot;</span>,<span class="hljs-number">11111</span>), <span class="hljs-string">&quot;example&quot;</span>, <span class="hljs-string">&quot;&quot;</span>, <span class="hljs-string">&quot;&quot;</span>);<br>    <span class="hljs-type">int</span> <span class="hljs-variable">batchSize</span> <span class="hljs-operator">=</span> <span class="hljs-number">1000</span>;<br>    <span class="hljs-comment">//空闲空转计数器</span><br>    <span class="hljs-type">int</span> <span class="hljs-variable">emptyCount</span> <span class="hljs-operator">=</span> <span class="hljs-number">0</span>;<br>    System.out.println(<span class="hljs-string">&quot;---------------------canal init OK，开始监听mysql变化------&quot;</span>);<br>    <span class="hljs-keyword">try</span> &#123;<br>        connector.connect();<br>        connector.subscribe(<span class="hljs-string">&quot;.*\\..*&quot;</span>);<br>        <span class="hljs-comment">//connector.subscribe(&quot;petstoredb.pets&quot;);</span><br>        connector.rollback();<br>        <span class="hljs-type">int</span> <span class="hljs-variable">totalEmptyCount</span> <span class="hljs-operator">=</span> <span class="hljs-number">600</span>;<br>        <span class="hljs-keyword">while</span> (emptyCount &lt; totalEmptyCount) &#123;<br>            System.out.println(<span class="hljs-string">&quot;我是canal，每秒一次正在监听:&quot;</span>+ UUID.randomUUID().toString());<br>            <span class="hljs-type">Message</span> <span class="hljs-variable">message</span> <span class="hljs-operator">=</span> connector.getWithoutAck(batchSize); <span class="hljs-comment">// 获取指定数量的数据</span><br>            <span class="hljs-type">long</span> <span class="hljs-variable">batchId</span> <span class="hljs-operator">=</span> message.getId();<br>            <span class="hljs-type">int</span> <span class="hljs-variable">size</span> <span class="hljs-operator">=</span> message.getEntries().size();<br>            <span class="hljs-keyword">if</span> (batchId == -<span class="hljs-number">1</span> || size == <span class="hljs-number">0</span>) &#123;<br>                emptyCount++;<br>                <span class="hljs-keyword">try</span> &#123; TimeUnit.SECONDS.sleep(<span class="hljs-number">1</span>); &#125; <span class="hljs-keyword">catch</span> (InterruptedException e) &#123; e.printStackTrace(); &#125;<br>            &#125; <span class="hljs-keyword">else</span> &#123;<br>                <span class="hljs-comment">//计数器重新置零</span><br>                emptyCount = <span class="hljs-number">0</span>;<br>                printEntry(message.getEntries());<br>            &#125;<br>            connector.ack(batchId); <span class="hljs-comment">// 提交确认</span><br>            <span class="hljs-comment">// connector.rollback(batchId); // 处理失败, 回滚数据</span><br>        &#125;<br>        System.out.println(<span class="hljs-string">&quot;已经监听了&quot;</span>+totalEmptyCount+<span class="hljs-string">&quot;秒，无任何消息，请重启重试......&quot;</span>);<br>    &#125; <span class="hljs-keyword">finally</span> &#123;<br>        connector.disconnect();<br>    &#125;<br>&#125;<br><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">printEntry</span><span class="hljs-params">(List&lt;Entry&gt; entrys)</span> &#123;<br>    <span class="hljs-keyword">for</span> (Entry entry : entrys) &#123;<br>        <span class="hljs-keyword">if</span> (entry.getEntryType() == EntryType.TRANSACTIONBEGIN || entry.getEntryType() == EntryType.TRANSACTIONEND) &#123;<br>            <span class="hljs-keyword">continue</span>;<br>        &#125;<br>        <span class="hljs-type">RowChange</span> <span class="hljs-variable">rowChage</span> <span class="hljs-operator">=</span> <span class="hljs-literal">null</span>;<br>        <span class="hljs-keyword">try</span> &#123;<br>            <span class="hljs-comment">//获取变更的row数据</span><br>            rowChage = RowChange.parseFrom(entry.getStoreValue());<br>        &#125; <span class="hljs-keyword">catch</span> (Exception e) &#123;<br>            <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">RuntimeException</span>(<span class="hljs-string">&quot;ERROR ## parser of eromanga-event has an error,data:&quot;</span> + entry.toString(),e);<br>        &#125;<br>        <span class="hljs-comment">//获取变动类型</span><br>        <span class="hljs-type">EventType</span> <span class="hljs-variable">eventType</span> <span class="hljs-operator">=</span> rowChage.getEventType();<br>        System.out.println(String.format(<span class="hljs-string">&quot;================binlog[%s:%s] , name[%s,%s] , eventType : %s&quot;</span>,<br>                entry.getHeader().getLogfileName(), entry.getHeader().getLogfileOffset(),<br>                entry.getHeader().getSchemaName(), entry.getHeader().getTableName(), eventType));<br>        <span class="hljs-keyword">for</span> (RowData rowData : rowChage.getRowDatasList()) &#123;<br>            <span class="hljs-keyword">if</span> (eventType == EventType.INSERT) &#123;<br>                rowData.getAfterColumnsList().forEach(column-&gt;System.out.println(column.getName() + <span class="hljs-string">&quot; : &quot;</span> + column.getValue() + <span class="hljs-string">&quot;    update=&quot;</span> + column.getUpdated()));<br>                <span class="hljs-comment">//redisInsert(rowData.getAfterColumnsList());</span><br>            &#125; <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (eventType == EventType.DELETE) &#123;<br>                rowData.getAfterColumnsList().forEach(column-&gt;System.out.println(column.getName() + <span class="hljs-string">&quot; : &quot;</span> + column.getValue() + <span class="hljs-string">&quot;    update=&quot;</span> + column.getUpdated()));<br>                <span class="hljs-comment">//redisDelete(rowData.getBeforeColumnsList());</span><br>            &#125; <span class="hljs-keyword">else</span> &#123;<span class="hljs-comment">//EventType.UPDATE</span><br>                rowData.getAfterColumnsList().forEach(column-&gt;System.out.println(column.getName() + <span class="hljs-string">&quot; : &quot;</span> + column.getValue() + <span class="hljs-string">&quot;    update=&quot;</span> + column.getUpdated()));<br>                <span class="hljs-comment">//redisUpdate(rowData.getAfterColumnsList());</span><br>            &#125;<br>        &#125;<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
-
-<p>输出为：</p>
-<blockquote>
-<p>我是canal，每秒一次正在监听:0d7700c0-0117-4a28-8d82-0a6ccbafadfd<br>我是canal，每秒一次正在监听:a658edf6-e56c-458e-bf13-25a64bffa7ec<br>我是canal，每秒一次正在监听:a6896fce-8f48-4478-983e-cf4bb05c1393<br>我是canal，每秒一次正在监听:e180a475-8a4a-44ee-84fa-096c2f44db16<br>我是canal，每秒一次正在监听:0fd10344-7eb1-412d-90fc-185e3ec69c51<br>&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;binlog[mysql-bin.000353:54296] , name[api_open_platform,interface_access] , eventType : INSERT<br>accesskey : a7e4c3c9-90be-434f-a201-1fb0c9c6921f    update&#x3D;true<br>verify_type : 1    update&#x3D;true<br>secretkey : 41ee07aa-bd35-45f0-aa6f-b39351d8db0c    update&#x3D;true<br>remaining_amount :     update&#x3D;true<br>remaining_times :     update&#x3D;true<br>interface_id : 10    update&#x3D;true<br>userid : 28    update&#x3D;true<br>call_times : 0    update&#x3D;true<br>failed_call_times : 0    update&#x3D;true<br>create_time : 2024-03-06 22:42:25    update&#x3D;true<br>update_time : 2024-03-06 22:42:25    update&#x3D;true<br>is_deleted : 0    update&#x3D;true<br>我是canal，每秒一次正在监听:1b80e597-9976-430a-b6f7-4fcaac936776<br>我是canal，每秒一次正在监听:9e89f0f4-0dfe-4f53-88c7-5731dbf0ebdf<br>我是canal，每秒一次正在监听:19322e19-0924-400d-a85b-bba58beb1a53<br>我是canal，每秒一次正在监听:0febf37a-df93-40b8-8c23-d0b89a1a1576</p>
-</blockquote>
-<p>至此，canal启动完成。<section class="footnotes"><div class="footnote-list"><ol><li><span id="fn:1" class="footnote-text"><span>本文基于canalv1.1.7版本。<br><a href="#fnref:1" rev="footnote" class="footnote-backref"> ↩</a></span></span></li></ol></div></section></p>
-]]></content>
-      <categories>
-        <category>分布式</category>
-        <category>中间件</category>
-        <category>canal</category>
-      </categories>
-      <tags>
-        <tag>canal</tag>
-        <tag>双写一致性</tag>
-        <tag>Dump</tag>
-        <tag>Binary log</tag>
-        <tag>mysql slave</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>消息队列：1.认识篇</title>
     <url>/2024/03/13/backend/middleware/messagequeue/mq-introducte/</url>
     <content><![CDATA[<h1 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h1><p>消息队列，顾名思义，存放消息（可类比为请求）的队列（一种先进先出的数据结构）。<br>其是一种常用于分布式系统的中间件，可以在不同的应用程序、服务或系统之间传递消息，并且常用于解耦合不同部分的系统，使得系统更加可扩展和灵活。<br><strong>基本原理：发送者将消息放入队列，接收者从队列中获取消息并处理。</strong><br>消息队列实质是一种方式，一种<strong>在不同组件之间传递消息的通信方式</strong>。发送者和接收者之间不需要直接通信，它们只需了解如何发送和接收消息即可。</p>
@@ -1182,7 +966,7 @@ newProxyInstance方法的三个参数：</li>
     <title>消息队列：6.消息存储原理</title>
     <url>/2024/03/13/backend/middleware/messagequeue/rocket-storage/</url>
     <content><![CDATA[<p>消息队列必须保证消息存储的可靠性，这是消息队列可以做到异步、削峰填谷的基础。<br>本文将讲解消息队列是如何实现消息的存储的。</p>
-<h1 id="存储设备与存储方式"><a href="#存储设备与存储方式" class="headerlink" title="存储设备与存储方式"></a>存储设备与存储方式</h1><h2 id="硬盘"><a href="#硬盘" class="headerlink" title="硬盘"></a>硬盘</h2><p>类似MySQL或Redis，RocketMQ的消息持久化也是直接存储到<strong>本地硬盘</strong>中的。<br>在面对削峰填谷的需求下，可靠性、性能、存储量都无比重要：消息不能丢失，消息得快速写入（但是不急着读取），并且需要存储大量消息。<br>硬盘非常适合满足上述需求：</p>
+<h1 id="写入"><a href="#写入" class="headerlink" title="写入"></a>写入</h1><h2 id="硬盘"><a href="#硬盘" class="headerlink" title="硬盘"></a>硬盘</h2><p>类似MySQL或Redis，RocketMQ的消息持久化也是直接存储到<strong>本地硬盘</strong>中的。<br>在面对削峰填谷的需求下，可靠性、性能、存储量都无比重要：消息不能丢失，消息得快速写入（但是不急着读取），并且需要存储大量消息。<br>硬盘非常适合满足上述需求：</p>
 <ul>
 <li><strong>可靠性</strong>：可以通过设置RAID等级来保证数据可靠性。</li>
 <li><strong>快速写入</strong>：硬盘支持顺序写入，能够快速写入大量数据。</li>
@@ -1233,6 +1017,85 @@ newProxyInstance方法的三个参数：</li>
 <blockquote>
 <p>这样的设计有些类似简单文件系统中superblock、inode table、data region的设计。</p>
 </blockquote>
+<h1 id="底层优化"><a href="#底层优化" class="headerlink" title="底层优化"></a>底层优化</h1><p>操作系统会为每个进程提供虚拟内存，虚拟内存通过页表映射到物理内存。<br>在物理内存中，操作系统会留出一定内存用于运行内核程序，以此区分用户态和内核态的空间。<br>当进程处于用户态时，需要进行系统调用，才能进入内核态，并访问所有的内存空间和I&#x2F;O设备。</p>
+<h2 id="初始情况"><a href="#初始情况" class="headerlink" title="初始情况"></a>初始情况</h2><p>举例：Java读取文件并发送到网络（通过文件系统调用和网卡I&#x2F;O）</p>
+<p><img src="/2024/03/13/backend/middleware/messagequeue/rocket-storage/%E8%AF%BB%E5%8F%96%E6%96%87%E4%BB%B6%E5%B9%B6%E5%8F%91%E9%80%81%E5%88%B0%E7%BD%91%E7%BB%9C.svg"></p>
+<p>按时间顺序说明其过程：</p>
+<ol>
+<li><strong>打开本地文件</strong>：<ol>
+<li>在Java程序中，首先通过<code>FileInputStream</code>或<code>Files.newInputStream()</code>打开磁盘上的目标文件，这一步通常发生在用户空间。</li>
+<li>Java运行时系统发出系统调用到操作系统内核，请求打开文件。</li>
+<li>内核验证权限并找到文件，创建一个描述符（句柄），用于后续对该文件的读取操作。</li>
+</ol>
+</li>
+<li><strong>读取文件数据</strong>：<ol>
+<li>使用<code>FileInputStream</code>的<code>read(byte[] buffer)</code>方法从文件中读取数据，这是一个阻塞操作。</li>
+<li><strong>当调用<code>read()</code>时，内核开始从磁盘读取数据到内核空间的缓冲区（如果数据不在缓存中）。</strong></li>
+<li><strong>数据一旦被内核读取到缓冲区，内核将其复制到用户空间提供的缓冲区中（即Java程序的<code>byte[]</code>数组）。</strong></li>
+</ol>
+</li>
+<li><strong>创建Socket连接</strong>：<ol>
+<li>在Java程序中，创建一个<code>Socket</code>实例并连接到远程服务器地址。</li>
+<li>这会触发TCP&#x2F;IP协议栈的操作，通过系统调用进入内核，建立网络连接。</li>
+</ol>
+</li>
+<li><strong>获取Socket输出流</strong>：<ol>
+<li>调用<code>Socket.getOutputStream()</code>获取一个<code>OutputStream</code>实例，这个实例与套接字关联，用于向网络发送数据。</li>
+<li>再次涉及到内核调用，因为实际的网络数据发送是由内核的TCP&#x2F;IP协议栈处理的。</li>
+</ol>
+</li>
+<li><strong>将文件数据写入Socket</strong>：<ol>
+<li>循环读取文件输入流的数据，并调用<code>OutputStream</code>的<code>write(byte[] buffer, int offset, int length)</code>方法，将数据写入Socket。</li>
+<li><strong>每次调用<code>write()</code>方法时，Java运行时会将用户空间的数据复制到内核空间的网络缓冲区。</strong></li>
+<li><strong>内核在适当时候负责将这些数据封装成网络帧并通过物理网络接口发送出去。</strong></li>
+</ol>
+</li>
+</ol>
+<p>通过在内核空间建立文件的缓存，对于读写操作均有一定性能的优化：</p>
+<ol>
+<li>读：再次发送读该文件时，可以直接返回缓存，不用读磁盘。</li>
+<li>写：可将写保存到缓存中，再延迟批量写入，减少I&#x2F;O调用次数。\</li>
+</ol>
+<p>但是这样存在一个问题：如果仅进行转发（如消息队列将消息发送到消费者时），该操作拷贝此时过多，并且占用内存较大。因此，引入<strong>零拷贝</strong>进行优化。</p>
+<h2 id="零拷贝"><a href="#零拷贝" class="headerlink" title="零拷贝"></a>零拷贝</h2><h3 id="sendFile"><a href="#sendFile" class="headerlink" title="sendFile"></a>sendFile</h3><p>如果一个程序，对文件不做任何处理，就直接发送到网络，那么可以直接忽略<strong>将磁盘缓存区复制到用户空间再复制到网络缓冲区</strong>的过程，改为直接<strong>将内核空间中的磁盘缓存区复制到网络缓冲区</strong>，该方式通过<strong>sendFile（Linux的系统调用）</strong>实现。</p>
+<p><img src="/2024/03/13/backend/middleware/messagequeue/rocket-storage/sendFile.svg"></p>
+<p>在Java NIO（非阻塞I&#x2F;O）库中，可以通过<code>FileChannel.transferTo()</code>方法实现这一优化：</p>
+<ol>
+<li><strong>打开文件通道</strong>：使用<code>FileChannel.open()</code>方法打开文件，并获取到FileChannel对象。</li>
+<li><strong>创建Socket通道</strong>：创建<code>SocketChannel</code>实例并与远程服务器建立连接。</li>
+<li><strong>使用<code>transferTo()</code>方法</strong>：直接调用<code>FileChannel.transferTo(long position, long count, WritableByteChannel target)</code>方法，这里的<code>target</code>参数就是之前创建的<code>SocketChannel</code>。<br>此时，内核可以直接将文件数据从磁盘缓存区复制到网络缓冲区，无需经过用户空间，从而实现了零拷贝。</li>
+</ol>
+<h3 id="DMA-Gather"><a href="#DMA-Gather" class="headerlink" title="DMA Gather"></a>DMA Gather</h3><p>在某些现代操作系统和硬件支持下，我们可以进一步利用<strong>DMA（Direct Memory Access，直接内存访问）Gather</strong>特性对上述的零拷贝操作进行优化。<br>DMA允许硬件（如网卡）直接访问内存，而无需CPU的干预，这样可以减少CPU工作负载。DMA Gather则允许一次数据传输操作中，从内存中多个不连续的位置收集数据并发送到目标设备（例如网络接口）。<br>即文件从硬盘到内核空间的磁盘缓存区后，提供文件描述符和数据长度给网络缓存区，网卡即可使用DMA收集功能直接从磁盘缓存区中拷贝，进而减少了冲磁盘缓存区复制到网络缓冲区的操作。<br><img src="/2024/03/13/backend/middleware/messagequeue/rocket-storage/sendFile+DMAGather.svg"></p>
+<p>对于Java应用程序来说，虽然不能直接控制DMA Gather的具体实现，但在底层操作系统和硬件的支持下，<code>FileChannel.transferTo()</code>方法调用可能已经隐式地利用了DMA Gather特性。当操作系统检测到数据需要从磁盘读取并发送到网络时，它可能会执行以下步骤：</p>
+<ol>
+<li><strong>DMA读取</strong>：内核启动磁盘控制器的DMA读取功能，直接从磁盘读取数据到内核空间的缓冲区，无需CPU参与数据搬移。</li>
+<li><strong>DMA Gather</strong>：网卡同样启用DMA模式，并在内核的协调下执行Gather操作，<strong>从内核空间中存放文件数据的不同缓冲区（通常是页缓存的不连续区域）收集数据，一次性将这些数据打包并发送到网络接口。</strong></li>
+</ol>
+<p>sendFile+DMA Gather的机制很好，但是存在一个问题，就是java程序是无法获得消息的实际内容的。如果要开启消息过滤，就需要获得消息的内容，因此引入另一种机制：mmap。</p>
+<h3 id="mmap"><a href="#mmap" class="headerlink" title="mmap"></a>mmap</h3><p><strong>mmap（Memory Mapping）</strong>是一种操作系统提供的内存管理功能，它允许将文件或者其他对象的内容映射到进程的地址空间中，形成内存映射文件。通过mmap，进程可以直接像访问普通内存一样来访问文件内容，而无需每次都调用<code>read</code>或<code>write</code>等系统调用来读写文件。</p>
+<p>Java程序可以通过<code>JNI</code>或其他方式调用<code>mmap()</code>系统调用，将文件映射到进程的地址空间（用户空间）。此时，对文件的访问可以直接通过内存访问进行，避免了传统的<code>read()</code>系统调用，从而减少了内核空间到用户空间的一次数据复制。<br><img src="/2024/03/13/backend/middleware/messagequeue/rocket-storage/mmap.svg"></p>
+<blockquote>
+<p>mmap仅仅是将文件内容与虚拟内存添加了映射关系，实际上没有将文件从硬盘中加载到实际内存，因此需要做好缓存预热。</p>
+</blockquote>
+<h2 id="RocketMQ实际机制"><a href="#RocketMQ实际机制" class="headerlink" title="RocketMQ实际机制"></a>RocketMQ实际机制</h2><p>写入磁盘机制：</p>
+<ol>
+<li>异步刷盘：通过mmap，将写入操作写入系统的页缓存，等操作系统异步将修改过的页（脏页）写入到磁盘，可提升一点性能。</li>
+<li>同步刷盘：通过mmap，将写入操作写入系统的页缓存，并立即刷盘，以保证消息不丢失。</li>
+</ol>
+<blockquote>
+<p>刷盘：将数据从 page cache 写入到磁盘中。</p>
+</blockquote>
+<p>读取磁盘并发送到网络的机制：</p>
+<ol>
+<li>执行mmap，建立映射。（mmap操作后，物理内存中实际并没有分配资源，只有当进程访问到，发现内存中没数据才会进行缺页中断，分配资源，而这个缺页中断是系统调用，涉及上下文切换，比较耗费时间，因此进行内存预热）</li>
+<li>文件预热：<ol>
+<li>将当前映射的文件每个页都写入0字节，以保证触发页中断，将文件从磁盘加载到缓存。</li>
+<li>调用 <code>mlock</code> 和 <code>madvise(MADV_WILLNEED)</code>，保证预热的页不会被页置换，并且建议进行页预读。</li>
+</ol>
+</li>
+<li>write操作：当消费者拉取信息时，使用<code>write</code>从用户缓存写入到网络缓冲区，实际上由于mmap的原因，是直接从内核的磁盘缓存区write到网络缓存区。</li>
+</ol>
+<p>示意图：<br><img src="/2024/03/13/backend/middleware/messagequeue/rocket-storage/mmap+write.svg"></p>
 ]]></content>
       <categories>
         <category>分布式</category>
@@ -1247,6 +1110,228 @@ newProxyInstance方法的三个参数：</li>
         <tag>consumerOffset</tag>
         <tag>commitlog offset</tag>
         <tag>indexFile</tag>
+        <tag>用户空间</tag>
+        <tag>内核空间</tag>
+        <tag>零拷贝</tag>
+        <tag>sendFile</tag>
+        <tag>DMA Gather</tag>
+        <tag>mmap</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>canal入门篇：2.实现MySQL&amp;Redis双写一致性</title>
+    <url>/2024/03/06/backend/middleware/canal/canal_MySQL&amp;Redis/</url>
+    <content><![CDATA[<p>本文将介绍如何使用canal实现MySQl和Redis的双写一致性。前文为：<a href="/2024/03/06/backend/middleware/canal/canal_config/" title="canal入门篇：1.介绍&amp;配置&amp;启动">canal入门篇：1.介绍&amp;配置&amp;启动</a>。</p>
+<blockquote>
+<p><a href="https://github.com/shoumingchilun/API_OPEN_SPACE_CANAL">github仓库链接</a></p>
+</blockquote>
+<h1 id="canalAPI讲解"><a href="#canalAPI讲解" class="headerlink" title="canalAPI讲解"></a>canalAPI讲解</h1><p>本文将使用SpringBoot框架搭建一个应用，通过canal获得数据库的更改消息，并将发生变更的实体同步更新到Redis中。</p>
+<h2 id="优点"><a href="#优点" class="headerlink" title="优点"></a>优点</h2><p>使用canal的好处：</p>
+<ol>
+<li><strong>透明性与低侵入</strong>：使用 Canal 通常不需要对既有业务逻辑进行大规模改造，因为它作为独立的服务组件，可以透明地监听和处理数据库的变化，将更新事件推送给相应的缓存系统，实现数据同步，降低了对业务代码的入侵性。</li>
+<li><strong>扩展性与灵活性</strong>：Canal 支持多种数据源以及不同的消费方式，可以根据实际需求构建灵活的消息处理和分发机制。它可以与各种消息队列或数据处理系统集成，实现复杂的数据同步和多级缓存更新。</li>
+<li><strong>可靠性</strong>：由于 Canal 是基于 MySQL 的主从复制协议设计的，它继承了数据库层面的数据可靠性保障。同时，消息投递失败时（未进行ACK）可以通过重试机制确保最终一致性，而且可以支持幂等处理，避免重复消费造成的问题。</li>
+</ol>
+<h2 id="类说明"><a href="#类说明" class="headerlink" title="类说明"></a>类说明</h2><h3 id="canal-Client"><a href="#canal-Client" class="headerlink" title="canal Client"></a>canal Client</h3><p>先介绍一下canal Client相关的一些配置类：</p>
+<ul>
+<li><strong>ClientIdentity</strong>：canal client和server交互之间的身份标识。</li>
+<li><strong>CanalConnector</strong>：SimpleCanalConnector&#x2F;ClusterCanalConnector是两种connector的实现。simple针对的是简单的ip直连模式，cluster针对多ip的模式，可依赖CanalNodeAccessStrategy进行failover控制。（确保 Canal 在发生故障时能够无缝地切换到备份节点或者恢复服务，暂时不关注）</li>
+<li><strong>CanalNodeAccessStrategy</strong>：SimpleNodeAccessStrategy&#x2F;ClusterNodeAccessStrategy是两种failover的实现。simple针对给定的初始ip列表进行failover选择，cluster基于zookeeper上的cluster节点动态选择正在运行的canal server。（暂时不关注）</li>
+</ul>
+<p>然后即可从<code>connector</code>中通过<code>get</code>&#x2F;<code>getWithoutAck</code>获得的<code>Message</code>的这个类，该类主要的功能就是使用<code>getEntries</code>函数获得包装好的<code>List&lt;Entry&gt;</code>对象。</p>
+<h3 id="Entry"><a href="#Entry" class="headerlink" title="Entry"></a>Entry</h3><p>介绍一下Entry、RowChange、rowdata、column的概念。</p>
+<ol>
+<li><strong>Entry</strong>：Entry 是 Canal 解析 MySQL Binlog 后产生的基本单元，它<strong>代表了Binlog中的一条记录</strong>。每个Entry对象对应了MySQL数据库的一个事务或一个GTID事件（如果启用了GTID）。Entry包含了事务的相关元数据如执行时间、事务ID等，以及实际的数据库更改内容。</li>
+<li><strong>RowChange</strong>： RowChange 是更进一步封装的事件变更细节，它描述了<strong>一次数据库表级别的行级别数据变化</strong>。一个RowChange对象对应binlog中的一次行变更事件，它可以包含多行数据的插入、更新或删除操作。</li>
+<li><strong>RowData</strong>：RowData 表示<strong>单行数据的变更内容</strong>。对于RowChange中的每一次行操作（insert&#x2F;update&#x2F;delete），都会有对应的RowData对象来具体描述变更前后的列值信息。<ol>
+<li>RowData有两个重要的字段：<ul>
+<li>beforeColumnsList：在UPDATE或DELETE事件中，存储的是变更前的列数据集合。</li>
+<li>afterColumnsList：在INSERT或UPDATE事件中，存储的是变更后的列数据集合。</li>
+</ul>
+</li>
+<li>对于INSERT、UPDATE和DELETE事件，其表现形式不同：<ul>
+<li>INSERT事件：RowData会包含这一行插入后的所有列值。</li>
+<li>UPDATE事件：RowData包含两部分，即变更前的列值（beforeColumns）和变更后的列值（afterColumns）。</li>
+<li>DELETE事件：RowData仅包含被删除前的那一行的所有列值。</li>
+</ul>
+</li>
+</ol>
+</li>
+<li><strong>Column</strong>：Column 对象更加细致地表示了数据库表中某一列的数据变化情况，包括列名、列值、是否为空、是否是主键等属性信息。在RowData的beforeColumns和afterColumns列表中，每一项就是一个Column对象。</li>
+</ol>
+<h3 id="解析Entry"><a href="#解析Entry" class="headerlink" title="解析Entry"></a>解析Entry</h3><p>在获得一个<code>List&lt;Entry&gt;</code>后，我们需要对其中每个条目进行逐步解析：</p>
+<ol>
+<li><strong>判断类型</strong>：通过调用<code>getEntryType()</code>获得该<code>Entry</code>的<code>EntryType</code>，常见的类型有**事务开始(BEGIN)、事务结束(COMMIT)、行数据(ROWDATA)**等。</li>
+<li>对于 <strong>ROWDATA 类型</strong>的 Entry，可以从中提取 <strong>RowChange 对象</strong>（包含了数据库行级别的变更详情）：通过调用<code>CanalEntry.RowChange.parseFrom(entry.getStoreValue())</code>获得 RowChange 对象。</li>
+<li>获得 RowChange 对象后，可根据<code>EventType</code>获得具体操作的类型，如<code>INSERT</code>、<code>UPDATE</code>、<code>ALTER</code>等，如： <code>rowChage.getEventType()==EventType.DELETE</code>。</li>
+<li>可从 <code>RowChange</code> 对象中获得 <code>RowData</code> 对象，并从后者中获得一行数据变更前的状态和变更后的状态，再从中获得单独的<code>column</code>进行解析： <figure class="highlight java"><table><tr><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">for</span> (RowData rowData : rowChage.getRowDatasList()) &#123;<br>    rowData.getBeforeColumnsList().forEach(column -&gt; System.out.println(column.getName() + <span class="hljs-string">&quot; : &quot;</span> + column.getValue()));<br>    rowData.getAfterColumnsList().forEach(column -&gt; System.out.println(column.getName() + <span class="hljs-string">&quot; : &quot;</span> + column.getValue()));<br></code></pre></td></tr></table></figure></li>
+</ol>
+<h1 id="实现双写一致性"><a href="#实现双写一致性" class="headerlink" title="实现双写一致性"></a>实现双写一致性</h1><p>（省略启动类）</p>
+<h2 id="添加依赖"><a href="#添加依赖" class="headerlink" title="添加依赖"></a>添加依赖</h2><p>需要添加Springboot和连接Redis、canal的依赖。<br>pom.xml：</p>
+<figure class="highlight xml"><table><tr><td class="code"><pre><code class="hljs xml"><span class="hljs-tag">&lt;<span class="hljs-name">dependencyManagement</span>&gt;</span><br>    <span class="hljs-tag">&lt;<span class="hljs-name">dependencies</span>&gt;</span><br>        <span class="hljs-tag">&lt;<span class="hljs-name">dependency</span>&gt;</span><br>            <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>org.springframework.boot<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span><br>            <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>spring-boot-dependencies<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span><br>            <span class="hljs-tag">&lt;<span class="hljs-name">version</span>&gt;</span>2.7.9<span class="hljs-tag">&lt;/<span class="hljs-name">version</span>&gt;</span><br>            <span class="hljs-tag">&lt;<span class="hljs-name">type</span>&gt;</span>pom<span class="hljs-tag">&lt;/<span class="hljs-name">type</span>&gt;</span><br>            <span class="hljs-tag">&lt;<span class="hljs-name">scope</span>&gt;</span>import<span class="hljs-tag">&lt;/<span class="hljs-name">scope</span>&gt;</span><br>        <span class="hljs-tag">&lt;/<span class="hljs-name">dependency</span>&gt;</span><br>    <span class="hljs-tag">&lt;/<span class="hljs-name">dependencies</span>&gt;</span><br><span class="hljs-tag">&lt;/<span class="hljs-name">dependencyManagement</span>&gt;</span><br><span class="hljs-tag">&lt;<span class="hljs-name">dependencies</span>&gt;</span><br>    <span class="hljs-tag">&lt;<span class="hljs-name">dependency</span>&gt;</span><br>        <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>org.springframework.boot<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span><br>        <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>spring-boot-starter-web<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span><br>    <span class="hljs-tag">&lt;/<span class="hljs-name">dependency</span>&gt;</span><br>    <span class="hljs-tag">&lt;<span class="hljs-name">dependency</span>&gt;</span><br>        <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>org.springframework.boot<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span><br>        <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>spring-boot-starter-data-redis<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span><br>    <span class="hljs-tag">&lt;/<span class="hljs-name">dependency</span>&gt;</span><br>    <span class="hljs-tag">&lt;<span class="hljs-name">dependency</span>&gt;</span><br>        <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>com.alibaba.otter<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span><br>        <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>canal.client<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span><br>        <span class="hljs-tag">&lt;<span class="hljs-name">version</span>&gt;</span>1.1.0<span class="hljs-tag">&lt;/<span class="hljs-name">version</span>&gt;</span><br>    <span class="hljs-tag">&lt;/<span class="hljs-name">dependency</span>&gt;</span><br><span class="hljs-tag">&lt;/<span class="hljs-name">dependencies</span>&gt;</span><br></code></pre></td></tr></table></figure>
+
+<h2 id="注册CanalConnector-Bean"><a href="#注册CanalConnector-Bean" class="headerlink" title="注册CanalConnector Bean"></a>注册CanalConnector Bean</h2><p>使用配置文件注入依赖。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><code class="hljs java"><span class="hljs-meta">@Configuration</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">CanalConfig</span> &#123;<br>    <span class="hljs-meta">@Value(&quot;$&#123;mycanal.hostname&#125;&quot;)</span><br>    <span class="hljs-keyword">private</span> String hostname;<br>    <span class="hljs-meta">@Value(&quot;$&#123;mycanal.port&#125;&quot;)</span><br>    <span class="hljs-keyword">private</span> Integer port;<br>    <span class="hljs-meta">@Value(&quot;$&#123;mycanal.destination&#125;&quot;)</span><br>    <span class="hljs-keyword">private</span> String destination;<br>    <span class="hljs-meta">@Value(&quot;$&#123;mycanal.username&#125;&quot;)</span><br>    <span class="hljs-keyword">private</span> <span class="hljs-type">String</span> <span class="hljs-variable">username</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;&quot;</span>;<br>    <span class="hljs-meta">@Value(&quot;$&#123;mycanal.password&#125;&quot;)</span><br>    <span class="hljs-keyword">private</span> <span class="hljs-type">String</span> <span class="hljs-variable">password</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;&quot;</span>;<br><br><br>    <span class="hljs-meta">@Bean</span><br>    <span class="hljs-keyword">public</span> CanalConnector <span class="hljs-title function_">createCanalConnector</span><span class="hljs-params">()</span> &#123;<br>        <span class="hljs-keyword">return</span> CanalConnectors.newSingleConnector(<span class="hljs-keyword">new</span> <span class="hljs-title class_">InetSocketAddress</span>(hostname,<br>                port), destination, username, password);<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>配置文件application.yml：</p>
+<figure class="highlight dts"><table><tr><td class="code"><pre><code class="hljs dts"><span class="hljs-symbol">mycanal:</span><br><span class="hljs-symbol">  hostname:</span> <span class="hljs-number">192.168</span><span class="hljs-number">.146</span><span class="hljs-number">.132</span><br><span class="hljs-symbol">  port:</span> <span class="hljs-number">11111</span><br><span class="hljs-symbol">  destination:</span> example<br><span class="hljs-symbol">  username:</span><br><span class="hljs-symbol">  password:</span><br></code></pre></td></tr></table></figure>
+
+<h2 id="设置Redis转码方式"><a href="#设置Redis转码方式" class="headerlink" title="设置Redis转码方式"></a>设置Redis转码方式</h2><figure class="highlight java"><table><tr><td class="code"><pre><code class="hljs java"><span class="hljs-meta">@Configuration</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">RedisConfig</span> &#123;<br>    <span class="hljs-meta">@Bean</span><br>    <span class="hljs-keyword">public</span> RedisTemplate&lt;String, Object&gt; <span class="hljs-title function_">redisTemplate</span><span class="hljs-params">(LettuceConnectionFactory lettuceConnectionFactory)</span> &#123;<br>        RedisTemplate&lt;String, Object&gt; redisTemplate = <span class="hljs-keyword">new</span> <span class="hljs-title class_">RedisTemplate</span>&lt;&gt;();<br><br>        redisTemplate.setConnectionFactory(lettuceConnectionFactory);<br>        <span class="hljs-comment">//设置key序列化方式string</span><br>        redisTemplate.setKeySerializer(<span class="hljs-keyword">new</span> <span class="hljs-title class_">StringRedisSerializer</span>());<br>        <span class="hljs-comment">//设置value的序列化方式json，使用GenericJackson2JsonRedisSerializer替换默认序列化</span><br>        redisTemplate.setValueSerializer(<span class="hljs-keyword">new</span> <span class="hljs-title class_">GenericJackson2JsonRedisSerializer</span>());<br>        redisTemplate.setHashKeySerializer(<span class="hljs-keyword">new</span> <span class="hljs-title class_">StringRedisSerializer</span>());<br>        redisTemplate.setHashValueSerializer(<span class="hljs-keyword">new</span> <span class="hljs-title class_">GenericJackson2JsonRedisSerializer</span>());<br><br>        redisTemplate.afterPropertiesSet();<br>        <span class="hljs-keyword">return</span> redisTemplate;<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p>补充：如果使用GenericJackson2JsonRedisSerializer充当序列化&#x2F;反序列化工具的话<code>redisTemplate.setValueSerializer(new GenericJackson2JsonRedisSerializer());</code>，请保证各组件内类名一致（包含包路径）。</p>
+</blockquote>
+<h2 id="创建实体类"><a href="#创建实体类" class="headerlink" title="创建实体类"></a>创建实体类</h2><p>Redis中value对应的实体。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><code class="hljs java"><span class="hljs-meta">@Data</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">InterfaceAccess</span> <span class="hljs-keyword">implements</span> <span class="hljs-title class_">Serializable</span> &#123;<br>    <span class="hljs-keyword">private</span> String accesskey;<br>    <span class="hljs-keyword">private</span> Integer verifyType;<br>    <span class="hljs-keyword">private</span> String secretkey;<br>    <span class="hljs-keyword">private</span> BigDecimal remainingAmount;<br>    <span class="hljs-keyword">private</span> Integer remainingTimes;<br>    <span class="hljs-keyword">private</span> Long interfaceId;<br>    <span class="hljs-keyword">private</span> Long userid;<br>    <span class="hljs-keyword">private</span> Integer callTimes;<br>    <span class="hljs-keyword">private</span> Integer failedCallTimes;<br>    <span class="hljs-keyword">private</span> Date createTime;<br>    <span class="hljs-keyword">private</span> Date updateTime;<br>    <span class="hljs-keyword">private</span> Integer isDeleted;<br>    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-type">long</span> <span class="hljs-variable">serialVersionUID</span> <span class="hljs-operator">=</span> <span class="hljs-number">1L</span>;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h2 id="设计Redis服务接口并实现"><a href="#设计Redis服务接口并实现" class="headerlink" title="设计Redis服务接口并实现"></a>设计Redis服务接口并实现</h2><figure class="highlight java"><table><tr><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">interface</span> <span class="hljs-title class_">RedisService</span> &#123;<br>    <span class="hljs-type">String</span> <span class="hljs-variable">ACCESS_PREFIX</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;InterfaceAccess_&quot;</span>;<br>    <span class="hljs-keyword">void</span> <span class="hljs-title function_">updateInterfaceAccess</span><span class="hljs-params">(InterfaceAccess interfaceAccess)</span>;<br>    <span class="hljs-keyword">void</span> <span class="hljs-title function_">deleteInterfaceAccess</span><span class="hljs-params">(InterfaceAccess interfaceAccess)</span>;<br>&#125;<br><br><span class="hljs-meta">@Service</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">RedisServiceImpl</span> <span class="hljs-keyword">implements</span> <span class="hljs-title class_">RedisService</span> &#123;<br>    <span class="hljs-meta">@Resource</span><br>    <span class="hljs-keyword">private</span> RedisTemplate&lt;String, InterfaceAccess&gt; redisTemplate;<br><br>    <span class="hljs-meta">@Override</span><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">updateInterfaceAccess</span><span class="hljs-params">(InterfaceAccess interfaceAccess)</span> &#123;<br>        redisTemplate.opsForValue().set(RedisService.ACCESS_PREFIX + interfaceAccess.getAccesskey(), interfaceAccess, <span class="hljs-number">2</span>, TimeUnit.MINUTES);<br>    &#125;<br><br>    <span class="hljs-meta">@Override</span><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">deleteInterfaceAccess</span><span class="hljs-params">(InterfaceAccess interfaceAccess)</span> &#123;<br>        redisTemplate.delete(RedisService.ACCESS_PREFIX + interfaceAccess.getAccesskey());<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h2 id="创建CanalMessageHandler类"><a href="#创建CanalMessageHandler类" class="headerlink" title="创建CanalMessageHandler类"></a>创建CanalMessageHandler类</h2><p>使用ApplicationRunner接口实现容器启动后开始监听。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><code class="hljs java"><span class="hljs-meta">@Slf4j</span><br><span class="hljs-meta">@Component</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">CanalMessageHandler</span> <span class="hljs-keyword">implements</span> <span class="hljs-title class_">ApplicationRunner</span> &#123;<br>    <span class="hljs-meta">@Resource</span><br>    <span class="hljs-keyword">private</span> CanalConnector connector;<br><br>    <span class="hljs-meta">@Resource</span><br>    <span class="hljs-keyword">private</span> RedisService redisService;<br><br>    <span class="hljs-meta">@Override</span><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">run</span><span class="hljs-params">(ApplicationArguments args)</span> &#123;<br>        <span class="hljs-type">int</span> <span class="hljs-variable">batchSize</span> <span class="hljs-operator">=</span> <span class="hljs-number">1000</span>;<br>        <span class="hljs-comment">//空闲空转计数器</span><br>        <span class="hljs-type">int</span> <span class="hljs-variable">emptyCount</span> <span class="hljs-operator">=</span> <span class="hljs-number">0</span>;<br>        <span class="hljs-keyword">try</span> &#123;<br>            connector.connect();<br>            <span class="hljs-comment">// 监听api_open_platform数据库下的interface_access表</span><br>            connector.subscribe(<span class="hljs-string">&quot;api_open_platform.interface_access&quot;</span>);<br>            <span class="hljs-comment">// 回滚到未进行 ack 的地方，下次fetch的时候，可以从最后一个没有 ack 的地方开始拿</span><br>            connector.rollback();<br>            <span class="hljs-comment">// 如果3600s内没有监听到更改，则报错并停止运行</span><br>            <span class="hljs-type">int</span> <span class="hljs-variable">totalEmptyCount</span> <span class="hljs-operator">=</span> <span class="hljs-number">3600</span>;<br>            <span class="hljs-keyword">while</span> (emptyCount &lt; totalEmptyCount) &#123;<br>                System.out.println(<span class="hljs-string">&quot;正在监听canal Server: &quot;</span> + System.currentTimeMillis());<br>                <span class="hljs-type">Message</span> <span class="hljs-variable">message</span> <span class="hljs-operator">=</span> connector.getWithoutAck(batchSize); <span class="hljs-comment">// 获取指定数量的数据</span><br>                <span class="hljs-type">long</span> <span class="hljs-variable">batchId</span> <span class="hljs-operator">=</span> message.getId();<br>                <span class="hljs-type">int</span> <span class="hljs-variable">size</span> <span class="hljs-operator">=</span> message.getEntries().size();<br>                <span class="hljs-keyword">if</span> (batchId == -<span class="hljs-number">1</span> || size == <span class="hljs-number">0</span>) &#123;<br>                    emptyCount++;<br>                    <span class="hljs-keyword">try</span> &#123;<br>                        TimeUnit.SECONDS.sleep(<span class="hljs-number">1</span>);<br>                    &#125; <span class="hljs-keyword">catch</span> (InterruptedException e) &#123;<br>                        e.printStackTrace();<br>                    &#125;<br>                &#125; <span class="hljs-keyword">else</span> &#123;<br>                    <span class="hljs-comment">//计数器重新置零</span><br>                    emptyCount = <span class="hljs-number">0</span>;<br>                    handlerMessage(message.getEntries());<br>                &#125;<br>                connector.ack(batchId); <span class="hljs-comment">// 提交确认</span><br>                <span class="hljs-comment">// connector.rollback(batchId); // 处理失败, 回滚数据</span><br>            &#125;<br>            log.error(<span class="hljs-string">&quot;已经监听了&quot;</span> + totalEmptyCount + <span class="hljs-string">&quot;秒，无任何消息，请检查canal是否正常运行或连接是否成功......&quot;</span>);<br>        &#125; <span class="hljs-keyword">finally</span> &#123;<br>            connector.disconnect();<br>        &#125;<br>    &#125;<br><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">handlerMessage</span><span class="hljs-params">(List&lt;Entry&gt; entrys)</span> &#123;<br>        <span class="hljs-comment">//...</span><br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h2 id="实现handlerMessage方法"><a href="#实现handlerMessage方法" class="headerlink" title="实现handlerMessage方法"></a>实现handlerMessage方法</h2><p>对消息进行处理，并通过调用<code>RedisService</code>的方法同步到redis。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">handlerMessage</span><span class="hljs-params">(List&lt;Entry&gt; entrys)</span> &#123;<br>    <span class="hljs-type">ObjectMapper</span> <span class="hljs-variable">objectMapper</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">ObjectMapper</span>();<br>    <span class="hljs-type">SimpleDateFormat</span> <span class="hljs-variable">sdf</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">SimpleDateFormat</span>(<span class="hljs-string">&quot;yyyy-MM-dd HH:mm:ss&quot;</span>);<br>    <span class="hljs-keyword">for</span> (Entry entry : entrys) &#123;<br>        <span class="hljs-comment">//如果不是ROWDATA，则忽略</span><br>        <span class="hljs-keyword">if</span> (entry.getEntryType() != EntryType.ROWDATA) &#123;<br>            <span class="hljs-keyword">continue</span>;<br>        &#125;<br>        <span class="hljs-type">RowChange</span> <span class="hljs-variable">rowchange</span> <span class="hljs-operator">=</span> <span class="hljs-literal">null</span>;<br>        <span class="hljs-keyword">try</span> &#123;<br>            <span class="hljs-comment">//获取变更的row数据</span><br>            rowchange = CanalEntry.RowChange.parseFrom(entry.getStoreValue());<br>        &#125; <span class="hljs-keyword">catch</span> (Exception e) &#123;<br>            log.error(<span class="hljs-string">&quot;解析Entry获得RowChange失败：&quot;</span> + entry, e);<br>            <span class="hljs-keyword">return</span>;<br>        &#125;<br>        <span class="hljs-comment">//获取变动类型</span><br>        <span class="hljs-type">EventType</span> <span class="hljs-variable">eventType</span> <span class="hljs-operator">=</span> rowchange.getEventType();<br>        log.info(String.format(<span class="hljs-string">&quot;================binlog[%s:%s] , name[%s,%s] , eventType : %s&quot;</span>,<br>                entry.getHeader().getLogfileName(), entry.getHeader().getLogfileOffset(),<br>                entry.getHeader().getSchemaName(), entry.getHeader().getTableName(), eventType));<br><br>        <span class="hljs-keyword">for</span> (RowData rowData : rowchange.getRowDatasList()) &#123;<br>            <span class="hljs-comment">//由于使用逻辑删除，delete实现方式为将is_deleted属性设置为1，所以删除逻辑写在update中</span><br>            <span class="hljs-keyword">if</span> (eventType == EventType.UPDATE) &#123;<br>                <span class="hljs-comment">//可使用该方式查看各个index对应的列名是什么</span><br>                <span class="hljs-comment">//rowData.getAfterColumnsList().stream().forEach(column -&gt; &#123;</span><br>                <span class="hljs-comment">//    System.out.println(column.getName());</span><br>                <span class="hljs-comment">//&#125;);</span><br>                <span class="hljs-type">InterfaceAccess</span> <span class="hljs-variable">interfaceAccess</span> <span class="hljs-operator">=</span> parseRowDateIntoInterfaceAccess(rowData);<br>                <span class="hljs-keyword">if</span> (interfaceAccess.getIsDeleted() == <span class="hljs-number">1</span>) &#123;<br>                    <span class="hljs-comment">//说明已经删除，需要同步删除</span><br>                    redisService.deleteInterfaceAccess(interfaceAccess);<br>                &#125; <span class="hljs-keyword">else</span> &#123;<br>                    <span class="hljs-comment">//说明未删除，需要同步更新</span><br>                    redisService.updateInterfaceAccess(interfaceAccess);<br>                &#125;<br>            &#125;<br>        &#125;<br>    &#125;<br>&#125;<br><br><span class="hljs-keyword">private</span> InterfaceAccess <span class="hljs-title function_">parseRowDateIntoInterfaceAccess</span><span class="hljs-params">(RowData rowData)</span> &#123;<br>    <span class="hljs-type">SimpleDateFormat</span> <span class="hljs-variable">sdf</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">SimpleDateFormat</span>(<span class="hljs-string">&quot;yyyy-MM-dd HH:mm:ss&quot;</span>);<br>    <span class="hljs-type">InterfaceAccess</span> <span class="hljs-variable">interfaceAccess</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">InterfaceAccess</span>();<br>    <span class="hljs-type">String</span> <span class="hljs-variable">accesskey</span> <span class="hljs-operator">=</span> rowData.getAfterColumns(<span class="hljs-number">0</span>).getValue();<br>    <span class="hljs-type">Integer</span> <span class="hljs-variable">verifyType</span> <span class="hljs-operator">=</span> Integer.parseInt(rowData.getAfterColumns(<span class="hljs-number">1</span>).getValue());<br>    <span class="hljs-comment">//允许为空的参数如果为空，则column.getValue().equals(&quot;&quot;)</span><br>    <span class="hljs-type">String</span> <span class="hljs-variable">secretkey</span> <span class="hljs-operator">=</span> rowData.getAfterColumns(<span class="hljs-number">2</span>).getValue().equals(<span class="hljs-string">&quot;&quot;</span>) ? <span class="hljs-literal">null</span> : rowData.getAfterColumns(<span class="hljs-number">2</span>).getValue();<br>    <span class="hljs-type">BigDecimal</span> <span class="hljs-variable">remainingAmount</span> <span class="hljs-operator">=</span> <span class="hljs-literal">null</span>;<br>    <span class="hljs-keyword">if</span> (!rowData.getAfterColumns(<span class="hljs-number">3</span>).getValue().equals(<span class="hljs-string">&quot;&quot;</span>)) &#123;<br>        remainingAmount = <span class="hljs-keyword">new</span> <span class="hljs-title class_">BigDecimal</span>(rowData.getAfterColumns(<span class="hljs-number">3</span>).getValue());<br>    &#125;<br>    <span class="hljs-type">Integer</span> <span class="hljs-variable">remainingTimes</span> <span class="hljs-operator">=</span> <span class="hljs-literal">null</span>;<br>    <span class="hljs-keyword">if</span> (!rowData.getAfterColumns(<span class="hljs-number">4</span>).getValue().equals(<span class="hljs-string">&quot;&quot;</span>)) &#123;<br>        remainingTimes = Integer.parseInt(rowData.getAfterColumns(<span class="hljs-number">4</span>).getValue());<br>    &#125;<br>    <span class="hljs-type">Long</span> <span class="hljs-variable">interfaceId</span> <span class="hljs-operator">=</span> Long.parseLong(rowData.getAfterColumns(<span class="hljs-number">5</span>).getValue());<br>    <span class="hljs-type">Long</span> <span class="hljs-variable">userid</span> <span class="hljs-operator">=</span> Long.parseLong(rowData.getAfterColumns(<span class="hljs-number">6</span>).getValue());<br>    <span class="hljs-type">Integer</span> <span class="hljs-variable">callTimes</span> <span class="hljs-operator">=</span> Integer.parseInt(rowData.getAfterColumns(<span class="hljs-number">7</span>).getValue());<br>    <span class="hljs-type">Integer</span> <span class="hljs-variable">failedCallTimes</span> <span class="hljs-operator">=</span> Integer.parseInt(rowData.getAfterColumns(<span class="hljs-number">8</span>).getValue());<br>    <span class="hljs-type">Date</span> <span class="hljs-variable">createTime</span> <span class="hljs-operator">=</span> <span class="hljs-literal">null</span>;<br>    <span class="hljs-type">Date</span> <span class="hljs-variable">updateTime</span> <span class="hljs-operator">=</span> <span class="hljs-literal">null</span>;<br>    <span class="hljs-keyword">try</span> &#123;<br>        createTime = sdf.parse(rowData.getAfterColumns(<span class="hljs-number">9</span>).getValue());<br>        updateTime = sdf.parse(rowData.getAfterColumns(<span class="hljs-number">10</span>).getValue());<br>    &#125; <span class="hljs-keyword">catch</span> (ParseException e) &#123;<br>        log.error(<span class="hljs-string">&quot;解析日期失败：&quot;</span>, e);<br>    &#125;<br>    <span class="hljs-type">Integer</span> <span class="hljs-variable">isDeleted</span> <span class="hljs-operator">=</span> Integer.parseInt(rowData.getAfterColumns(<span class="hljs-number">11</span>).getValue());<br>    interfaceAccess.setAccesskey(accesskey);<br>    interfaceAccess.setVerifyType(verifyType);<br>    interfaceAccess.setSecretkey(secretkey);<br>    interfaceAccess.setRemainingAmount(remainingAmount);<br>    interfaceAccess.setRemainingTimes(remainingTimes);<br>    interfaceAccess.setInterfaceId(interfaceId);<br>    interfaceAccess.setUserid(userid);<br>    interfaceAccess.setCallTimes(callTimes);<br>    interfaceAccess.setFailedCallTimes(failedCallTimes);<br>    interfaceAccess.setCreateTime(createTime);<br>    interfaceAccess.setUpdateTime(updateTime);<br>    interfaceAccess.setIsDeleted(isDeleted);<br>    <span class="hljs-keyword">return</span> interfaceAccess;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h2 id="效果"><a href="#效果" class="headerlink" title="效果"></a>效果</h2><h3 id="1-数据库更新后："><a href="#1-数据库更新后：" class="headerlink" title="1. 数据库更新后："></a>1. 数据库更新后：</h3><p>标准输出：</p>
+<blockquote>
+<p>正在监听canal Server: 1709812780346<br>2024-03-07 19:59:40.394  INFO 26712 — [           main] c.c.a.canal.handler.CanalMessageHandler  : &#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;binlog[mysql-bin.000354:6832] , name[api_open_platform,interface_access] , eventType : UPDATE<br>2024-03-07 19:59:40.425  INFO 26712 — [           main] c.c.a.canal.handler.CanalMessageHandler  : 在redis中同步f607abdc-c80e-4255-81d3-37ea6fe355b4<br>正在监听canal Server: 1709812780425<br>正在监听canal Server: 1709812781481</p>
+</blockquote>
+<p>查询redis：<br><img src="/2024/03/06/backend/middleware/canal/canal_MySQL&Redis/redis-update.png"></p>
+<h3 id="2-数据库删除后"><a href="#2-数据库删除后" class="headerlink" title="2. 数据库删除后"></a>2. 数据库删除后</h3><p>标准输出：</p>
+<blockquote>
+<p>正在监听canal Server: 1709812979293<br>正在监听canal Server: 1709812980340<br>2024-03-07 20:03:00.383  INFO 26712 — [           main] c.c.a.canal.handler.CanalMessageHandler  : &#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;binlog[mysql-bin.000354:7413] , name[api_open_platform,interface_access] , eventType : UPDATE<br>2024-03-07 20:03:00.384  INFO 26712 — [           main] c.c.a.canal.handler.CanalMessageHandler  : 从redis中删除f607abdc-c80e-4255-81d3-37ea6fe355b4<br>正在监听canal Server: 1709812980384</p>
+</blockquote>
+<p>查询redis：<br><img src="/2024/03/06/backend/middleware/canal/canal_MySQL&Redis/redis-delete.png"></p>
+]]></content>
+      <categories>
+        <category>分布式</category>
+        <category>中间件</category>
+        <category>canal</category>
+      </categories>
+      <tags>
+        <tag>canal</tag>
+        <tag>双写一致性</tag>
+        <tag>redis</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>canal入门篇：1.介绍&amp;配置&amp;启动</title>
+    <url>/2024/03/06/backend/middleware/canal/canal_config/</url>
+    <content><![CDATA[<p>本文将讲述canal的安装、配置、启动以及验证监听是否成功。</p>
+<h1 id="介绍-1"><a href="#介绍-1" class="headerlink" title="介绍[1]"></a>介绍<sup id="fnref:1" class="footnote-ref"><a href="#fn:1" rel="footnote"><span class="hint--top hint--rounded" aria-label="本文基于canalv1.1.7版本。">[1]</span></a></sup></h1><p><strong>中间件功能：基于数据库增量日志解析，提供增量数据的订阅&amp;消费。</strong>（目前主要支持了mysql）</p>
+<p>使用canal的优点：</p>
+<ul>
+<li><strong>实时性</strong>：Canal 直接对接 MySQL 的二进制日志（Binlog），实现了近乎实时的数据同步，可以实现实时数据流处理和近实时的数据集成。</li>
+<li><strong>轻量级</strong>：作为一个开源组件，Canal 采用 Java 编写，具有较好的跨平台性和扩展性，部署相对简单，资源占用较小，适合大规模分布式环境下的部署与使用。</li>
+<li><strong>可靠性</strong>：基于 MySQL 的 Binlog 记录机制，Canal 可以确保数据的完整性，不会丢失任何有效的数据库更改操作。</li>
+<li><strong>灵活性</strong>：Canal 提供了丰富的过滤和路由策略，允许用户根据需求精确配置需要同步的数据库、表甚至是字段级别的数据变更。</li>
+<li><strong>低侵入性</strong>：无需在业务代码中插入额外逻辑，就能实现数据的实时抓取，业务代码与数据同步逻辑完全解耦。</li>
+<li><strong>易用性</strong>：提供了简洁易懂的配置方式，支持多种输出方式，如消息队列、HTTP API 推送等，方便与其他系统进行集成。</li>
+</ul>
+<h2 id="工作原理"><a href="#工作原理" class="headerlink" title="工作原理"></a>工作原理</h2><h3 id="1-MySQL主从复制原理"><a href="#1-MySQL主从复制原理" class="headerlink" title="1. MySQL主从复制原理"></a>1. MySQL主从复制原理</h3><ol>
+<li><strong>主库 Binlog 日志</strong>：在主数据库（Master）中，所有对数据库的更改操作都被记录在<strong>二进制日志（Binary Log，即binlog）</strong>中。这个日志包含了所有数据修改语句（如INSERT、UPDATE、DELETE），或者更底层的事件，如行格式的二进制日志。</li>
+<li><strong>日志传输</strong>：从数据库（Slave）连接到主数据库，请求主数据库发送 binlog 中的更新事件。主数据库有一个名为 <strong>Binlog Dump Thread</strong> 的线程，它负责读取 binlog 并将这些事件传送给从数据库。</li>
+<li><strong>中继日志 Relay Log</strong>：从数据库接收到主数据库的更新事件后，将它们存储在自己的中继日志（Relay Log）中。</li>
+<li><strong>事件重放</strong>：从数据库有自己的** SQL 线程（也称 I&#x2F;O 线程和 SQL 线程）**，I&#x2F;O 线程负责接收并写入 relay log，而 SQL 线程则负责读取 relay log 中的事件并在从数据库上重新执行（即重放）这些事件。</li>
+</ol>
+<p><img src="/2024/03/06/backend/middleware/canal/canal_config/MySQL%E4%B8%BB%E4%BB%8E%E5%A4%8D%E5%88%B6.png"></p>
+<p>这个过程保证了主数据库的每一次更新操作都能在从数据库上按照同样的顺序执行一次，从而让从数据库的数据与主数据库保持一致。</p>
+<blockquote>
+<p>复制模式(MySQL 支持多种复制模式)：</p>
+<ul>
+<li>异步复制是最常见的模式，主库不等待从库确认就继续处理新的事务，因此可能存在一定的数据延迟。</li>
+<li>半同步复制在主库提交事务之前至少需要一个从库确认已接收事件，提供了一定程度的数据一致性保障。</li>
+<li>全同步复制要求所有从库都确认事务后，主库才提交事务，提供了最强的数据一致性，但可能会影响性能。</li>
+</ul>
+</blockquote>
+<h3 id="2-canal工作原理"><a href="#2-canal工作原理" class="headerlink" title="2. canal工作原理"></a>2. canal工作原理</h3><p><img src="/2024/03/06/backend/middleware/canal/canal_config/canal%E5%B7%A5%E4%BD%9C%E5%8E%9F%E7%90%86.png"></p>
+<ol>
+<li><strong>模拟MySQL Slave</strong>： Canal通过模拟MySQL的Slave节点行为，连接到MySQL Master节点，并遵循MySQL的复制协议。它会像真正的MySQL slave那样，向MySQL master发送dump binlog的请求。</li>
+<li><strong>获取Binary Log</strong>： 当MySQL Master接收到这个dump请求后，它会开始将自身的二进制日志（Binary Log）推送给Canal。Binary Log中记录了所有对数据库的更改操作，如INSERT、UPDATE、DELETE等。</li>
+<li><strong>解析Binary Log</strong>： Canal接收并解析Master推送过来的Binary Log数据流，将其转换成结构化的事件（event）。这些事件包含了数据库变更的具体内容，如变更前后的行数据、执行的SQL语句等。</li>
+</ol>
+<h2 id="架构"><a href="#架构" class="headerlink" title="架构"></a>架构</h2><p><img src="/2024/03/06/backend/middleware/canal/canal_config/canal%E6%9E%B6%E6%9E%84.png"></p>
+<ol>
+<li>server：一个canal运行实例，对应于一个jvm</li>
+<li>instance：对应于一个数据队列（1个server对应1..n个instance）<ol>
+<li>eventParser：数据源接入，模拟slave协议和master进行交互，协议解析。</li>
+<li>eventSink：Parser和Store链接器，进行数据过滤，加工，分发的工作。</li>
+<li>eventStore：数据存储。</li>
+<li>metaManager：增量订阅&amp;消费信息管理器。</li>
+</ol>
+</li>
+</ol>
+<blockquote>
+<p>具体各个模块的功能请参考<a href="https://github.com/alibaba/canal/wiki/%E7%AE%80%E4%BB%8B">canal仓库</a></p>
+</blockquote>
+<h1 id="配置（快速启动canal）"><a href="#配置（快速启动canal）" class="headerlink" title="配置（快速启动canal）"></a>配置（快速启动canal）</h1><h2 id="1-更改MySQL配置"><a href="#1-更改MySQL配置" class="headerlink" title="1. 更改MySQL配置"></a>1. 更改MySQL配置</h2><p>修改MySQL配置文件my.ini，开启 Binlog 写入功能，并配置 binlog-format 为 ROW 模式：</p>
+<figure class="highlight ini"><table><tr><td class="code"><pre><code class="hljs ini"><span class="hljs-attr">log-bin</span>=mysql-bin <span class="hljs-comment"># 开启 binlog</span><br><span class="hljs-attr">binlog-format</span>=ROW <span class="hljs-comment"># 选择 ROW 模式</span><br><span class="hljs-attr">server-id</span>=<span class="hljs-number">1</span> <span class="hljs-comment"># 配置 MySQL replaction 需要定义，不要和 canal 的 slaveId 重复</span><br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p>Windows修改MySQL配置文件的方式：</p>
+<ol>
+<li><code>Win+R</code>打开<strong>运行</strong>，输入<code>services.msc</code>，进入服务页面。</li>
+<li>找到对应的MySQL服务，双击查看<strong>可执行文件的路径：</strong>条目下的<code>--default-file=</code>后的my.ini文件位置。</li>
+<li>修改该文件。</li>
+<li>右键MySQL服务条目，点击<strong>重新启动</strong>，重启MySQL服务。</li>
+</ol>
+</blockquote>
+<h2 id="2-安装canal"><a href="#2-安装canal" class="headerlink" title="2. 安装canal"></a>2. 安装canal</h2><p>进入Ubuntu安装canal：</p>
+<ol>
+<li>进入canal的<a href="https://github.com/alibaba/canal/releases">release页面</a>，选择对应版本的压缩包。（我下载的是canal.deployer-1.1.7.tar.gz<br>）</li>
+<li>在ubuntu中拉取该压缩包：<code>wget https://github.com/alibaba/canal/releases/download/canal-1.1.7/canal.deployer-1.1.7.tar.gz</code></li>
+<li>解压该压缩包<code>tar -zxf canal.deployer-1.1.7.tar.gz</code></li>
+<li>修改配置文件<code>vim conf/example/instance.properties</code></li>
+</ol>
+<p>修改配置：</p>
+<figure class="highlight routeros"><table><tr><td class="code"><pre><code class="hljs routeros">canal.instance.master.<span class="hljs-attribute">address</span>=192.168.112.1:3306<br>canal.instance.master.journal.<span class="hljs-attribute">name</span>=mysql-bin.000353<br>canal.instance.master.<span class="hljs-attribute">position</span>=1<br><span class="hljs-built_in">..</span>.<br>canal.instance.<span class="hljs-attribute">dbUsername</span>=canal<br>canal.instance.<span class="hljs-attribute">dbPassword</span>=canal<br><span class="hljs-built_in">..</span>.<br>canal.instance.filter.<span class="hljs-attribute">regex</span>=api_open_platform\\..*<br></code></pre></td></tr></table></figure>
+<ul>
+<li>address: 数据库地址</li>
+<li>journal.name: 日志文件名，去MySQL运行文件目录旁边找一下就能找到了</li>
+<li>position: 从日志的第几个字节开始读取</li>
+<li>dbUsername: 用户名</li>
+<li>dbPassword: 用户密码</li>
+<li>filter.regex：使用正则表达式选择数据库表（我设置的是监听api_open_platform数据库下所有的表）</li>
+</ul>
+<h2 id="3-启动canal"><a href="#3-启动canal" class="headerlink" title="3. 启动canal"></a>3. 启动canal</h2><ol>
+<li><strong>开启命令</strong>：<code>bash bin/startup.sh</code>。</li>
+<li><strong>查看日志命令</strong>：<code>vim logs/canal/canal.log</code>、<code>vim logs/example/example.log</code>。</li>
+<li><strong>关闭命令</strong>：<code>bash bin/stop.sh</code>。</li>
+</ol>
+<p>成功后的运行日志：</p>
+<ul>
+<li>canal.log：<blockquote>
+<p>2024-03-06 22:16:46.110 [main] INFO  com.alibaba.otter.canal.deployer.CanalLauncher - ## set default uncaught exception handler<br>2024-03-06 22:16:46.117 [main] INFO  com.alibaba.otter.canal.deployer.CanalLauncher - ## load canal configurations<br>2024-03-06 22:16:46.126 [main] INFO  com.alibaba.otter.canal.deployer.CanalStarter - ## start the canal server.<br>2024-03-06 22:16:46.152 [main] INFO  com.alibaba.otter.canal.deployer.CanalController - ## start the canal server[172.20.0.1(172.20.0.1):11111]<br>2024-03-06 22:16:47.076 [main] INFO  com.alibaba.otter.canal.deployer.CanalStarter - ## the canal server is running now ……</p>
+</blockquote>
+</li>
+<li>example.log：<blockquote>
+<p>2024-03-06 22:16:46.589 [main] INFO  c.a.otter.canal.instance.spring.CanalInstanceWithSpring - start CannalInstance for 1-example<br>2024-03-06 22:16:47.044 [main] WARN  c.a.o.canal.parse.inbound.mysql.dbsync.LogEventConvert - –&gt; init table filter : ^api_open_platform..<em>$<br>2024-03-06 22:16:47.044 [main] WARN  c.a.o.canal.parse.inbound.mysql.dbsync.LogEventConvert - –&gt; init table black filter : ^mysql.slave_.</em>$<br>2024-03-06 22:16:47.048 [main] INFO  c.a.otter.canal.instance.core.AbstractCanalInstance - start successful….<br>2024-03-06 22:16:47.116 [destination &#x3D; example , address &#x3D; &#x2F;192.168.112.1:3306 , EventParser] WARN  c.a.o.c.p.inbound.mysql.rds.RdsBinlogEventParserProxy - —&gt; begin to find start position, it will be long time for reset or first position<br>2024-03-06 22:16:47.132 [destination &#x3D; example , address &#x3D; &#x2F;192.168.112.1:3306 , EventParser] WARN  c.a.o.c.p.inbound.mysql.rds.RdsBinlogEventParserProxy - prepare to find start position mysql-bin.000353:4:1709690365000<br>2024-03-06 22:16:47.437 [destination &#x3D; example , address &#x3D; &#x2F;192.168.112.1:3306 , EventParser] WARN  c.a.o.c.p.inbound.mysql.rds.RdsBinlogEventParserProxy - —&gt; find start position successfully, EntryPosition[included&#x3D;false,journalName&#x3D;mysql-bin.000353,position&#x3D;4,serverId&#x3D;1,gtid&#x3D;<null>,timestamp&#x3D;1709690365000] cost : 292ms , the next step is binlog dump</p>
+</blockquote>
+</li>
+</ul>
+<h1 id="java连接canal"><a href="#java连接canal" class="headerlink" title="java连接canal"></a>java连接canal</h1><h2 id="添加maven依赖"><a href="#添加maven依赖" class="headerlink" title="添加maven依赖"></a>添加maven依赖</h2><figure class="highlight xml"><table><tr><td class="code"><pre><code class="hljs xml"><span class="hljs-tag">&lt;<span class="hljs-name">dependency</span>&gt;</span><br>        <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>com.alibaba.otter<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span><br>        <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>canal.client<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span><br>        <span class="hljs-tag">&lt;<span class="hljs-name">version</span>&gt;</span>1.1.0<span class="hljs-tag">&lt;/<span class="hljs-name">version</span>&gt;</span><br><span class="hljs-tag">&lt;/<span class="hljs-name">dependency</span>&gt;</span><br></code></pre></td></tr></table></figure>
+<h2 id="main函数"><a href="#main函数" class="headerlink" title="main函数"></a>main函数</h2><blockquote>
+<p>注：该函数仅用于测试能否连接。</p>
+</blockquote>
+<figure class="highlight java"><table><tr><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">main</span><span class="hljs-params">(String[] args)</span>&#123;<br>    System.out.println(<span class="hljs-string">&quot;---------O(∩_∩)O哈哈~ initCanal() main方法-----------&quot;</span>);<br>    <span class="hljs-comment">//=================================</span><br>    <span class="hljs-comment">// 创建链接canal服务端</span><br>    <span class="hljs-type">CanalConnector</span> <span class="hljs-variable">connector</span> <span class="hljs-operator">=</span> CanalConnectors.newSingleConnector(<span class="hljs-keyword">new</span> <span class="hljs-title class_">InetSocketAddress</span>(<span class="hljs-string">&quot;192.168.146.132&quot;</span>,<span class="hljs-number">11111</span>), <span class="hljs-string">&quot;example&quot;</span>, <span class="hljs-string">&quot;&quot;</span>, <span class="hljs-string">&quot;&quot;</span>);<br>    <span class="hljs-type">int</span> <span class="hljs-variable">batchSize</span> <span class="hljs-operator">=</span> <span class="hljs-number">1000</span>;<br>    <span class="hljs-comment">//空闲空转计数器</span><br>    <span class="hljs-type">int</span> <span class="hljs-variable">emptyCount</span> <span class="hljs-operator">=</span> <span class="hljs-number">0</span>;<br>    System.out.println(<span class="hljs-string">&quot;---------------------canal init OK，开始监听mysql变化------&quot;</span>);<br>    <span class="hljs-keyword">try</span> &#123;<br>        connector.connect();<br>        connector.subscribe(<span class="hljs-string">&quot;.*\\..*&quot;</span>);<br>        <span class="hljs-comment">//connector.subscribe(&quot;petstoredb.pets&quot;);</span><br>        connector.rollback();<br>        <span class="hljs-type">int</span> <span class="hljs-variable">totalEmptyCount</span> <span class="hljs-operator">=</span> <span class="hljs-number">600</span>;<br>        <span class="hljs-keyword">while</span> (emptyCount &lt; totalEmptyCount) &#123;<br>            System.out.println(<span class="hljs-string">&quot;我是canal，每秒一次正在监听:&quot;</span>+ UUID.randomUUID().toString());<br>            <span class="hljs-type">Message</span> <span class="hljs-variable">message</span> <span class="hljs-operator">=</span> connector.getWithoutAck(batchSize); <span class="hljs-comment">// 获取指定数量的数据</span><br>            <span class="hljs-type">long</span> <span class="hljs-variable">batchId</span> <span class="hljs-operator">=</span> message.getId();<br>            <span class="hljs-type">int</span> <span class="hljs-variable">size</span> <span class="hljs-operator">=</span> message.getEntries().size();<br>            <span class="hljs-keyword">if</span> (batchId == -<span class="hljs-number">1</span> || size == <span class="hljs-number">0</span>) &#123;<br>                emptyCount++;<br>                <span class="hljs-keyword">try</span> &#123; TimeUnit.SECONDS.sleep(<span class="hljs-number">1</span>); &#125; <span class="hljs-keyword">catch</span> (InterruptedException e) &#123; e.printStackTrace(); &#125;<br>            &#125; <span class="hljs-keyword">else</span> &#123;<br>                <span class="hljs-comment">//计数器重新置零</span><br>                emptyCount = <span class="hljs-number">0</span>;<br>                printEntry(message.getEntries());<br>            &#125;<br>            connector.ack(batchId); <span class="hljs-comment">// 提交确认</span><br>            <span class="hljs-comment">// connector.rollback(batchId); // 处理失败, 回滚数据</span><br>        &#125;<br>        System.out.println(<span class="hljs-string">&quot;已经监听了&quot;</span>+totalEmptyCount+<span class="hljs-string">&quot;秒，无任何消息，请重启重试......&quot;</span>);<br>    &#125; <span class="hljs-keyword">finally</span> &#123;<br>        connector.disconnect();<br>    &#125;<br>&#125;<br><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">printEntry</span><span class="hljs-params">(List&lt;Entry&gt; entrys)</span> &#123;<br>    <span class="hljs-keyword">for</span> (Entry entry : entrys) &#123;<br>        <span class="hljs-keyword">if</span> (entry.getEntryType() == EntryType.TRANSACTIONBEGIN || entry.getEntryType() == EntryType.TRANSACTIONEND) &#123;<br>            <span class="hljs-keyword">continue</span>;<br>        &#125;<br>        <span class="hljs-type">RowChange</span> <span class="hljs-variable">rowChage</span> <span class="hljs-operator">=</span> <span class="hljs-literal">null</span>;<br>        <span class="hljs-keyword">try</span> &#123;<br>            <span class="hljs-comment">//获取变更的row数据</span><br>            rowChage = RowChange.parseFrom(entry.getStoreValue());<br>        &#125; <span class="hljs-keyword">catch</span> (Exception e) &#123;<br>            <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">RuntimeException</span>(<span class="hljs-string">&quot;ERROR ## parser of eromanga-event has an error,data:&quot;</span> + entry.toString(),e);<br>        &#125;<br>        <span class="hljs-comment">//获取变动类型</span><br>        <span class="hljs-type">EventType</span> <span class="hljs-variable">eventType</span> <span class="hljs-operator">=</span> rowChage.getEventType();<br>        System.out.println(String.format(<span class="hljs-string">&quot;================binlog[%s:%s] , name[%s,%s] , eventType : %s&quot;</span>,<br>                entry.getHeader().getLogfileName(), entry.getHeader().getLogfileOffset(),<br>                entry.getHeader().getSchemaName(), entry.getHeader().getTableName(), eventType));<br>        <span class="hljs-keyword">for</span> (RowData rowData : rowChage.getRowDatasList()) &#123;<br>            <span class="hljs-keyword">if</span> (eventType == EventType.INSERT) &#123;<br>                rowData.getAfterColumnsList().forEach(column-&gt;System.out.println(column.getName() + <span class="hljs-string">&quot; : &quot;</span> + column.getValue() + <span class="hljs-string">&quot;    update=&quot;</span> + column.getUpdated()));<br>                <span class="hljs-comment">//redisInsert(rowData.getAfterColumnsList());</span><br>            &#125; <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (eventType == EventType.DELETE) &#123;<br>                rowData.getAfterColumnsList().forEach(column-&gt;System.out.println(column.getName() + <span class="hljs-string">&quot; : &quot;</span> + column.getValue() + <span class="hljs-string">&quot;    update=&quot;</span> + column.getUpdated()));<br>                <span class="hljs-comment">//redisDelete(rowData.getBeforeColumnsList());</span><br>            &#125; <span class="hljs-keyword">else</span> &#123;<span class="hljs-comment">//EventType.UPDATE</span><br>                rowData.getAfterColumnsList().forEach(column-&gt;System.out.println(column.getName() + <span class="hljs-string">&quot; : &quot;</span> + column.getValue() + <span class="hljs-string">&quot;    update=&quot;</span> + column.getUpdated()));<br>                <span class="hljs-comment">//redisUpdate(rowData.getAfterColumnsList());</span><br>            &#125;<br>        &#125;<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>输出为：</p>
+<blockquote>
+<p>我是canal，每秒一次正在监听:0d7700c0-0117-4a28-8d82-0a6ccbafadfd<br>我是canal，每秒一次正在监听:a658edf6-e56c-458e-bf13-25a64bffa7ec<br>我是canal，每秒一次正在监听:a6896fce-8f48-4478-983e-cf4bb05c1393<br>我是canal，每秒一次正在监听:e180a475-8a4a-44ee-84fa-096c2f44db16<br>我是canal，每秒一次正在监听:0fd10344-7eb1-412d-90fc-185e3ec69c51<br>&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;binlog[mysql-bin.000353:54296] , name[api_open_platform,interface_access] , eventType : INSERT<br>accesskey : a7e4c3c9-90be-434f-a201-1fb0c9c6921f    update&#x3D;true<br>verify_type : 1    update&#x3D;true<br>secretkey : 41ee07aa-bd35-45f0-aa6f-b39351d8db0c    update&#x3D;true<br>remaining_amount :     update&#x3D;true<br>remaining_times :     update&#x3D;true<br>interface_id : 10    update&#x3D;true<br>userid : 28    update&#x3D;true<br>call_times : 0    update&#x3D;true<br>failed_call_times : 0    update&#x3D;true<br>create_time : 2024-03-06 22:42:25    update&#x3D;true<br>update_time : 2024-03-06 22:42:25    update&#x3D;true<br>is_deleted : 0    update&#x3D;true<br>我是canal，每秒一次正在监听:1b80e597-9976-430a-b6f7-4fcaac936776<br>我是canal，每秒一次正在监听:9e89f0f4-0dfe-4f53-88c7-5731dbf0ebdf<br>我是canal，每秒一次正在监听:19322e19-0924-400d-a85b-bba58beb1a53<br>我是canal，每秒一次正在监听:0febf37a-df93-40b8-8c23-d0b89a1a1576</p>
+</blockquote>
+<p>至此，canal启动完成。<section class="footnotes"><div class="footnote-list"><ol><li><span id="fn:1" class="footnote-text"><span>本文基于canalv1.1.7版本。<br><a href="#fnref:1" rev="footnote" class="footnote-backref"> ↩</a></span></span></li></ol></div></section></p>
+]]></content>
+      <categories>
+        <category>分布式</category>
+        <category>中间件</category>
+        <category>canal</category>
+      </categories>
+      <tags>
+        <tag>canal</tag>
+        <tag>双写一致性</tag>
+        <tag>Dump</tag>
+        <tag>Binary log</tag>
+        <tag>mysql slave</tag>
       </tags>
   </entry>
 </search>
