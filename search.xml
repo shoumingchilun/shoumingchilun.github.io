@@ -1356,7 +1356,70 @@ newProxyInstance方法的三个参数：</li>
 <h2 id="实现原理"><a href="#实现原理" class="headerlink" title="实现原理"></a>实现原理</h2><h3 id="1-SCHEDULE-TOPIC-XXXX"><a href="#1-SCHEDULE-TOPIC-XXXX" class="headerlink" title="1.SCHEDULE_TOPIC_XXXX"></a>1.SCHEDULE_TOPIC_XXXX</h3><p>当Broker接收到延迟消息时，会将该消息的Topic和MessageQueueID等属性作为消息扩展属性存储起来，然后将该消息存储到<strong>SCHEDULE_TOPIC_XXXX</strong>主题中，根据延时等级存储到对应的18个消息队列。</p>
 <h3 id="2-定时线程池"><a href="#2-定时线程池" class="headerlink" title="2.定时线程池"></a>2.定时线程池</h3><p>Broker 会开启一个定时线程池，里面一共有18个核心线程，这个线程池的任务就是定时调度（间隔100ms）查看SCHEDULE_TOPIC_XXXX下的每个队列的消息，一旦有到期的消息，就分发到原Topic的队列中供消费者消费。</p>
 <p>示意图：<br><img src="/2024/03/14/backend/middleware/messagequeue/rocket-message/delayMessage.svg"></p>
-]]></content>
+<h1 id="顺序消息"><a href="#顺序消息" class="headerlink" title="顺序消息"></a>顺序消息</h1><p>顺序消息为RocketMQ中的高级特性消息，常用于有序事件处理、数据库变更增量同步等场景。</p>
+<blockquote>
+<p>数据库变更增量同步：如数据库操作日志，不可乱序。</p>
+</blockquote>
+<h2 id="生命周期-2"><a href="#生命周期-2" class="headerlink" title="生命周期"></a>生命周期</h2><p>顺序消息生命周期与普通消息生命周期相同。</p>
+<h2 id="使用方式-2"><a href="#使用方式-2" class="headerlink" title="使用方式"></a>使用方式</h2><ol>
+<li>使用mqadmin工具创建顺序消息类型的主题：<code>sh mqadmin updateTopic-n &lt;nameserver_address&gt;-t &lt;topic_name&gt;-c &lt;cluster_name&gt;-a +message.type=FIFO</code></li>
+<li>发送消息时需要设置<strong>MessageGroup</strong>，该值用于为消息设置<strong>GroupID</strong>，同一个GroupID的消息只会被其中一个消费者（如果有一个包含多个消费者的消费者组订阅顺序主题）消费，从而确保消息的顺序性。</li>
+<li>消费消息时，必须提交消费结果。同一个<strong>MessageGroup</strong>的消息，如果前序消息没有消费完成，再次调用Receive是获取不到后续消息的。</li>
+</ol>
+<h2 id="保证顺序性"><a href="#保证顺序性" class="headerlink" title="保证顺序性"></a>保证顺序性</h2><p>为保证顺序性，需同时保证<strong>生产顺序性</strong>和<strong>消费顺序性</strong>。</p>
+<ul>
+<li>保证消息<strong>生产的顺序性</strong>，必须满足<strong>单一生产者</strong>、<strong>串行发送</strong>两个条件。<ul>
+<li><strong>单一生产者</strong>：消息生产的顺序性仅支持单一生产者，不同生产者分布在不同的系统，即使设置相同的消息组，不同生产者之间产生的消息也无法判定其先后顺序。</li>
+<li><strong>串行发送</strong>：生产者客户端支持多线程安全访问，但如果生产者使用多线程并行发送，则不同线程间产生的消息将无法保证先后顺序。</li>
+</ul>
+</li>
+<li>保证消息<strong>消费的顺序性</strong>，必须满足<strong>投递顺序</strong>、<strong>有限重试</strong>两个条件。<ul>
+<li><strong>投递顺序</strong>：RocketMQ通过客户端SDK和服务端通信协议保障消息按照服务端存储顺序投递，但业务方消费消息时需要严格按照接收—处理—应答的语义处理消息，避免因异步处理导致消息乱序。（消费者类型为PushConsumer时，RocketMQ保证消息按照存储顺序一条一条投递给消费者，若消费者类型为SimpleConsumer，则消费者有可能一次拉取多条消息。此时，消息消费的顺序性需要由业务方自行保证。）</li>
+<li><strong>有限重试</strong>：RocketMQ顺序消息投递仅在重试次数限定范围内，即一条消息如果一直重试失败，超过最大重试次数后将不再重试，跳过这条消息消费，不会一直阻塞后续消息处理。（顺序消息消费失败进行消费重试时，为保障消息的顺序性，后续消息不可被消费，必须等待前面的消息消费完成后才能被处理。）</li>
+</ul>
+</li>
+</ul>
+<p>服务端顺序存储逻辑如下：相同消息组的消息按照先后顺序被存储在同一个队列；不同消息组的消息可以混合在同一个队列中，且不保证连续：<br><img src="/2024/03/14/backend/middleware/messagequeue/rocket-message/%E6%9C%8D%E5%8A%A1%E7%AB%AF%E9%A1%BA%E5%BA%8F%E5%AD%98%E5%82%A8%E9%80%BB%E8%BE%91.png"><br>如上图所示，同组的消息均保证顺序。</p>
+<h2 id="全局与分区"><a href="#全局与分区" class="headerlink" title="全局与分区"></a>全局与分区</h2><p><strong>全局顺序消息</strong>：需要将所有的消息发送到同一个队列（设置同一个MessageGroup），并且消费不能并发消息，性能差。<br><strong>分区顺序消息</strong>：仅保证同一批业务逻辑相关消息的顺序，而并发度取决于Topic下的队列数，不同队列之间可以并发处理顺序消息，互不影响，性能较好。</p>
+<h2 id="底层实现"><a href="#底层实现" class="headerlink" title="底层实现"></a>底层实现</h2><p>rocketMq的顺序消息，通过两种机制来保证消息只会被一个线程处理：</p>
+<ol>
+<li>borker维护全局队列锁，保证只有一个客户端可获得该队列消息。</li>
+<li>客户端内维护了局部队列锁，保证在一个JVM应用里面，这个队列只会被一个线程消费。</li>
+</ol>
+<h3 id="1-维护全局队列锁"><a href="#1-维护全局队列锁" class="headerlink" title="1. 维护全局队列锁"></a>1. 维护全局队列锁</h3><p>在 RocketMQ 中，有两种基本的消息消费模型：<strong>并发消费（MessageListenerConcurrently 实现）</strong>和<strong>有序消费（MessageListenerOrderly 实现）</strong>。<br>并发消费不保证消息的消费顺序，而<strong>有序消费则保证了在同一个消息队列（Queue）中消息的消费顺序与生产顺序一致</strong>。</p>
+<p><code>ConsumeMessageOrderlyService</code>该类在初始化的时候会生成一个定时线程池，然后在<code>ConsumeMessageOrderlyService</code>启动的时候，会创建一个任务，1s执行一次<code>lockMQPeriodically</code>这个方法，就是<strong>给当前客户端所消费的所有队列</strong>去broker进行上锁。（ConsumeMessageOrderlyService执行在消费者本地）<br><code>lockMQPeriodically</code>内部会调用<code>lockBatchMQ</code>发送上全局锁请求到Broker，对MessageQueue进行上锁，并获得上锁结果。</p>
+<p>上全局锁过程：</p>
+<ol>
+<li>循环判断当前队列，是否被当前的客户端持有，如果已经持有了，那么更新下持有时间。对未持有锁的队列，存入<code>notLocakedMqs</code>。</li>
+<li>循环<code>notLocakedMqs</code>，尝试获取全局锁。尝试过程如下：<ol>
+<li>获得用来锁全局锁信息的锁。    </li>
+<li>每个队列（当前客户端所消费的所有队列）的全局锁信息。</li>
+<li>当锁信息为空时，说明当前队列没有被上锁，设置该队列锁为当前客户所有。</li>
+<li>如果队列锁为当前队列所有，则更新持有时间。</li>
+<li>如果队列锁已过期，无论之前是什么客户端持有，都获得该队列锁并更新持有时间。</li>
+<li>否则说明该锁已被其他客户端持有，获得失败。</li>
+</ol>
+</li>
+</ol>
+<p>当获得了全局队列锁后，即可进入本地队列锁。</p>
+<h3 id="2-维护本地队列锁"><a href="#2-维护本地队列锁" class="headerlink" title="2.维护本地队列锁"></a>2.维护本地队列锁</h3><p><code>ConsumeMessageOrderlyService</code>中对消息消费的策略：</p>
+<ol>
+<li>当从broker拉取到的消息后，会放入<code>ProcessQueue</code>，<code>ProcessQueue</code>内部会根据offset对消息做有序存储，保证单个队列的消息是有序的。</li>
+<li>只有当<code>ProcessQueue</code>中存在消息且目前不在消费（目前无线程正在消费），才会构建<code>ConsumerRequest</code>消费任务到线程池去进行消费。</li>
+<li><code>ConsumerRequest</code>的消费策略（<code>run</code>方法）：<ol>
+<li>获取本地的队列锁，本地的队列锁获取成功，则进行处理；如果获取失败则调用tryLockLaterAndReconsume延迟消费消息。</li>
+<li>再次判断全局队列锁有无获得成功，未成功则退出。</li>
+<li>调用监听器消费信息，获得结果。</li>
+<li>当结果为异常时，重试。</li>
+</ol>
+</li>
+</ol>
+<blockquote>
+<p>当消费者数量变更的时候，会触发负载均衡，客户端会重新计算消费的队列，这个时候会把不需要再消费的队列的全局锁释放掉，同时还是去borker里面对新消费的队列进行上锁，如果上锁失败，那么这个队列的消息是不能消费的，只有上锁成功才能被消费。</p>
+</blockquote>
+<h1 id="事务消息"><a href="#事务消息" class="headerlink" title="事务消息"></a>事务消息</h1><p>事务消息为RocketMQ中的高级特性消息，应用于保证分布式事务的最终一致性场景。</p>
+<p>RocketMQ的事务消息支持<strong>二阶段的提交能力</strong>。将二阶段提交和本地事务绑定，实现全局提交结果的一致性。</p>
+<h2 id="事务消息处理流程"><a href="#事务消息处理流程" class="headerlink" title="事务消息处理流程"></a>事务消息处理流程</h2>]]></content>
       <categories>
         <category>分布式</category>
         <category>中间件</category>
@@ -1370,6 +1433,18 @@ newProxyInstance方法的三个参数：</li>
         <tag>异步消息</tag>
         <tag>延时消息</tag>
         <tag>SCHEDULE_TOPIC_XXXX</tag>
+        <tag>MessageGroup</tag>
+        <tag>生产顺序性</tag>
+        <tag>消费顺序性</tag>
+        <tag>单一生产者</tag>
+        <tag>串行发送</tag>
+        <tag>投递顺序</tag>
+        <tag>有限重试</tag>
+        <tag>全局顺序消息</tag>
+        <tag>分区顺序消息</tag>
+        <tag>ConsumeMessageOrderlyService</tag>
+        <tag>全局队列锁</tag>
+        <tag>本地队列锁</tag>
       </tags>
   </entry>
   <entry>
