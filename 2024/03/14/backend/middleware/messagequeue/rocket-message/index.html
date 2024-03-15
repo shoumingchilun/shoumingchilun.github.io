@@ -30,7 +30,7 @@
 <meta property="og:image" content="http://shoumingchilun.github.io/2024/03/14/backend/middleware/messagequeue/rocket-message/delayMessage.svg">
 <meta property="og:image" content="http://shoumingchilun.github.io/2024/03/14/backend/middleware/messagequeue/rocket-message/%E6%9C%8D%E5%8A%A1%E7%AB%AF%E9%A1%BA%E5%BA%8F%E5%AD%98%E5%82%A8%E9%80%BB%E8%BE%91.png">
 <meta property="article:published_time" content="2024-03-14T15:30:01.000Z">
-<meta property="article:modified_time" content="2024-03-15T04:01:40.422Z">
+<meta property="article:modified_time" content="2024-03-15T08:25:03.790Z">
 <meta property="article:author" content="寿命齿轮">
 <meta property="article:tag" content="消息队列">
 <meta property="article:tag" content="RocketMQ">
@@ -40,6 +40,7 @@
 <meta property="article:tag" content="延时消息">
 <meta property="article:tag" content="SCHEDULE_TOPIC_XXXX">
 <meta property="article:tag" content="MessageGroup">
+<meta property="article:tag" content="顺序消息">
 <meta property="article:tag" content="生产顺序性">
 <meta property="article:tag" content="消费顺序性">
 <meta property="article:tag" content="单一生产者">
@@ -51,6 +52,9 @@
 <meta property="article:tag" content="ConsumeMessageOrderlyService">
 <meta property="article:tag" content="全局队列锁">
 <meta property="article:tag" content="本地队列锁">
+<meta property="article:tag" content="事务消息">
+<meta property="article:tag" content="RMQ_SYS_TRANS_HALF_TOPIC">
+<meta property="article:tag" content="TransactionMessageCheckService">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:image" content="http://shoumingchilun.github.io/2024/03/14/backend/middleware/messagequeue/rocket-message/%E5%90%8C%E6%AD%A5%E6%B6%88%E6%81%AF.svg">
   
@@ -249,7 +253,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          2.9k 字
+          4.2k 字
         
       </span>
     
@@ -260,7 +264,7 @@
         
         
         
-          24 分钟
+          35 分钟
         
       </span>
     
@@ -315,7 +319,7 @@
               <p id="updated-time" class="note note-info" style="display: none">
                 
                   
-                    本文最后更新于 2024-03-15T12:01:40+08:00
+                    本文最后更新于 2024-03-15T16:25:03+08:00
                   
                   
 
@@ -491,7 +495,41 @@
 </blockquote>
 <h1 id="事务消息"><a href="#事务消息" class="headerlink" title="事务消息"></a>事务消息</h1><p>事务消息为RocketMQ中的高级特性消息，应用于保证分布式事务的最终一致性场景。</p>
 <p>RocketMQ的事务消息支持<strong>二阶段的提交能力</strong>。将二阶段提交和本地事务绑定，实现全局提交结果的一致性。</p>
-<h2 id="事务消息处理流程"><a href="#事务消息处理流程" class="headerlink" title="事务消息处理流程"></a>事务消息处理流程</h2>
+<blockquote>
+<p>需要注意的是，事务消息的特点是支持回滚消息（即二阶段未通过后可将消息移出），而不是通过RocketMQ来管理分布式事务并实现最终一致性。比如有一段代码，要求具有原子性，其中包括发送一些消息、更改一些数据等功能，当发生异常时，要求数据库可回滚，消息也可回滚。</p>
+</blockquote>
+<h2 id="事务消息处理流程"><a href="#事务消息处理流程" class="headerlink" title="事务消息处理流程"></a>事务消息处理流程</h2><ol>
+<li>生产者将消息发送至Broker。</li>
+<li>Broker持久化消息，返回ACK。目前消息状态为（事务待提交）。</li>
+<li>生产者开始执行本地事务逻辑。</li>
+<li>生产者根据本地事务执行结果向服务端提交二次确认结果（Commit或是Rollback），服务端收到确认结果后处理逻辑如下：<ol>
+<li>二次确认结果为Commit：服务端将半事务消息标记为可投递，并投递给消费者。</li>
+<li>二次确认结果为Rollback：服务端将回滚事务，不会将半事务消息投递给消费者。</li>
+</ol>
+</li>
+<li>在断网或者是生产者应用重启的特殊情况下，若服务端未收到发送者提交的二次确认结果，或服务端收到的二次确认结果为Unknown未知状态，经过固定时间后，服务端将对消息生产者即生产者集群中任一生产者实例发起<strong>消息回查</strong>。 </li>
+<li>生产者收到消息回查后，需要检查对应消息的本地事务执行的最终结果。</li>
+<li>生产者根据检查到的本地事务的最终状态再次提交二次确认，服务端仍按照步骤4对半事务消息进行处理。</li>
+</ol>
+<h2 id="生命周期-3"><a href="#生命周期-3" class="headerlink" title="生命周期"></a>生命周期</h2><ol>
+<li><strong>初始化</strong>：半事务消息被生产者构建并完成初始化，待发送到服务端的状态。</li>
+<li><strong>事务待提交</strong>：半事务消息被发送到服务端，和普通消息不同，并不会直接被服务端持久化，而是会被单独存储到事务存储系统中，等待第二阶段本地事务返回执行结果后再提交。此时消息对下游消费者不可见。</li>
+<li><strong>消息回滚</strong>：第二阶段如果<strong>事务执行结果明确为回滚</strong>，服务端会将半事务消息回滚，该事务消息流程终止。</li>
+<li><strong>提交待消费</strong>：第二阶段如果<strong>事务执行结果明确为提交</strong>，服务端会将半事务消息重新存储到普通存储系统中，此时消息对下游消费者可见，等待被消费者获取并消费。</li>
+<li><strong>消费中</strong>：消息被消费者获取，并按照消费者本地的业务逻辑进行处理的过程。 此时服务端会等待消费者完成消费并提交消费结果，如果一定时间后没有收到消费者的响应，RocketMQ会对消息进行重试处理。</li>
+<li><strong>消费提交</strong>：消费者完成消费处理，并向服务端提交消费结果，服务端标记当前消息已经被处理（包括消费成功和失败）。</li>
+<li><strong>消息删除</strong>：RocketMQ按照消息保存机制滚动清理最早的消息数据，将消息从物理文件中删除。</li>
+</ol>
+<h2 id="使用方法"><a href="#使用方法" class="headerlink" title="使用方法"></a>使用方法</h2><ol>
+<li>使用mqadmin工具创建事务类型主题：<code>sh mqadmin updateTopic -n &lt;nameserver_address&gt; -t &lt;topic_name&gt; -c &lt;cluster_name&gt; -a +message.type=TRANSACTION</code>。</li>
+<li>事务生产者需要提供一个事务检查器，用于检查确认异常半事务的中间状态，比如：<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">//构造事务生产者：事务消息需要生产者构建一个事务检查器，用于检查确认异常半事务的中间状态。</span><br><span class="hljs-type">Producer</span> <span class="hljs-variable">producer</span> <span class="hljs-operator">=</span> provider.newProducerBuilder()<br>        .setTransactionChecker(messageView -&gt; &#123;<br>            <span class="hljs-comment">/**</span><br><span class="hljs-comment">             * 事务检查器一般是根据业务的ID去检查本地事务是否正确提交还是回滚，此处以订单ID属性为例。</span><br><span class="hljs-comment">             * 在订单表找到了这个订单，说明本地事务插入订单的操作已经正确提交；如果订单表没有订单，说明本地事务已经回滚。</span><br><span class="hljs-comment">             */</span><br>            <span class="hljs-keyword">final</span> <span class="hljs-type">String</span> <span class="hljs-variable">orderId</span> <span class="hljs-operator">=</span> messageView.getProperties().get(<span class="hljs-string">&quot;OrderId&quot;</span>);<br>            <span class="hljs-keyword">if</span> (Strings.isNullOrEmpty(orderId)) &#123;<br>                <span class="hljs-comment">// 错误的消息，直接返回Rollback。</span><br>                <span class="hljs-keyword">return</span> TransactionResolution.ROLLBACK;<br>            &#125;<br>            <span class="hljs-keyword">return</span> checkOrderById(orderId) ? TransactionResolution.COMMIT : TransactionResolution.ROLLBACK;<br>        &#125;)<br>        .build();<br></code></pre></td></tr></table></figure></li>
+</ol>
+<blockquote>
+<p>注意：消息回查时，对于正在进行中的事务不要返回Rollback或Commit结果，应继续保持Unknown的状态。如果事务执行较慢，消息回查太快，可以将第一次事务回查时间设置较大一些或让程序能正确识别正在进行中的事务。</p>
+</blockquote>
+<h2 id="实现原理-1"><a href="#实现原理-1" class="headerlink" title="实现原理"></a>实现原理</h2><h3 id="1-RMQ-SYS-TRANS-HALF-TOPIC"><a href="#1-RMQ-SYS-TRANS-HALF-TOPIC" class="headerlink" title="1. RMQ_SYS_TRANS_HALF_TOPIC"></a>1. RMQ_SYS_TRANS_HALF_TOPIC</h3><p>和顺序消息类似，发送事务消息到Broker时，Broker会检查是否为事务消息，是则会将原先的Topic、queue存储在属性中，并将该事务消息的topic替换为<code>RMQ_SYS_TRANS_HALF_TOPIC</code>，存入该主题。</p>
+<h3 id="2-TransactionMessageCheckService"><a href="#2-TransactionMessageCheckService" class="headerlink" title="2. TransactionMessageCheckService"></a>2. TransactionMessageCheckService</h3><p>该主题内消息会不被消费者消费，而是等到生产者提交或回滚，再将该消息发往Topic或直接丢弃。<br>会有一个**定时线程<code>TransactionMessageCheckService</code>**，定时扫描<code>RMQ_SYS_TRANS_HALF_TOPIC</code>下的消息，反查生产者的反差接口来判断事务有无成功，成功则投递到原Topic，失败则丢弃，未知则跳过。</p>
+
                 
               </div>
             
@@ -554,6 +592,8 @@
       
         <a href="/tags/MessageGroup/" class="print-no-link">#MessageGroup</a>
       
+        <a href="/tags/%E9%A1%BA%E5%BA%8F%E6%B6%88%E6%81%AF/" class="print-no-link">#顺序消息</a>
+      
         <a href="/tags/%E7%94%9F%E4%BA%A7%E9%A1%BA%E5%BA%8F%E6%80%A7/" class="print-no-link">#生产顺序性</a>
       
         <a href="/tags/%E6%B6%88%E8%B4%B9%E9%A1%BA%E5%BA%8F%E6%80%A7/" class="print-no-link">#消费顺序性</a>
@@ -575,6 +615,12 @@
         <a href="/tags/%E5%85%A8%E5%B1%80%E9%98%9F%E5%88%97%E9%94%81/" class="print-no-link">#全局队列锁</a>
       
         <a href="/tags/%E6%9C%AC%E5%9C%B0%E9%98%9F%E5%88%97%E9%94%81/" class="print-no-link">#本地队列锁</a>
+      
+        <a href="/tags/%E4%BA%8B%E5%8A%A1%E6%B6%88%E6%81%AF/" class="print-no-link">#事务消息</a>
+      
+        <a href="/tags/RMQ-SYS-TRANS-HALF-TOPIC/" class="print-no-link">#RMQ_SYS_TRANS_HALF_TOPIC</a>
+      
+        <a href="/tags/TransactionMessageCheckService/" class="print-no-link">#TransactionMessageCheckService</a>
       
     </div>
   
