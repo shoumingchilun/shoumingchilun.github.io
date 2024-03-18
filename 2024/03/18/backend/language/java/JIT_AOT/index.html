@@ -1,0 +1,1054 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/images/apple-touch-icon.png">
+  <link rel="icon" href="/images/favicon-32x32.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+  
+  <meta name="theme-color" content="#161f24">
+  <meta name="author" content="寿命齿轮">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="本文将介绍使用JVM运行java程序的过程，以及使用AOT技术改进后可带来的变化。 JIT传统的一个 Java 应用从代码编写到启动运行大致可以分为如下步骤：  首先，编写.java源代码程序。 然后，借助javac工具将.java文件翻译为.class的字节码。字节码是 Java 中非常重要的内容之一，正是因为它的出现，Java 才实现对底层环境的屏蔽，达到 Write once, run an">
+<meta property="og:type" content="article">
+<meta property="og:title" content="JAVA: AOT&amp;JIT介绍">
+<meta property="og:url" content="http://shoumingchilun.github.io/2024/03/18/backend/language/java/JIT_AOT/">
+<meta property="og:site_name" content="Chilun&#39;s Blogs">
+<meta property="og:description" content="本文将介绍使用JVM运行java程序的过程，以及使用AOT技术改进后可带来的变化。 JIT传统的一个 Java 应用从代码编写到启动运行大致可以分为如下步骤：  首先，编写.java源代码程序。 然后，借助javac工具将.java文件翻译为.class的字节码。字节码是 Java 中非常重要的内容之一，正是因为它的出现，Java 才实现对底层环境的屏蔽，达到 Write once, run an">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://shoumingchilun.github.io/2024/03/18/backend/language/java/JIT_AOT/java_jdk.svg">
+<meta property="og:image" content="http://shoumingchilun.github.io/2024/03/18/backend/language/java/JIT_AOT/java2.svg">
+<meta property="og:image" content="http://shoumingchilun.github.io/2024/03/18/backend/language/java/JIT_AOT/JVM_invoke.png">
+<meta property="og:image" content="http://shoumingchilun.github.io/2024/03/18/backend/language/java/JIT_AOT/GraalVM.png">
+<meta property="og:image" content="http://shoumingchilun.github.io/2024/03/18/backend/language/java/JIT_AOT/nativeImage.png">
+<meta property="og:image" content="http://shoumingchilun.github.io/2024/03/18/backend/language/java/JIT_AOT/%E9%9D%99%E6%80%81%E7%BC%96%E8%AF%91.png">
+<meta property="article:published_time" content="2024-03-18T04:06:17.000Z">
+<meta property="article:modified_time" content="2024-03-18T18:27:59.567Z">
+<meta property="article:author" content="寿命齿轮">
+<meta property="article:tag" content="JAVA">
+<meta property="article:tag" content="JDK">
+<meta property="article:tag" content="AOT">
+<meta property="article:tag" content="JIT">
+<meta property="article:tag" content="GraalVM">
+<meta property="article:tag" content="运行时编译">
+<meta property="article:tag" content="及时编译">
+<meta property="article:tag" content="静态编译">
+<meta property="article:tag" content="静态分析">
+<meta property="article:tag" content="提前编译">
+<meta property="article:tag" content="字节码">
+<meta property="article:tag" content="冷启动问题">
+<meta property="article:tag" content="native image">
+<meta property="article:tag" content="Substrate VM">
+<meta property="article:tag" content="Substrate VM运行时">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="http://shoumingchilun.github.io/2024/03/18/backend/language/java/JIT_AOT/java_jdk.svg">
+  
+  
+  
+  <title>JAVA: AOT&amp;JIT介绍 - Chilun&#39;s Blogs</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+  
+<link rel="stylesheet" href="/css/iconfont_csdn/iconfont.css">
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"shoumingchilun.github.io","root":"/","version":"1.9.7","typing":{"enable":true,"typeSpeed":80,"cursorChar":"'","loop":false,"scope":["home"]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"left","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 65vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>Chilun&#39;s Blogs</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/images/headpage.jpg') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle">JAVA: AOT&JIT介绍</span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2024-03-18 12:06" pubdate>
+          2024年3月18日 中午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          2.9k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          25 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="padding-left: 2rem; margin-right: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">JAVA: AOT&amp;JIT介绍</h1>
+            
+              <p id="updated-time" class="note note-info" style="display: none">
+                
+                  
+                    本文最后更新于 2024-03-19T02:27:59+08:00
+                  
+                  
+
+                
+              </p>
+            
+            
+              <div class="markdown-body">
+                
+                <p>本文将介绍使用JVM运行java程序的过程，以及使用AOT技术改进后可带来的变化。</p>
+<h1 id="JIT"><a href="#JIT" class="headerlink" title="JIT"></a>JIT</h1><p>传统的一个 Java 应用从代码编写到启动运行大致可以分为如下步骤：</p>
+<ol>
+<li>首先，编写<code>.java</code>源代码程序。</li>
+<li>然后，借助<strong>javac</strong>工具将<code>.java</code>文件翻译为<code>.class</code>的<strong>字节码</strong>。字节码是 Java 中非常重要的内容之一，正是因为它的出现，Java 才实现对底层环境的屏蔽，达到 Write once, run anywhere 的效果。</li>
+<li>基于步骤2的<code>.class</code>文件会被打包成 <strong>jar</strong> 包或者 <strong>war</strong> 包进行部署执行，部署过程中通过Java虚拟机加载应用程序然后<strong>解释字节码</strong>运行业务逻辑。<ul>
+<li>我们需要格外注意的是，<code>.class-&gt;机器码</code>的过程中，JVM类加载器首先加载字节码文件，然后通过解释器逐行解释执行，这种方式的执行速度会相对比较慢。而且，有些方法和代码块是经常需要被调用的(也就是所谓的热点代码)，所以后面引进了<strong>JIT（Just in Time Compilation）</strong>编译器，而 JIT 属于运行时编译。当 JIT 编译器完成第一次编译后，其会将字节码对应的机器码保存下来，下次可以直接使用。而我们知道，机器码的运行效率肯定是高于 Java 解释器的。这也解释了我们为什么经常会说Java 是<strong>编译与解释共存</strong>的语言。</li>
+</ul>
+</li>
+</ol>
+<p>示意图：<br><img src="/2024/03/18/backend/language/java/JIT_AOT/java_jdk.svg" srcset="/img/loading.gif" lazyload></p>
+<p><img src="/2024/03/18/backend/language/java/JIT_AOT/java2.svg" srcset="/img/loading.gif" lazyload></p>
+<h1 id="AOT"><a href="#AOT" class="headerlink" title="AOT"></a>AOT</h1><h2 id="传统方案的缺陷"><a href="#传统方案的缺陷" class="headerlink" title="传统方案的缺陷"></a>传统方案的缺陷</h2><p><img src="/2024/03/18/backend/language/java/JIT_AOT/JVM_invoke.png" srcset="/img/loading.gif" lazyload><br>Java 程序启动运行详细过程如上图所示。</p>
+<p>具体过程：</p>
+<ol>
+<li>一个 Java 应用启动过程首先需要<strong>加载</strong>该应用程序对应的<strong>JVM 虚拟机软件程序到内存中</strong>，如上图<span style="color: #fe4006;">红色</span>部分描述所示。</li>
+<li>然后 JVM 虚拟机再<strong>加载对应的应用程序到内存中</strong>，该过程对应上图中的<span style="color: #ccfefe;">浅蓝色</span>类加载（Class Load，CL）部分。</li>
+<li>在类加载过程中，<strong>应用程序</strong>就会开始<strong>被解释执行</strong>，对应上图中<span style="color: #adce00;">浅绿色</span>部分。</li>
+<li>解释执行过程 JVM 对垃圾对象进行回收，对应上图中的<span style="color: #fed220;">黄色</span>部分。</li>
+<li>随着程序的运行的深入，JVM 会采用<strong>及时编译（Just In Time，JIT）技术</strong>对执行频率较高的代码进行编译优化，以便提升应用程序运行速度。JIT 过程对应上图中的<span style="color: #fefefe;">白色</span>部分。</li>
+<li>经过 JIT 编译优化后的代码对应图中<span style="color: #00ad00;">深绿色</span>部分。</li>
+</ol>
+<p>经过上述分析，不难看出，一个 Java 程序从启动到达到被JIT动态编译优化会经过<strong>VM init</strong>，<strong>App init</strong>和<strong>App active</strong>几个阶段，相比于其他一些编译型语言，其<strong>冷启动问题</strong>比较严重。</p>
+<p>除了冷启动问题，在一个 Java 程序运行过程中，什么都不做首先就需要加载一个 JVM 虚拟机，该操作一般占用一定内存。另外，由于 Java 程序是先解释执行字节码，然后再做 JIT 编译优化。由于相比于一些编译型语言其将编译优化的动作后置到运行时，因此非常容易出现实际加载的代码比实际需要运行的代码多很多的情况，造成了一些无效内存占用情况。综上所述就是为什么很多人常诟病 Java 程序<strong>运行内存占用高</strong>的几点主要原因。</p>
+<h2 id="解决方案：AOT"><a href="#解决方案：AOT" class="headerlink" title="解决方案：AOT"></a>解决方案：AOT</h2><p><strong>提前编译（Ahead-of-Time Compilation，AOT Compilation）</strong>或者叫<strong>静态编译</strong>在 Java 领域很早就被提了出来。其核心思想就是让 Java 程序也跟其他程序语言，比如 C&#x2F;C++ 一样，先编译后执行解决上述问题，将 Java 程序的编译阶段提前到程序启动前，然后在编译阶段进行代码编译优化，让程序启动既巅峰，消除冷启动，降低运行时内存开销。</p>
+<p>Java 领域静态编译的实现技术有很多，其中最具代表性的还属 Oracle 推出的 <strong>GraalVM</strong> 开源高性能多语言运行时平台。</p>
+<blockquote>
+<p><img src="/2024/03/18/backend/language/java/JIT_AOT/GraalVM.png" srcset="/img/loading.gif" lazyload><br>GraalVM 中通过提供 Truffle 解释器实现框架，让开发人员可以使用 Truffle 提供的 API 快速实现特定语言的解释器从而实现对上图中各种编程语言所写的程序都能进行编译运行的效果，从而成为一个多语言运行时平台。GraalVM 实现静态编译能力的编译器就是 GraalVM JIT Compiler。静态编译框架和运行时由 Substrate VM 子项目实现，兼容 OpenJDK 运行时实现，提供了原生镜像程序运行时的异常处理、同步调度、线程管理、内存管理等功能。<br>因此，GraalVM 不仅可以作为一个多语言运行时平台，而且由于其中提供的 GraalVM JIT Compiler 静态编译器，其可用来对 Java 程序进行静态编译。</p>
+</blockquote>
+<p>基于静态编译的 Java 程序相比于目前应用广泛的 JVM 运行时编译 Java 程序，整个从代码编写到编译执行的区别如下：<br><img src="/2024/03/18/backend/language/java/JIT_AOT/nativeImage.png" srcset="/img/loading.gif" lazyload></p>
+<p>相比于 JVM 运行时方式，静态编译在运行之前会先对程序解析编译，然后生成一个跟运行时环境强相关的 <strong>native image 可执行文件</strong>，最后直接执行该文件即可启动程序进行执行。</p>
+<h3 id="静态编译过程"><a href="#静态编译过程" class="headerlink" title="静态编译过程"></a>静态编译过程</h3><blockquote>
+<p>静态编译过程到底会对 Java 程序做哪些解析操作？静态编译后的可执行程序垃圾回收问题怎么解决？</p>
+</blockquote>
+<p>GraalVM 静态编译实现示意图：<br><img src="/2024/03/18/backend/language/java/JIT_AOT/%E9%9D%99%E6%80%81%E7%BC%96%E8%AF%91.png" srcset="/img/loading.gif" lazyload></p>
+<p>图中左侧前三个输入内容 Applicaton，Libraries 和 JDK 是一个 Java 程序编译运行必备的三部分，不必多说。而 <strong>Substrate VM</strong> 就是 GraalVM 中实现静态编译的核心部分，在整个静态编译过程中扮演了重要作用。<br>在静态分析过程中Substrate VM 通过<strong>上下文不敏感的指向分析（Points-to Analysis）</strong>来对应用程序做<strong>静态分析</strong>，其可以在不需要运行程序的情况下，基于源程序分析给出所有可能的可达函数列表然后作为后续编译阶段的输入对程序<strong>进行静态编译</strong>。<br>在静态分析完成后，基于静态分析结果的可达函数列表，会调用介绍的 GraalVM 中的 GraalVM JIT Compiler 编译器将应用程序编译为与目标平台强相关的本地代码以完成编译过程。<br>编译完成后，就会进入到上图中右侧 Native 可执行文件生成阶段。在该过程中，Substrate VM 会将静态编译阶段确定和初始化的内容以及跟 Substrate VM 运行时以及 JDK 库中的数据一起保存到最终可执行文件的 Image Heap 中。其中 <strong>Substrate VM 运行时</strong>就为最终可执行文件提供了运行过程中所需的垃圾回收、异常处理等能力。</p>
+<h4 id="静态分析局限性"><a href="#静态分析局限性" class="headerlink" title="静态分析局限性"></a>静态分析局限性</h4><p>在Substrate VM的静态分析过程中，由于静态分析无法覆盖 Java 中的反射、动态代理、JNI 调用等动态特性。这也造成了很多的 Java 框架由于在实现过程中使用了大量的上述特性，因此，都难以直接基于 Substrate VM 完成对自身所有代码的静态分析，需要通过<strong>额外的外部配置</strong>来解决静态分析本身的不足。</p>
+<blockquote>
+<p>一个java项目，该如何进行静态编译适配呢？其最核心要解决的本质问题，就是将开源框架中的 GraalVM 无法识别和处理的动态内容转换为其可识别的内容即可。</p>
+<p>Spring 社区为了应对Spring项目中反射和动态代理等特性在静态编译环境下的挑战，开发了<strong>AOT Engine</strong>工具。AOT Engine专注于在构建阶段对Spring应用中的特定内容进行静态分析与转换处理，这些内容包括但不限于使用@Configuration注解声明的配置类及其初始化逻辑。<br>通过AOT Engine，能够识别并预先处理那些原本只能在运行时动态生成的类结构，如基于Java的动态代理类。这样，在静态编译阶段就能够有效生成这些原本动态创建的对象，确保它们能被Substrate VM或类似支持提前编译的技术识别和兼容。<br>因此，AOT Engine有效地解决了Spring应用在静态编译场景下可能遇到的问题，使得Spring应用能够适应静态编译并实现性能优化，同时保持框架的灵活性和功能完整性。</p>
+<p>对于非 Spring 体系项目或者自身使用了一些 JDK 中原生的反射或者其他 Java 动态特性，针对自身代码中的 Java 动态用法需要在项目中提供对应的静态配置文件才能在静态编译过程中让编译器识别其中的动态特性，对其进行编译构建才能实现项目的顺利编译与执行。<br>针对这种情况，GraalVM 提供了一个名叫 <strong>native-image-agent</strong> 的 Tracing Agent 来帮助大家更方便地收集元数据并准备配置文件。该 Agent 会在常规 Java VM 上的应用程序运行过程中自动收集其中的动态特性使用情况并将其转换为 GraalVM 可以识别的配置文件。最后，将通过 Agent 生成的框架自身的动态配置文件存放在项目的：META-INF&#x2F;native-image&#x2F;&lt;group.id&gt;&#x2F;&lt;artifact.id&gt; 目录下，就可以在静态编译过程中根据这些配置内容，识别项目包中的动态特性。</p>
+</blockquote>
+<h2 id="基于静态编译构建微服务"><a href="#基于静态编译构建微服务" class="headerlink" title="基于静态编译构建微服务"></a>基于静态编译构建微服务</h2><blockquote>
+<p>Spring Cloud Alibaba 2022.0.0.0 版本所包含的所有中间件客户端已完成了构建 GraalVM 原生应用的适配。为用户提供了开箱即用的静态编译能力。</p>
+</blockquote>
+<h3 id="环境准备"><a href="#环境准备" class="headerlink" title="环境准备"></a>环境准备</h3><ol>
+<li>安装 GraalVM 发行版。（windows安装可参考：<a target="_blank" rel="noopener" href="https://medium.com/graalvm/using-graalvm-and-native-image-on-windows-10-9954dc071311">Using GraalVM and Native Image on Windows 10</a>）</li>
+<li>检查 java -version 的输出来验证是否配置了正确的版本。</li>
+</ol>
+<blockquote>
+<p>建议不要使用Windows。</p>
+</blockquote>
+<h3 id="应用构建"><a href="#应用构建" class="headerlink" title="应用构建"></a>应用构建</h3><ol>
+<li>要使用 GraalVM 静态编译能力构建微服务，首先确保项目的<code>Spring Boot</code>版本为<code>3.0.0</code>或以上<code>Spring Cloud</code>版本为<code>2022.0.0</code>或以上。然后在项目中引入<code>Spring Cloud Alibaba 2022.0.0.0</code>版本的所需模块依赖即可。</li>
+<li>通过maven命令生成应用中反射、序列化和动态代理所需的 Hints 配置文件：<code>mvn -Pnative spring-boot:run</code>（前提是应用中引入了<code>spring-boot-starter-parent</code>父模块）</li>
+<li>之后应用会启动，进行预执行，需要尽可能完整的测试一遍应用的所有功能，保证应用的大部分代码都被测试用例覆盖，该过程会基于 GraalVM 的 native-image-agent 收集程序中的动态特性，这样可以确保完整生成应用运行过程中的所有必须的动态属性。</li>
+<li>运行完所有测试用例后，我们发现<code>resource/META-INF/native-image</code>目录下会生成以下一些<code>hints</code>文件:<ul>
+<li>resource-config.json：应用中资源 hint 文件</li>
+<li>reflect-config.json：应用中反射定义 hint 文件</li>
+<li>serialization-config.json：应用中序列化内容 hint 文件</li>
+<li>proxy-config.json：应用中 Java 代理相关内容 hint 文件</li>
+<li>jni-config.json：应用中 Java Native Interface（JNI）内容 hint 文件</li>
+</ul>
+</li>
+</ol>
+<blockquote>
+<p>上述预执行过程主要为了扫描应用自身业务代码以及其他第三方包中的动态特性，以便后续静态编译过程能顺利进行，应用能正常启动。</p>
+</blockquote>
+<h3 id="静态编译"><a href="#静态编译" class="headerlink" title="静态编译"></a>静态编译</h3><p>通过maven命令来构建原生镜像：<code>mvn -Pnative native:compile</code><br>成功执行后，可在<code>/target</code>目录看到生成的可执行文件。</p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E5%90%8E%E7%AB%AF%E5%BC%80%E5%8F%91/" class="category-chain-item">后端开发</a>
+  
+  
+    <span>></span>
+    
+  <a href="/categories/%E5%90%8E%E7%AB%AF%E5%BC%80%E5%8F%91/%E8%AF%AD%E8%A8%80/" class="category-chain-item">语言</a>
+  
+  
+    <span>></span>
+    
+  <a href="/categories/%E5%90%8E%E7%AB%AF%E5%BC%80%E5%8F%91/%E8%AF%AD%E8%A8%80/Java/" class="category-chain-item">Java</a>
+  
+  
+
+  
+
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/JAVA/" class="print-no-link">#JAVA</a>
+      
+        <a href="/tags/JDK/" class="print-no-link">#JDK</a>
+      
+        <a href="/tags/AOT/" class="print-no-link">#AOT</a>
+      
+        <a href="/tags/JIT/" class="print-no-link">#JIT</a>
+      
+        <a href="/tags/GraalVM/" class="print-no-link">#GraalVM</a>
+      
+        <a href="/tags/%E8%BF%90%E8%A1%8C%E6%97%B6%E7%BC%96%E8%AF%91/" class="print-no-link">#运行时编译</a>
+      
+        <a href="/tags/%E5%8F%8A%E6%97%B6%E7%BC%96%E8%AF%91/" class="print-no-link">#及时编译</a>
+      
+        <a href="/tags/%E9%9D%99%E6%80%81%E7%BC%96%E8%AF%91/" class="print-no-link">#静态编译</a>
+      
+        <a href="/tags/%E9%9D%99%E6%80%81%E5%88%86%E6%9E%90/" class="print-no-link">#静态分析</a>
+      
+        <a href="/tags/%E6%8F%90%E5%89%8D%E7%BC%96%E8%AF%91/" class="print-no-link">#提前编译</a>
+      
+        <a href="/tags/%E5%AD%97%E8%8A%82%E7%A0%81/" class="print-no-link">#字节码</a>
+      
+        <a href="/tags/%E5%86%B7%E5%90%AF%E5%8A%A8%E9%97%AE%E9%A2%98/" class="print-no-link">#冷启动问题</a>
+      
+        <a href="/tags/native-image/" class="print-no-link">#native image</a>
+      
+        <a href="/tags/Substrate-VM/" class="print-no-link">#Substrate VM</a>
+      
+        <a href="/tags/Substrate-VM%E8%BF%90%E8%A1%8C%E6%97%B6/" class="print-no-link">#Substrate VM运行时</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>JAVA: AOT&amp;JIT介绍</div>
+      <div>http://shoumingchilun.github.io/2024/03/18/backend/language/java/JIT_AOT/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>寿命齿轮</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2024年3月18日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by-nc-sa/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-by"></i>
+                  </span>
+                </a>
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by-nc-sa/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="NC - 非商业性使用">
+                    <i class="iconfont icon-nc"></i>
+                  </span>
+                </a>
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by-nc-sa/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="SA - 相同方式共享">
+                    <i class="iconfont icon-sa"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar category-bar" style="margin-left: -1rem">
+    
+
+
+
+
+
+<div class="category-list">
+  
+  
+    
+    
+    
+    <div class="category row nomargin-x">
+      <a class="category-item 
+          list-group-item category-item-action col-10 col-md-11 col-xm-11" title="后端开发"
+        id="heading-657f6b455e0b01f4fcad68cf3e0328c0" role="tab" data-toggle="collapse" href="#collapse-657f6b455e0b01f4fcad68cf3e0328c0"
+        aria-expanded="true"
+      >
+        后端开发
+        <span class="list-group-count">(2)</span>
+        <i class="iconfont icon-arrowright"></i>
+      </a>
+      
+      <div class="category-collapse collapse show" id="collapse-657f6b455e0b01f4fcad68cf3e0328c0"
+           role="tabpanel" aria-labelledby="heading-657f6b455e0b01f4fcad68cf3e0328c0">
+        
+        
+          
+          
+  <div class="category-post-list">
+    
+    
+  </div>
+
+          
+  
+    
+    
+    
+    <div class="category-sub row nomargin-x">
+      <a class="category-subitem collapsed
+          list-group-item category-item-action col-10 col-md-11 col-xm-11" title="框架"
+        id="heading-41f1d2b62436eded1a6776504b6895d7" role="tab" data-toggle="collapse" href="#collapse-41f1d2b62436eded1a6776504b6895d7"
+        aria-expanded="false"
+      >
+        框架
+        <span class="list-group-count">(1)</span>
+        <i class="iconfont icon-arrowright"></i>
+      </a>
+      
+      <div class="category-collapse collapse " id="collapse-41f1d2b62436eded1a6776504b6895d7"
+           role="tabpanel" aria-labelledby="heading-41f1d2b62436eded1a6776504b6895d7">
+        
+        
+          
+          
+  <div class="category-post-list">
+    
+    
+  </div>
+
+          
+  
+    
+    
+    
+    <div class="category-sub row nomargin-x">
+      <a class="category-subitem collapsed
+          list-group-item category-item-action col-10 col-md-11 col-xm-11" title="Spring"
+        id="heading-38008dd81c2f4d7985ecf6e0ce8af1d1" role="tab" data-toggle="collapse" href="#collapse-38008dd81c2f4d7985ecf6e0ce8af1d1"
+        aria-expanded="false"
+      >
+        Spring
+        <span class="list-group-count">(1)</span>
+        <i class="iconfont icon-arrowright"></i>
+      </a>
+      
+      <div class="category-collapse collapse " id="collapse-38008dd81c2f4d7985ecf6e0ce8af1d1"
+           role="tabpanel" aria-labelledby="heading-38008dd81c2f4d7985ecf6e0ce8af1d1">
+        
+        
+          
+  <div class="category-post-list">
+    
+    
+      
+      
+        <a href="/2024/03/03/backend/devframe/spring/Spring_IOC&amp;AOP/" title="Spring入门篇：IOC&amp;AOP"
+           class="list-group-item list-group-item-action
+           ">
+          <span class="category-post">Spring入门篇：IOC&amp;AOP</span>
+        </a>
+      
+    
+  </div>
+
+        
+      </div>
+    </div>
+  
+        
+      </div>
+    </div>
+  
+    
+    
+    
+    <div class="category-sub row nomargin-x">
+      <a class="category-subitem 
+          list-group-item category-item-action col-10 col-md-11 col-xm-11" title="语言"
+        id="heading-295bb704f5205801d57d672780b94117" role="tab" data-toggle="collapse" href="#collapse-295bb704f5205801d57d672780b94117"
+        aria-expanded="true"
+      >
+        语言
+        <span class="list-group-count">(1)</span>
+        <i class="iconfont icon-arrowright"></i>
+      </a>
+      
+      <div class="category-collapse collapse show" id="collapse-295bb704f5205801d57d672780b94117"
+           role="tabpanel" aria-labelledby="heading-295bb704f5205801d57d672780b94117">
+        
+        
+          
+          
+  <div class="category-post-list">
+    
+    
+  </div>
+
+          
+  
+    
+    
+    
+    <div class="category-sub row nomargin-x">
+      <a class="category-subitem 
+          list-group-item category-item-action col-10 col-md-11 col-xm-11" title="Java"
+        id="heading-d52387880e1ea22817a72d3759213819" role="tab" data-toggle="collapse" href="#collapse-d52387880e1ea22817a72d3759213819"
+        aria-expanded="true"
+      >
+        Java
+        <span class="list-group-count">(1)</span>
+        <i class="iconfont icon-arrowright"></i>
+      </a>
+      
+      <div class="category-collapse collapse show" id="collapse-d52387880e1ea22817a72d3759213819"
+           role="tabpanel" aria-labelledby="heading-d52387880e1ea22817a72d3759213819">
+        
+        
+          
+  <div class="category-post-list">
+    
+    
+      
+      
+        <a href="/2024/03/18/backend/language/java/JIT_AOT/" title="JAVA: AOT&amp;JIT介绍"
+           class="list-group-item list-group-item-action
+           active">
+          <span class="category-post">JAVA: AOT&amp;JIT介绍</span>
+        </a>
+      
+    
+  </div>
+
+        
+      </div>
+    </div>
+  
+        
+      </div>
+    </div>
+  
+        
+      </div>
+    </div>
+  
+</div>
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+  
+  
+
+
+
+
+
+  <script>
+  Fluid.utils.createScript('https://lib.baomitu.com/mermaid/8.14.0/mermaid.min.js', function() {
+    mermaid.initialize({"theme":"default"});
+
+    Fluid.utils.listenDOMLoaded(function() {
+      Fluid.events.registerRefreshCallback(function() {
+        if ('mermaid' in window) {
+          mermaid.init();
+        }
+      });
+    });
+  });
+</script>
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <span><a href="https://hexo.io" target="_blank" rel="nofollow noopener">Hexo</a>-<a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener">Fluid</a></span> <i class="iconfont icon-love"></i> 寿命齿轮 
+    </div>
+  
+  
+  
+    <!-- 备案信息 ICP for China -->
+    <div class="beian">
+  <span>
+    <a href="http://beian.miit.gov.cn/" target="_blank" rel="nofollow noopener">
+      浙ICP备2024070074号
+    </a>
+  </span>
+  
+</div>
+<div>
+  <a target="_blank" rel="noopener" href="https://www.upyun.com/?utm_source=lianmeng&utm_medium=referral">本网站由
+    <img src="/images/%E5%8F%88%E6%8B%8D%E4%BA%91.png" srcset="/img/loading.gif" lazyload  height="30" alt="又拍云"/>提供CDN加速/云存储服务</a>
+</div>
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  var relativeDate = function() {
+    var updatedTime = document.getElementById('updated-time');
+    if (updatedTime) {
+      var text = updatedTime.textContent;
+      var reg = /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:Z|[+-]\d{2}:\d{2})/;
+      var matchs = text.match(reg);
+      if (matchs) {
+        var relativeTime = moment(matchs[0]).fromNow();
+        updatedTime.textContent = text.replace(reg, relativeTime);
+      }
+      updatedTime.style.display = '';
+    }
+  };
+  Fluid.utils.createScript('https://lib.baomitu.com/moment.js/2.29.4/moment.min.js', function() {
+    if (!'zh-cn'.startsWith('en')) {
+      Fluid.utils.createScript('https://lib.baomitu.com/moment.js/2.29.4/locale/zh-cn.min.js', function() {
+        relativeDate();
+      });
+    } else {
+      relativeDate();
+    }
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  
+      <script>
+        if (!window.MathJax) {
+          window.MathJax = {
+            tex    : {
+              inlineMath: { '[+]': [['$', '$']] }
+            },
+            loader : {
+              load: ['ui/lazy']
+            },
+            options: {
+              renderActions: {
+                insertedScript: [200, () => {
+                  document.querySelectorAll('mjx-container').forEach(node => {
+                    let target = node.parentNode;
+                    if (target.nodeName.toLowerCase() === 'li') {
+                      target.parentNode.classList.add('has-jax');
+                    }
+                  });
+                }, '', false]
+              }
+            }
+          };
+        } else {
+          MathJax.startup.document.state(0);
+          MathJax.texReset();
+          MathJax.typeset();
+          MathJax.typesetPromise();
+        }
+
+        Fluid.events.registerRefreshCallback(function() {
+          if ('MathJax' in window && MathJax.startup.document && typeof MathJax.startup.document.state === 'function') {
+            MathJax.startup.document.state(0);
+            MathJax.texReset();
+            MathJax.typeset();
+            MathJax.typesetPromise();
+          }
+        });
+      </script>
+    
+
+  <script  src="https://lib.baomitu.com/mathjax/3.2.2/es5/tex-mml-chtml.js" ></script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>
