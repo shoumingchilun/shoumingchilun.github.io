@@ -32,7 +32,7 @@
 <meta property="og:image" content="http://shoumingchilun.github.io/2024/03/18/backend/language/java/JIT_AOT/nativeImage.png">
 <meta property="og:image" content="http://shoumingchilun.github.io/2024/03/18/backend/language/java/JIT_AOT/%E9%9D%99%E6%80%81%E7%BC%96%E8%AF%91.png">
 <meta property="article:published_time" content="2024-03-18T04:06:17.000Z">
-<meta property="article:modified_time" content="2024-03-18T18:27:59.567Z">
+<meta property="article:modified_time" content="2024-03-19T08:05:41.219Z">
 <meta property="article:author" content="寿命齿轮">
 <meta property="article:tag" content="JAVA">
 <meta property="article:tag" content="JDK">
@@ -247,7 +247,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          2.9k 字
+          3k 字
         
       </span>
     
@@ -313,7 +313,7 @@
               <p id="updated-time" class="note note-info" style="display: none">
                 
                   
-                    本文最后更新于 2024-03-19T02:27:59+08:00
+                    本文最后更新于 2024-03-19T16:05:41+08:00
                   
                   
 
@@ -390,8 +390,13 @@
 </ol>
 <blockquote>
 <p>上述预执行过程主要为了扫描应用自身业务代码以及其他第三方包中的动态特性，以便后续静态编译过程能顺利进行，应用能正常启动。</p>
+<p>如果没有使用动态特性，可直接进行下一步。</p>
 </blockquote>
 <h3 id="静态编译"><a href="#静态编译" class="headerlink" title="静态编译"></a>静态编译</h3><p>通过maven命令来构建原生镜像：<code>mvn -Pnative native:compile</code><br>成功执行后，可在<code>/target</code>目录看到生成的可执行文件。</p>
+<h3 id="执行可执行文件"><a href="#执行可执行文件" class="headerlink" title="执行可执行文件"></a>执行可执行文件</h3><p>进入<code>/target</code>，命令行输入<code>./&lt;可执行文件名称&gt;</code>，即可发现项目被光速启动了。</p>
+<blockquote>
+<p>这是真TM快啊！</p>
+</blockquote>
 
                 
               </div>
