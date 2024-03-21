@@ -228,6 +228,123 @@
     <article class="col-12 col-md-12 mx-auto index-info">
       <h2 class="index-header">
         
+        <a href="/2024/03/22/backend/database/mysql/mysql_concurrent/" target="_self">
+          MySQL：并发
+        </a>
+      </h2>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2024/03/22/backend/database/mysql/mysql_concurrent/" target="_self">
+        <div>
+          本文将讲解并发事务带来的问题、并发事务的控制方式、事务隔离级别。 并发事务带来的问题在典型的应用程序中，多个事务并发运行，经常会操作相同的数据来完成各自的任务（多个用户对同一数据进行操作）。 并发虽然是必须的，但可能会导致以下的问题：脏读、修改丢失、不可重复读、幻读。  这4个问题是并发操作中最常见的事务一致性问题，直接关系到数据库的完整性和一致性；解决这四个问题可以极大地减少并发环境下的数据一致
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2024-03-22 00:01" pubdate>
+              2024-03-22
+            </time>
+          </div>
+        
+        
+          <div class="post-meta mr-3 d-flex align-items-center">
+            <i class="iconfont icon-category"></i>
+            
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E5%90%8E%E7%AB%AF%E5%BC%80%E5%8F%91/" class="category-chain-item">后端开发</a>
+  
+  
+    <span>></span>
+    
+  <a href="/categories/%E5%90%8E%E7%AB%AF%E5%BC%80%E5%8F%91/%E6%95%B0%E6%8D%AE%E5%BA%93/" class="category-chain-item">数据库</a>
+  
+  
+    <span>></span>
+    
+  <a href="/categories/%E5%90%8E%E7%AB%AF%E5%BC%80%E5%8F%91/%E6%95%B0%E6%8D%AE%E5%BA%93/MySQL/" class="category-chain-item">MySQL</a>
+  
+  
+
+  
+
+  
+
+      </span>
+    
+  
+</span>
+
+          </div>
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/">#数据库</a>
+            
+              <a href="/tags/MySQL/">#MySQL</a>
+            
+              <a href="/tags/%E8%84%8F%E8%AF%BB/">#脏读</a>
+            
+              <a href="/tags/Dirty-read/">#Dirty read</a>
+            
+              <a href="/tags/%E4%B8%A2%E5%A4%B1%E4%BF%AE%E6%94%B9/">#丢失修改</a>
+            
+              <a href="/tags/Lost-to-modify/">#Lost to modify</a>
+            
+              <a href="/tags/%E4%B8%8D%E5%8F%AF%E9%87%8D%E5%A4%8D%E8%AF%BB/">#不可重复读</a>
+            
+              <a href="/tags/Unrepeatable-read/">#Unrepeatable read</a>
+            
+              <a href="/tags/%E5%B9%BB%E8%AF%BB/">#幻读</a>
+            
+              <a href="/tags/Phantom-read/">#Phantom read</a>
+            
+              <a href="/tags/%E9%94%81/">#锁</a>
+            
+              <a href="/tags/MVCC/">#MVCC</a>
+            
+              <a href="/tags/Multi-Version-Concurrency-Control/">#Multi-Version Concurrency Control</a>
+            
+              <a href="/tags/%E5%A4%9A%E7%89%88%E6%9C%AC%E5%B9%B6%E5%8F%91%E6%8E%A7%E5%88%B6/">#多版本并发控制</a>
+            
+              <a href="/tags/READ-UNCOMMITTED/">#READ-UNCOMMITTED</a>
+            
+              <a href="/tags/%E8%AF%BB%E5%8F%96%E6%9C%AA%E6%8F%90%E4%BA%A4/">#读取未提交</a>
+            
+              <a href="/tags/READ-COMMITTED/">#READ-COMMITTED</a>
+            
+              <a href="/tags/%E8%AF%BB%E5%8F%96%E5%B7%B2%E6%8F%90%E4%BA%A4/">#读取已提交</a>
+            
+              <a href="/tags/REPEATABLE-READ/">#REPEATABLE-READ</a>
+            
+              <a href="/tags/%E5%8F%AF%E9%87%8D%E5%A4%8D%E8%AF%BB/">#可重复读</a>
+            
+              <a href="/tags/SERIALIZABLE/">#SERIALIZABLE</a>
+            
+              <a href="/tags/%E5%8F%AF%E4%B8%B2%E8%A1%8C%E5%8C%96/">#可串行化</a>
+            
+          </div>
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h2 class="index-header">
+        
         <a href="/2024/03/21/backend/database/mysql/mysql_log/" target="_self">
           MySQL：日志
         </a>
@@ -293,6 +410,10 @@
             
               <a href="/tags/MySQL/">#MySQL</a>
             
+              <a href="/tags/MVCC/">#MVCC</a>
+            
+              <a href="/tags/%E5%A4%9A%E7%89%88%E6%9C%AC%E5%B9%B6%E5%8F%91%E6%8E%A7%E5%88%B6/">#多版本并发控制</a>
+            
               <a href="/tags/%E6%97%A5%E5%BF%97/">#日志</a>
             
               <a href="/tags/binlog/">#binlog</a>
@@ -306,10 +427,6 @@
               <a href="/tags/sync-binlog/">#sync_binlog</a>
             
               <a href="/tags/undo-log/">#undo log</a>
-            
-              <a href="/tags/%E5%A4%9A%E7%89%88%E6%9C%AC%E5%B9%B6%E5%8F%91%E6%8E%A7%E5%88%B6/">#多版本并发控制</a>
-            
-              <a href="/tags/MVCC/">#MVCC</a>
             
               <a href="/tags/Buffer-Pool/">#Buffer Pool</a>
             
@@ -1112,111 +1229,6 @@
               <a href="/tags/RocketMQ/">#RocketMQ</a>
             
               <a href="/tags/Springboot/">#Springboot</a>
-            
-          </div>
-        
-      </div>
-    </article>
-  </div>
-
-  <div class="row mx-auto index-card">
-    
-    
-    <article class="col-12 col-md-12 mx-auto index-info">
-      <h2 class="index-header">
-        
-        <a href="/2024/03/13/backend/middleware/messagequeue/rocket-domainmodel/" target="_self">
-          消息队列：3.领域模型
-        </a>
-      </h2>
-
-      
-      <a class="index-excerpt index-excerpt__noimg" href="/2024/03/13/backend/middleware/messagequeue/rocket-domainmodel/" target="_self">
-        <div>
-          本文之前使用LaTeX书写，现直接使用PDF发布。
-        </div>
-      </a>
-
-      <div class="index-btm post-metas">
-        
-          <div class="post-meta mr-3">
-            <i class="iconfont icon-date"></i>
-            <time datetime="2024-03-13 22:17" pubdate>
-              2024-03-13
-            </time>
-          </div>
-        
-        
-          <div class="post-meta mr-3 d-flex align-items-center">
-            <i class="iconfont icon-category"></i>
-            
-
-<span class="category-chains">
-  
-  
-    
-      <span class="category-chain">
-        
-  <a href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F/" class="category-chain-item">分布式</a>
-  
-  
-    <span>></span>
-    
-  <a href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F/%E4%B8%AD%E9%97%B4%E4%BB%B6/" class="category-chain-item">中间件</a>
-  
-  
-    <span>></span>
-    
-  <a href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F/%E4%B8%AD%E9%97%B4%E4%BB%B6/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" class="category-chain-item">消息队列</a>
-  
-  
-
-  
-
-  
-
-      </span>
-    
-  
-</span>
-
-          </div>
-        
-        
-          <div class="post-meta">
-            <i class="iconfont icon-tags"></i>
-            
-              <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/">#消息队列</a>
-            
-              <a href="/tags/RocketMQ/">#RocketMQ</a>
-            
-              <a href="/tags/Producer/">#Producer</a>
-            
-              <a href="/tags/NameSrv/">#NameSrv</a>
-            
-              <a href="/tags/Broker/">#Broker</a>
-            
-              <a href="/tags/Comsumer/">#Comsumer</a>
-            
-              <a href="/tags/Producer-group/">#Producer group</a>
-            
-              <a href="/tags/Comsumer-group/">#Comsumer group</a>
-            
-              <a href="/tags/Broker-cluster/">#Broker cluster</a>
-            
-              <a href="/tags/Topic/">#Topic</a>
-            
-              <a href="/tags/MessageQueue/">#MessageQueue</a>
-            
-              <a href="/tags/Subscription/">#Subscription</a>
-            
-              <a href="/tags/%E5%90%8C%E6%AD%A5RPC%E8%B0%83%E7%94%A8%E6%A8%A1%E5%9E%8B/">#同步RPC调用模型</a>
-            
-              <a href="/tags/%E5%BC%82%E6%AD%A5%E9%80%9A%E4%BF%A1%E6%A8%A1%E5%9E%8B/">#异步通信模型</a>
-            
-              <a href="/tags/%E7%82%B9%E5%AF%B9%E7%82%B9%E6%A8%A1%E5%9E%8B/">#点对点模型</a>
-            
-              <a href="/tags/%E5%8F%91%E5%B8%83%E8%AE%A2%E9%98%85%E6%A8%A1%E5%9E%8B/">#发布订阅模型</a>
             
           </div>
         
