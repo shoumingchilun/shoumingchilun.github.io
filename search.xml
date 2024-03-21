@@ -258,6 +258,9 @@
 </ul>
 <h2 id="如何寻找有效区块"><a href="#如何寻找有效区块" class="headerlink" title="如何寻找有效区块"></a>如何寻找有效区块</h2><p><img src="/2024/03/03/Web3/readingNotes/%E5%8C%BA%E5%9D%97%E9%93%BE%EF%BC%9A%E6%8A%80%E6%9C%AF%E9%A9%B1%E5%8A%A8%E9%87%91%E8%9E%8D/%E5%AF%BB%E6%89%BE%E6%9C%89%E6%95%88%E5%8C%BA%E5%9D%97.jpg"></p>
 <p>一个区块内，可变内容为头部随机数（nonce）和币基随机数（币基交易中可放入任何值），但由于币基随机数变动后计算量更大（需要额外计算梅克尔树），所以优先变动头部随机数。</p>
+<blockquote>
+<p>To be continue……</p>
+</blockquote>
 ]]></content>
       <categories>
         <category>Web3</category>
@@ -273,100 +276,6 @@
         <tag>工作量证明</tag>
         <tag>零币</tag>
         <tag>虚拟挖矿</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>微服务：认识篇</title>
-    <url>/2024/03/13/backend/microservice/microservice-introduce/</url>
-    <content><![CDATA[<p>本文将从时代背景、发展过程、微服务特点出发，对微服务整体构建一个大致的理解：</p>
-<h2 id="时代背景"><a href="#时代背景" class="headerlink" title="时代背景"></a>时代背景</h2><ol>
-<li><p>解决<strong>复杂性</strong>的需求——传统的单体应用架构将所有的功能和模块集中在一个单独的应用程序中，导致应用程序开发、部署和维护变得困难，并且不利于快速迭代和扩展。</p>
-</li>
-<li><p>对<strong>高可用性和扩展性</strong>的需求（如高并发和大规模用户访问）——用户对于应用程序的高可用性和即时响应的期望越来越高，而单体应用架构难以实现高可用性和弹性扩展（一个组件的故障可能会影响整个应用程序的可用性，并且扩展整个应用程序可能会面临技术和性能上的限制）。</p>
-</li>
-<li><p>快速迭代和团队协作的需求（可包含于1.1）——传统的单体应用架构可能不利于快速迭代，因为一个小的更改可能需要重新构建整个应用程序并进行全面的测试和部署，而且微服务为人员的分工提供了便捷，可以更好地支持快速迭代和敏捷开发。</p>
-<blockquote>
-<p>来自《凤凰架构》：譬如，制约软件质量与业务能力提升的最大因素是人而非硬件。多数企业即使有钱也很难招到大量的靠谱的开发者。此时，无论是引入外包团队，抑或是让少量技术专家带着大量普通水平的开发者去共同完成一个大型系统就成为了必然的选择。在单体架构下，没有什么有效阻断错误传播的手段，系统中“整体”与“部分”的关系没有物理的划分，系统质量只能靠研发与项目管理措施来尽可能地保障，少量的技术专家很难阻止大量螺丝钉式的程序员或者不熟悉原有技术架构的外包人员在某个不起眼的地方犯错并产生全局性的影响，并不容易做出整体可靠的大型系统。</p>
-</blockquote>
-</li>
-<li><p><strong>新技术云计算</strong>和<strong>分布式架构</strong>的支持——云计算的兴起为分布式架构提供了理想的基础设施。云计算提供了弹性的计算资源和可扩展的基础设施，使得构建分布式系统和服务变得更加容易。</p>
-</li>
-</ol>
-<h2 id="发展过程："><a href="#发展过程：" class="headerlink" title="发展过程："></a>发展过程：</h2><ol>
-<li>早期阶段：<ol>
-<li>SOA的出现：在这个阶段，服务导向架构（SOA）的概念开始引起关注。SOA提倡将应用程序拆分为一组可重用的服务，通过标准化的接口进行通信。这为后来微服务架构的发展奠定了基础。</li>
-</ol>
-</li>
-<li>兴起阶段：<ol>
-<li>架构模式的探索：微服务架构作为一种新兴的架构风格（更灵活、可维护和可扩展）开始受到关注。</li>
-<li>云计算和虚拟化技术的发展：云计算和虚拟化技术的兴起为微服务架构的发展提供了理想的基础设施。这些技术为构建分布式系统和部署微服务提供了更好的支持。</li>
-</ol>
-</li>
-<li>推广阶段：<ol>
-<li>微服务的推广：微服务架构开始广泛被采用并得到推广。越来越多的组织开始采用微服务架构，以应对复杂性增加、快速迭代和团队协作的挑战。</li>
-<li>开源和商业化工具的涌现：随着微服务的普及，大量的开源和商业化工具、框架和平台涌现，用于辅助微服务架构的开发、部署和管理。这些工具提供了服务注册与发现、负载均衡、容器化和编排、监控和日志等功能，为微服务架构提供了更好的支持。</li>
-<li>实践经验的积累：随着实际应用的增多，对于微服务架构的实践经验也在不断积累。开发人员和组织逐渐摸索出一些最佳实践、设计模式和解决方案，以应对微服务架构中的挑战和复杂性。</li>
-</ol>
-</li>
-<li>演进阶段（将来）：微服务架构是一个动态的领域，仍在不断演进和发展中。它的发展历史仍在进行中，将随着技术的进步和业务需求的变化而不断推进。因此，微服务架构的未来发展将会受到更多新技术、实践经验和业务需求的影响。</li>
-</ol>
-<h2 id="微服务特点："><a href="#微服务特点：" class="headerlink" title="微服务特点："></a>微服务特点：</h2><table>
-<thead>
-<tr>
-<th>不同点</th>
-<th>微服务架构</th>
-<th>单体架构</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>团队规模</td>
-<td>微服务架构可以将传统模式下的单个应用拆分为多个独立的服务，每个微服务都可以单独开发、部署和维护。<strong>每个服务从设计、开发到维护所需的团队规模小，团队管理成本小。</strong></td>
-<td>单体架构的应用程序通常需要一个大型团队，围绕一个庞大的应用程序工作，团队管理的成本大。</td>
-</tr>
-<tr>
-<td>项目结构（部署方式）</td>
-<td>微服务架构中<strong>每个服务都可以独立开发、部署和维护</strong>，也可以独立于其他服务进行扩展。如果部署得当，基于微服务的架构可以帮助企业提高应用程序的部署效率。</td>
-<td>采用单体架构的应用程序的每一次功能更改或 bug 修复都必须对整个应用程序重新进行部署（所有的业务逻辑都集中在同一个工程中）。</td>
-</tr>
-<tr>
-<td>开发模式</td>
-<td>在采用微服务架构的应用程序中，<strong>不同模块可以使用不同的技术或语言进行开发，开发模式更加灵活</strong>。</td>
-<td>在采用单体架构的应用程序中，所有模块使用的技术和语言必须相同，开发模式受限。</td>
-</tr>
-<tr>
-<td>故障隔离</td>
-<td>在微服务架构中，<strong>故障被隔离在单个服务中</strong>，避免系统的整体崩溃。</td>
-<td>在单体架构中，当一个组件出现故障时，故障很可能会在进程中蔓延，导致系统全局不可用。</td>
-</tr>
-</tbody></table>
-<p>优点：</p>
-<ul>
-<li><strong>松耦合</strong>：微服务架构通过将应用程序拆分为多个独立的服务来实现松耦合。每个服务都是自治的，可以独立开发、部署、扩展和维护。这种松耦合性使团队能够独立开发和部署不同的服务，降低了开发的复杂性，并且更容易实现敏捷开发和持续交付。</li>
-<li><strong>可伸缩性（扩展性）</strong>：由于微服务架构中的每个服务都是独立的，可以根据需求对每个服务进行单独的扩展。这意味着可以根据流量和负载的变化，只需对需要扩展的服务进行扩展，而无需扩展整个应用程序。这种可伸缩性使系统能够更好地应对高流量和大规模的并发请求。</li>
-<li><strong>技术多样性</strong>：微服务架构允许使用不同的编程语言、框架和技术栈来构建不同的服务。这使得团队可以选择最适合其需求和技术能力的工具和技术，从而实现更好的灵活性和创新性。</li>
-</ul>
-<p>缺点：</p>
-<ul>
-<li><strong>分布式系统复杂性</strong>：微服务架构引入了分布式系统的复杂性。服务之间的通信和协调需要考虑网络延迟、服务发现、故障处理等因素。这增加了系统的复杂性，并需要适当的工具和技术来管理分布式环境。</li>
-<li><strong>运维复杂性</strong>：由于微服务架构中存在大量的服务实例和组件，运维和监控这些服务变得更加复杂。需要适当的工具和流程来管理和监控每个服务的性能、可用性和健康状态。</li>
-<li><strong>分布式事务管理</strong>：微服务架构中的服务可能需要进行跨服务的事务操作。由于每个服务都是自治的，保持一致的事务管理变得复杂。需要使用一些机制（如分布式事务或补偿性事务）来管理分布式事务的一致性和可靠性。<br>此外，微服务还有其他一些特点，比如可以与容器（Docker）配合使用，可以进行链路追踪等，但是我们主要的目的，还是为了解决复杂性（实现独立开发、部署和维护，保证敏捷开发和持续交付）和提高可用性和扩展性（故障隔离、对服务进行扩展、可使用多种技术和语言），所以仅列出上述优缺点和特点。</li>
-</ul>
-<h2 id="与SOA的区别："><a href="#与SOA的区别：" class="headerlink" title="与SOA的区别："></a>与SOA的区别：</h2><p>微服务 VS SOA：</p>
-<ul>
-<li>相同：面向服务；</li>
-<li>不同：强约束 VS 软指导；强一致 VS 自由；规范标准 VS 实践标准。<br>微服务丢掉了 SOA 的强标准，换来了自由。自由的代价是工程师需根据业务情况选择适合的技术，过程中可能会犯错。微服务带来自由，也带来迷茫。微服务只是一种思想，它丢掉了 SOA 的包袱，却没带来什么具体的东西。RPC 等分布式的问题重新出现，交由社区解决；一时间，百花齐放，百家争鸣。</li>
-</ul>
-<blockquote>
-<p>引自《凤凰架构》：<br>SOA 在 21 世纪最初的十年里曾经盛行一时，有 IBM 等一众行业巨头厂商为其呐喊冲锋，吸引了不少软件开发商、尤其是企业级软件的开发商的跟随，最终却还是偃旗息鼓，沉寂了下去。在稍后的远程服务调用一节，笔者会提到 SOAP 协议被逐渐边缘化的本质原因：过于严格的规范定义带来过度的复杂性。而构建在 SOAP 基础之上的 ESB、BPM、SCA、SDO 等诸多上层建筑，进一步加剧了这种复杂性。开发信息系统毕竟不是作八股文章，过于精密的流程和理论也需要懂得复杂概念的专业人员才能够驾驭。SOA 诞生的那一天起，就已经注定了它只能是少数系统阳春白雪式的精致奢侈品，它可以实现多个异构大型系统之间的复杂集成交互，却很难作为一种具有广泛普适性的软件架构风格来推广。SOA 最终没有获得成功的致命伤与当年的EJB (opens new window)如出一辙，尽管有 Sun Microsystems 和 IBM 等一众巨头在背后力挺，EJB 仍然败于以 Spring、Hibernate 为代表的“草根框架”，可见一旦脱离人民群众，终究会淹没在群众的海洋之中，连信息技术也不曾例外过。</p>
-</blockquote>
-]]></content>
-      <categories>
-        <category>分布式</category>
-        <category>微服务</category>
-      </categories>
-      <tags>
-        <tag>微服务</tag>
-        <tag>SOA</tag>
       </tags>
   </entry>
   <entry>
@@ -429,6 +338,9 @@
 <p>示意图：<br><img src="/2024/03/20/backend/database/mysql/mysql_index/B+insert1.svg"></p>
 <p>如果此时再插入一个id&#x3D;7.5的记录，就会将5-7的叶子节点拆分，然后第一个内部节点需要多一个指针，就会导致第一个内部节点再次拆分，进而多出一个内部节点。（画图略）</p>
 <h4 id="删除"><a href="#删除" class="headerlink" title="删除"></a>删除</h4><p>删除即是插入的逆操作，边界条件下需要将叶子节点进行合并，进而导致内部节点的合并，以致最后的减深度。（自己类推即可，不做描述）</p>
+<blockquote>
+<p>待完善……</p>
+</blockquote>
 <h3 id="B树与B-树的异同"><a href="#B树与B-树的异同" class="headerlink" title="B树与B+树的异同"></a>B树与B+树的异同</h3><ul>
 <li>B 树的所有节点既存放键(key) 也存放数据(data)，而<strong>B+树只有叶子节点存放 key 和 data</strong>，其他内节点只存放 key。</li>
 <li>B 树的叶子节点都是独立的；B+树的叶子节点有一条<strong>引用链</strong>指向与它相邻的叶子节点。</li>
@@ -590,6 +502,374 @@
         <tag>覆盖索引</tag>
         <tag>联合索引</tag>
         <tag>最左前缀匹配原则</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>微服务：认识篇</title>
+    <url>/2024/03/13/backend/microservice/microservice-introduce/</url>
+    <content><![CDATA[<p>本文将从时代背景、发展过程、微服务特点出发，对微服务整体构建一个大致的理解：</p>
+<h2 id="时代背景"><a href="#时代背景" class="headerlink" title="时代背景"></a>时代背景</h2><ol>
+<li><p>解决<strong>复杂性</strong>的需求——传统的单体应用架构将所有的功能和模块集中在一个单独的应用程序中，导致应用程序开发、部署和维护变得困难，并且不利于快速迭代和扩展。</p>
+</li>
+<li><p>对<strong>高可用性和扩展性</strong>的需求（如高并发和大规模用户访问）——用户对于应用程序的高可用性和即时响应的期望越来越高，而单体应用架构难以实现高可用性和弹性扩展（一个组件的故障可能会影响整个应用程序的可用性，并且扩展整个应用程序可能会面临技术和性能上的限制）。</p>
+</li>
+<li><p>快速迭代和团队协作的需求（可包含于1.1）——传统的单体应用架构可能不利于快速迭代，因为一个小的更改可能需要重新构建整个应用程序并进行全面的测试和部署，而且微服务为人员的分工提供了便捷，可以更好地支持快速迭代和敏捷开发。</p>
+<blockquote>
+<p>来自《凤凰架构》：譬如，制约软件质量与业务能力提升的最大因素是人而非硬件。多数企业即使有钱也很难招到大量的靠谱的开发者。此时，无论是引入外包团队，抑或是让少量技术专家带着大量普通水平的开发者去共同完成一个大型系统就成为了必然的选择。在单体架构下，没有什么有效阻断错误传播的手段，系统中“整体”与“部分”的关系没有物理的划分，系统质量只能靠研发与项目管理措施来尽可能地保障，少量的技术专家很难阻止大量螺丝钉式的程序员或者不熟悉原有技术架构的外包人员在某个不起眼的地方犯错并产生全局性的影响，并不容易做出整体可靠的大型系统。</p>
+</blockquote>
+</li>
+<li><p><strong>新技术云计算</strong>和<strong>分布式架构</strong>的支持——云计算的兴起为分布式架构提供了理想的基础设施。云计算提供了弹性的计算资源和可扩展的基础设施，使得构建分布式系统和服务变得更加容易。</p>
+</li>
+</ol>
+<h2 id="发展过程："><a href="#发展过程：" class="headerlink" title="发展过程："></a>发展过程：</h2><ol>
+<li>早期阶段：<ol>
+<li>SOA的出现：在这个阶段，服务导向架构（SOA）的概念开始引起关注。SOA提倡将应用程序拆分为一组可重用的服务，通过标准化的接口进行通信。这为后来微服务架构的发展奠定了基础。</li>
+</ol>
+</li>
+<li>兴起阶段：<ol>
+<li>架构模式的探索：微服务架构作为一种新兴的架构风格（更灵活、可维护和可扩展）开始受到关注。</li>
+<li>云计算和虚拟化技术的发展：云计算和虚拟化技术的兴起为微服务架构的发展提供了理想的基础设施。这些技术为构建分布式系统和部署微服务提供了更好的支持。</li>
+</ol>
+</li>
+<li>推广阶段：<ol>
+<li>微服务的推广：微服务架构开始广泛被采用并得到推广。越来越多的组织开始采用微服务架构，以应对复杂性增加、快速迭代和团队协作的挑战。</li>
+<li>开源和商业化工具的涌现：随着微服务的普及，大量的开源和商业化工具、框架和平台涌现，用于辅助微服务架构的开发、部署和管理。这些工具提供了服务注册与发现、负载均衡、容器化和编排、监控和日志等功能，为微服务架构提供了更好的支持。</li>
+<li>实践经验的积累：随着实际应用的增多，对于微服务架构的实践经验也在不断积累。开发人员和组织逐渐摸索出一些最佳实践、设计模式和解决方案，以应对微服务架构中的挑战和复杂性。</li>
+</ol>
+</li>
+<li>演进阶段（将来）：微服务架构是一个动态的领域，仍在不断演进和发展中。它的发展历史仍在进行中，将随着技术的进步和业务需求的变化而不断推进。因此，微服务架构的未来发展将会受到更多新技术、实践经验和业务需求的影响。</li>
+</ol>
+<h2 id="微服务特点："><a href="#微服务特点：" class="headerlink" title="微服务特点："></a>微服务特点：</h2><table>
+<thead>
+<tr>
+<th>不同点</th>
+<th>微服务架构</th>
+<th>单体架构</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>团队规模</td>
+<td>微服务架构可以将传统模式下的单个应用拆分为多个独立的服务，每个微服务都可以单独开发、部署和维护。<strong>每个服务从设计、开发到维护所需的团队规模小，团队管理成本小。</strong></td>
+<td>单体架构的应用程序通常需要一个大型团队，围绕一个庞大的应用程序工作，团队管理的成本大。</td>
+</tr>
+<tr>
+<td>项目结构（部署方式）</td>
+<td>微服务架构中<strong>每个服务都可以独立开发、部署和维护</strong>，也可以独立于其他服务进行扩展。如果部署得当，基于微服务的架构可以帮助企业提高应用程序的部署效率。</td>
+<td>采用单体架构的应用程序的每一次功能更改或 bug 修复都必须对整个应用程序重新进行部署（所有的业务逻辑都集中在同一个工程中）。</td>
+</tr>
+<tr>
+<td>开发模式</td>
+<td>在采用微服务架构的应用程序中，<strong>不同模块可以使用不同的技术或语言进行开发，开发模式更加灵活</strong>。</td>
+<td>在采用单体架构的应用程序中，所有模块使用的技术和语言必须相同，开发模式受限。</td>
+</tr>
+<tr>
+<td>故障隔离</td>
+<td>在微服务架构中，<strong>故障被隔离在单个服务中</strong>，避免系统的整体崩溃。</td>
+<td>在单体架构中，当一个组件出现故障时，故障很可能会在进程中蔓延，导致系统全局不可用。</td>
+</tr>
+</tbody></table>
+<p>优点：</p>
+<ul>
+<li><strong>松耦合</strong>：微服务架构通过将应用程序拆分为多个独立的服务来实现松耦合。每个服务都是自治的，可以独立开发、部署、扩展和维护。这种松耦合性使团队能够独立开发和部署不同的服务，降低了开发的复杂性，并且更容易实现敏捷开发和持续交付。</li>
+<li><strong>可伸缩性（扩展性）</strong>：由于微服务架构中的每个服务都是独立的，可以根据需求对每个服务进行单独的扩展。这意味着可以根据流量和负载的变化，只需对需要扩展的服务进行扩展，而无需扩展整个应用程序。这种可伸缩性使系统能够更好地应对高流量和大规模的并发请求。</li>
+<li><strong>技术多样性</strong>：微服务架构允许使用不同的编程语言、框架和技术栈来构建不同的服务。这使得团队可以选择最适合其需求和技术能力的工具和技术，从而实现更好的灵活性和创新性。</li>
+</ul>
+<p>缺点：</p>
+<ul>
+<li><strong>分布式系统复杂性</strong>：微服务架构引入了分布式系统的复杂性。服务之间的通信和协调需要考虑网络延迟、服务发现、故障处理等因素。这增加了系统的复杂性，并需要适当的工具和技术来管理分布式环境。</li>
+<li><strong>运维复杂性</strong>：由于微服务架构中存在大量的服务实例和组件，运维和监控这些服务变得更加复杂。需要适当的工具和流程来管理和监控每个服务的性能、可用性和健康状态。</li>
+<li><strong>分布式事务管理</strong>：微服务架构中的服务可能需要进行跨服务的事务操作。由于每个服务都是自治的，保持一致的事务管理变得复杂。需要使用一些机制（如分布式事务或补偿性事务）来管理分布式事务的一致性和可靠性。<br>此外，微服务还有其他一些特点，比如可以与容器（Docker）配合使用，可以进行链路追踪等，但是我们主要的目的，还是为了解决复杂性（实现独立开发、部署和维护，保证敏捷开发和持续交付）和提高可用性和扩展性（故障隔离、对服务进行扩展、可使用多种技术和语言），所以仅列出上述优缺点和特点。</li>
+</ul>
+<h2 id="与SOA的区别："><a href="#与SOA的区别：" class="headerlink" title="与SOA的区别："></a>与SOA的区别：</h2><p>微服务 VS SOA：</p>
+<ul>
+<li>相同：面向服务；</li>
+<li>不同：强约束 VS 软指导；强一致 VS 自由；规范标准 VS 实践标准。<br>微服务丢掉了 SOA 的强标准，换来了自由。自由的代价是工程师需根据业务情况选择适合的技术，过程中可能会犯错。微服务带来自由，也带来迷茫。微服务只是一种思想，它丢掉了 SOA 的包袱，却没带来什么具体的东西。RPC 等分布式的问题重新出现，交由社区解决；一时间，百花齐放，百家争鸣。</li>
+</ul>
+<blockquote>
+<p>引自《凤凰架构》：<br>SOA 在 21 世纪最初的十年里曾经盛行一时，有 IBM 等一众行业巨头厂商为其呐喊冲锋，吸引了不少软件开发商、尤其是企业级软件的开发商的跟随，最终却还是偃旗息鼓，沉寂了下去。在稍后的远程服务调用一节，笔者会提到 SOAP 协议被逐渐边缘化的本质原因：过于严格的规范定义带来过度的复杂性。而构建在 SOAP 基础之上的 ESB、BPM、SCA、SDO 等诸多上层建筑，进一步加剧了这种复杂性。开发信息系统毕竟不是作八股文章，过于精密的流程和理论也需要懂得复杂概念的专业人员才能够驾驭。SOA 诞生的那一天起，就已经注定了它只能是少数系统阳春白雪式的精致奢侈品，它可以实现多个异构大型系统之间的复杂集成交互，却很难作为一种具有广泛普适性的软件架构风格来推广。SOA 最终没有获得成功的致命伤与当年的EJB (opens new window)如出一辙，尽管有 Sun Microsystems 和 IBM 等一众巨头在背后力挺，EJB 仍然败于以 Spring、Hibernate 为代表的“草根框架”，可见一旦脱离人民群众，终究会淹没在群众的海洋之中，连信息技术也不曾例外过。</p>
+</blockquote>
+]]></content>
+      <categories>
+        <category>分布式</category>
+        <category>微服务</category>
+      </categories>
+      <tags>
+        <tag>微服务</tag>
+        <tag>SOA</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>MySQL：日志</title>
+    <url>/2024/03/21/backend/database/mysql/mysql_log/</url>
+    <content><![CDATA[<p>MySQL 日志 主要包括错误日志、查询日志、慢查询日志、事务日志、二进制日志几大类。本文将讲解其中比较重要的<strong>二进制日志binlog（归档日志）</strong>、<strong>事务日志redo log（重做日志）</strong>和<strong>undo log（回滚日志）</strong>。</p>
+<h1 id="binlog"><a href="#binlog" class="headerlink" title="binlog"></a>binlog</h1><p>MySQL<strong>二制进日志（binlog）</strong>，也叫做<strong>变更日志（update log）</strong>。<br>二进制日志中记录了<strong>对MySQL数据库执行更改的所有操作</strong>，并且记录了语句发生时间、执行时长、操作数据等其它额外信息。</p>
+<p>二进制日志主要用于<strong>数据库恢复</strong>和<strong>主从复制</strong>，以及审计操作，它包含了所有能够重现数据库状态变更所必需的信息。。如果 MySQL 数据库意外停止，可以通过二进制日志文件来查看用户执行了哪些操作，对数据库服务器文件做了哪些修改，然后根据二进制日志文件中的记录来恢复数据库服务器。</p>
+<h2 id="内容"><a href="#内容" class="headerlink" title="内容"></a>内容</h2><p>二进制日志（binlog）中记录了对MySQL数据库执行更改的所有操作，并且记录了语句发生时间、执行时长、操作数据等其它额外信息：<br>主要包含以下内容：</p>
+<ul>
+<li><strong>逻辑操作</strong>：对数据库执行的原始SQL语句或其等价物。具体内容与格式有关：<ul>
+<li><strong>Statement格式</strong>：记录执行的SQL语句本身，例如INSERT INTO table VALUES(…)、UPDATE table SET column&#x3D;… WHERE condition等。</li>
+<li><strong>Row格式</strong>：记录每个受影响行的实际变化，而不是整个SQL语句。它会详细说明哪个表的哪一行如何被修改。</li>
+<li><strong>Mixed格式</strong>：混合使用Statement和Row格式，MySQL根据SQL语句的特点自动选择最佳方式。</li>
+</ul>
+</li>
+<li><strong>事务边界</strong>：<ul>
+<li>Binlog以事务为单位记录变更，确保了事务的原子性和一致性。每个事务的所有操作作为一个整体被记录，且事务开始和结束都有相应的标志。</li>
+</ul>
+</li>
+<li><strong>GTID（Global Transaction Identifier）</strong>：在支持GTID的MySQL版本中，binlog还会包含全局事务ID，用于主从复制时精确地跟踪和同步事务。</li>
+<li><strong>DDL操作</strong>：对于数据定义语言（如CREATE TABLE、ALTER TABLE、DROP TABLE等）也会记录在binlog中。</li>
+<li>其他元数据：事件头信息，如事务ID、时间戳、服务器ID等，用于数据恢复和复制过程中的校验和同步。</li>
+</ul>
+<h2 id="写入机制"><a href="#写入机制" class="headerlink" title="写入机制"></a>写入机制</h2><p>事务执行过程中，会先把日志写到binlog cache，事务提交的时候，再把binlog cache写到binlog文件中。<br>系统会给每个线程分配一个块内存作为binlog cache，以确保一个事务的binlog的一次性写入的。</p>
+<p>示意图：<br><img src="/2024/03/21/backend/database/mysql/mysql_log/writeBinlog.png"></p>
+<p>注意，如果<code>write</code>操作不会将binlog文件写入磁盘（仅仅是存入缓存），<code>fsync</code>才是将binlog文件写入磁盘的真正动作。如果机器宕机，Buffer Pool里面的 binlog 就会丢失。</p>
+<blockquote>
+<p><strong>sync_binlog参数</strong>可用于控制write和fsync的时机。</p>
+<ul>
+<li>0：sync_binlog为0时，每次提交事务都进行write，执行fsync时机由操作系统决定。</li>
+<li>1：每次提交事务都会执行fsync。</li>
+<li>N(N&gt;1)：表示每次提交事务都write，但累积N个事务后才fsync。</li>
+</ul>
+</blockquote>
+<h2 id="作用"><a href="#作用" class="headerlink" title="作用"></a>作用</h2><ol>
+<li><strong>基于时间点的恢复</strong>：在备份文件恢复的基础上，通过binlog日志，可以将数据库恢复到某一时间点；</li>
+<li><strong>主从复制</strong>：在主从复制模式下，必须在主服务器上开启binlog日志；</li>
+<li><strong>操作审计</strong>：对所有更改数据的操作进行审计。</li>
+</ol>
+<blockquote>
+<p>操作审计：</p>
+<ul>
+<li>数据追踪与回溯：通过分析binlog，可以追溯数据库中的任何数据变更历史，这对于数据安全性、合规性要求高的场景尤其重要，比如金融、医疗等行业，需要记录详细的交易历史以供审计或法律调查。</li>
+<li>审计复核：binlog可用于数据完整性验证，通过重新播放binlog中的事件，可以检查数据库是否按照预期进行了操作，从而帮助发现潜在的误操作或恶意篡改行为。</li>
+<li>安全审计：安全审计时，binlog可以帮助识别未经授权的访问尝试、非法数据修改等安全事件，因为它记录了所有的数据修改语句。</li>
+</ul>
+<p>注意：MySQL本身的审计功能并非直接依赖binlog，而是通过专门的审计插件（如MySQL Enterprise Audit Plugin）或其他审计工具来实现更全面和规范的审计需求，这些工具可以提供更多定制化的审计过滤、报告生成等功能。不过，binlog确实是进行事后审计和数据一致性检查的重要数据源之一。</p>
+</blockquote>
+<h1 id="undo-log"><a href="#undo-log" class="headerlink" title="undo log"></a>undo log</h1><p><strong>undo log</strong>是一种用于<strong>撤销回退</strong>的日志。<br>在事务没提交之前，MySQL会先<strong>记录更新前的数据到 undo log日志文件里面</strong>，当事务回滚时或者数据库崩溃时，可以利用 undo log来进行回退。</p>
+<h2 id="作用-1"><a href="#作用-1" class="headerlink" title="作用"></a>作用</h2><ol>
+<li><strong>提供回滚操作</strong>：在进行数据更新操作的时候，会记录undo log。如果因为某些原因导致事务回滚，那么这个时候MySQL就要执行回滚（rollback）操作，利用undo log将数据恢复到事务开始之前的状态。<ol>
+<li>比如我们执行下面一条update语句：<code>update user set name = &quot;李四&quot; where id = 1;   ---修改之前name=张三</code></li>
+<li>此时undo log会记录update之前的状态（id&#x3D;1,name&#x3D;‘张三’）；如果这个修改出现异常，就可以使用undo log日志中的操作来实现回滚操作，如：<code>update user set name = &quot;张三&quot; where id = 1;</code>，以保证事务的一致性。</li>
+</ol>
+</li>
+<li><strong>实现多版本并发控制（MVCC）</strong>。</li>
+</ol>
+<p><strong>MVCC</strong>，即<strong>多版本控制</strong>。在MySQL数据库InnoDB存储引擎中，用undo Log来实现多版本并发控制(MVCC)。当读取的某一行被其他事务锁定时，它可以从undo log中分析出该行记录以前的数据版本是怎样的，从而让用户能够<strong>快照读</strong>读取到当前事务操作之前的数据。</p>
+<blockquote>
+<p><strong>快照读</strong>：SQL读取的数据是快照版本，也就是历史版本，不用加锁，普通的SELECT就是快照读。<br><strong>当前读</strong>：SQL读取的数据是最新版本。通过锁机制来保证读取的数据无法被其他事务进行修改。UPDATE、DELETE、INSERT、SELECT … LOCK IN SHARE MODE、SELECT … FOR UPDATE都是当前读。</p>
+</blockquote>
+<h2 id="存储机制"><a href="#存储机制" class="headerlink" title="存储机制"></a>存储机制</h2><p>undo log的存储由<code>InnoDB存储引擎</code>实现，其采用<strong>分段(segment)<strong>的方式进行存储的。<br><strong>rollback segment</strong>称为</strong>回滚段</strong>，每个回滚段中有1024个<code>undo log segment</code>。在MySQL5.5之后，可以支持128个rollback segment，每一个回滚段，内部由1024个undo segment 组成，即总共可以记录128 * 1024个undo操作。</p>
+<p>存储结构示意图：<br><img src="/2024/03/21/backend/database/mysql/mysql_log/undolog1.svg"></p>
+<p>回滚指针第一次如果是insert语句的话，回滚指针为NULL，第二次update之后的undo log的回滚指针就会指向刚刚那一条undo log日志，依次类推，就会形成一条undo log的回滚链，方便找到该条记录的历史版本。</p>
+<h2 id="工作原理"><a href="#工作原理" class="headerlink" title="工作原理"></a>工作原理</h2><p>在更新数据之前，MySQL会提前生成undo log日志，当事务提交的时候，并不会立即删除undo log，因为后面可能需要进行回滚操作。<br>要执行回滚（rollback）操作时，从缓存中读取数据。undo log日志的删除是通过通过后台<strong>purge线程</strong>进行回收处理的。</p>
+<p>示意图：<br><img src="/2024/03/21/backend/database/mysql/mysql_log/undolog2.svg"></p>
+<p>举例：</p>
+<ol>
+<li>事务A执行update操作，此时事务还没提交，会将数据进行备份到对应的undo buffer，然后由undo buffer持久化到磁盘中的undo log文件中，<strong>此时undo log保存了未提交之前的操作日志</strong>，接着将操作的数据，也就是Teacher表的数据持久保存到InnoDB的数据文件IBD。</li>
+<li>此时事务B进行查询操作，直接<strong>从undo buffer缓存中进行读取</strong>，这时事务A还没提交事务，如果要<strong>回滚（rollback）事务，就直接从undo buffer缓存读取。</strong></li>
+</ol>
+<h2 id="流程"><a href="#流程" class="headerlink" title="流程"></a>流程</h2><p>使用undo log实现<strong>原子性</strong>和<strong>持久化</strong>的事务的流程：</p>
+<ol>
+<li>事务开始</li>
+<li>第一次更改：<ol>
+<li>将name&#x3D;A记录至undo log</li>
+<li>更改Buffer Pool中的name&#x3D;B（原name&#x3D;A）</li>
+</ol>
+</li>
+<li>第二次更改：<ol>
+<li>将name&#x3D;B记录至undo log</li>
+<li>更改Buffer Pool中的name&#x3D;C</li>
+</ol>
+</li>
+<li>持久化undo log（Undo Log在事务执行过程中就已经逐步地持久化到了磁盘中）</li>
+<li>提交事务，此时事务才真正完成，同时持久化Buffer Pool中的改动至磁盘。对于MySQL复制环境，在提交事务后，Binlog也会被持久化到磁盘。</li>
+</ol>
+<p><strong>注意：在更新数据前会提前记录undo log。</strong></p>
+<p>执行该流程的优点：</p>
+<ol>
+<li><strong>成功情况</strong>：事务提交将与数据一起写入磁盘。</li>
+<li><strong>异常情况</strong>：<ol>
+<li>持久化undo log后发生异常：undo log是完整的，可以用来回滚。</li>
+<li>持久化undo log前或时发生异常：磁盘上的数据保持在事务开始前。</li>
+</ol>
+</li>
+</ol>
+<blockquote>
+<p>感觉思路有点像磁盘的RAID1级或缓存的差异失效时间，提供了两个备份，因此任何时间点发生崩溃都可以保证数据不丢失。</p>
+</blockquote>
+<h1 id="redo-log"><a href="#redo-log" class="headerlink" title="redo log"></a>redo log</h1><p><strong>redo log（重做日志）</strong>，也叫重放日志。和undo log回滚日志一样，都是在数据库发生意外时用来进行数据恢复的，之前已经介绍了undo log，我们都知道undo log记录的是数据更新前的样子，主要保证事务的原子性；而redo log则记录的是<strong>事务执行过程中的修改情况</strong>，redo log主要保证事务的持久性。</p>
+<p>Redo Log 并不是直接用于保存事务提交后的“脏页”本身，而是用于<strong>保存那些在事务执行过程中对数据页所做的修改操作的日志记录</strong>。当一个事务在InnoDB存储引擎中执行时，它首先修改内存中的数据页（这些数据页位于Buffer Pool中），这些被修改过的数据页被称为“脏页”。</p>
+<p>Redo Log 记录了足以重新执行（redo）这些修改操作所需的信息，即使在系统发生故障（如宕机）的情况下，也能确保当数据库重启时，能够<strong>通过重做(redo)这些日志记录来恢复未持久化到磁盘的事务影响</strong>。<br><strong>在事务提交时，Redo Log 会被刷新到磁盘上的 redo log 文件中，这个过程通常早于对应数据页被刷回磁盘（即脏页flush到磁盘数据文件）。</strong>这种机制使得MySQL能够满足ACID中的持久性要求，即一旦事务提交，其对数据库的影响即使在系统崩溃后也能保持不变。</p>
+<h2 id="作用-2"><a href="#作用-2" class="headerlink" title="作用"></a>作用</h2><ol>
+<li><strong>保证事务的持久性</strong>：如果buffer pool缓冲池中的<strong>脏数据还没有进行刷盘</strong>的时候，此时数据库发生崩溃，重启服务后，我们可以通过redo log日志找到需要重放到磁盘文件的那些数据记录。</li>
+<li><strong>提高事务提交的速度</strong>：buffer pool缓冲池中的数据直接刷新到磁盘，是一个随机IO，效率较差，而把buffer pool中的数据记录到redo log，是一个顺序IO，可以提高事务提交的速度。可将redo log持久化作为事务完成的标志（崩溃了也能通过redo log恢复），所以速度更快。</li>
+</ol>
+<h2 id="工作原理-1"><a href="#工作原理-1" class="headerlink" title="工作原理"></a>工作原理</h2><p>redo log由两部分组成：</p>
+<ul>
+<li>redo log buffer：重做日志缓存，存在于内存中，容易发生丢失。</li>
+<li>redo log file：重做日志文件，存在于磁盘中，不容易发生丢失。</li>
+</ul>
+<p>为了确保每次日志都能写入到事务日志文件中，在每次将log buffer中的日志写入日志文件的过程中都会调用一次操作系统的<strong>fsync操作（即fsync()系统调用）</strong>。因为MySQL是工作在用户空间的，log buffer处于用户空间的内存中。要写入到磁盘上的log file中，中间还要经过操作系统内核空间的os buffer，调用fsync()的作用就是将OS buffer中的日志刷到磁盘上的log file中。</p>
+<p>redo log的工作原理示意图：（包括binlog、undo log、redo log）<br><img src="/2024/03/21/backend/database/mysql/mysql_log/log_all.svg"></p>
+<h2 id="流程-1"><a href="#流程-1" class="headerlink" title="流程"></a>流程</h2><p>之前的undo log中的事务执行流程并不完整，现在提供补充redo log后的完整流程：<br>数据需要在事务提交前写到磁盘，<strong>只要事务成功提交，数据必然已经持久化到磁盘。</strong></p>
+<ol>
+<li>事务开始</li>
+<li>每次数据更改步骤：<ol>
+<li>对于第一次更改（如将name从A改为B）：<ol>
+<li>创建一个Undo Log条目，记录原始值A以及变更前的数据状态。</li>
+<li>更新内存中的Buffer Pool（即Page Cache），将name字段改为B。</li>
+</ol>
+</li>
+<li>对于第二次更改（如将name从B改为C）：<ol>
+<li>再创建一个新的Undo Log条目，记录原始值B及变更前的状态。</li>
+<li>更新内存中的Buffer Pool，将name字段改为C。</li>
+</ol>
+</li>
+</ol>
+</li>
+<li><strong>Undo Log在事务执行过程中按照checkpoint机制或者达到一定条件时会被刷入磁盘，以保证事务的持久性</strong>。</li>
+<li>在事务准备提交阶段，<strong>Redo Log会被先于事务提交持久化到磁盘</strong>，通常通过fsync()系统调用确保其内容已经稳定存储。</li>
+<li>提交事务，此时事务才真正完成，同时持久化Buffer Pool中的改动至磁盘（通过Redo Log恢复）。对于MySQL复制环境，在提交事务后，Binlog也会被持久化到磁盘。</li>
+</ol>
+<p>异常情况说明：</p>
+<ul>
+<li>成功情况：一旦事务成功提交，意味着Redo Log已持久化，通过Redo Log可以重播事务的所有更改，即使系统崩溃重启也能恢复数据到最新状态。<strong>只要事务成功提交，数据必然已经持久化到磁盘。</strong></li>
+<li>异常情况：<ul>
+<li>如果在持久化Undo Log之后发生异常，由于Undo Log和Redo Log都已经持久化，可以根据Redo Log进行前滚恢复，若需要回滚事务，则可以使用Undo Log来还原数据。</li>
+<li>如果在持久化Undo Log之前或过程中发生异常，由于InnoDB遵循“Write-Ahead Logging”原则（即修改数据前先写日志），因此磁盘上的数据仍然是事务开始前的状态，不会出现数据不一致的情况。在系统恢复时，未完成的事务可以通过检查Undo Log来决定是否需要回滚。</li>
+</ul>
+</li>
+</ul>
+<h1 id="日志一致"><a href="#日志一致" class="headerlink" title="日志一致"></a>日志一致</h1><p>由于binlog和redo log的写入并不是一个原子性操作，所以可能发生写完redo log日志后，binlog日志写期间发生了异常的情况。<br>对此，InnoDB使用了<strong>两阶段提交</strong>的方案。</p>
+<p>将redo log的写入拆成了两个步骤prepare和commit，这就是两阶段提交。示意图：<br><img src="/2024/03/21/backend/database/mysql/mysql_log/%E4%B8%A4%E9%98%B6%E6%AE%B5%E6%8F%90%E4%BA%A4.png"></p>
+<p>使用两阶段提交后，写入binlog时发生异常也不会有影响，因为MySQL根据redo log日志恢复数据时，发现redo log还处于prepare阶段，并且没有对应的binlog日志，就会回滚该事务。</p>
+]]></content>
+      <categories>
+        <category>后端开发</category>
+        <category>数据库</category>
+        <category>MySQL</category>
+      </categories>
+      <tags>
+        <tag>数据库</tag>
+        <tag>MySQL</tag>
+        <tag>日志</tag>
+        <tag>binlog</tag>
+        <tag>Statement格式</tag>
+        <tag>Row格式</tag>
+        <tag>Mixed格式</tag>
+        <tag>sync_binlog</tag>
+        <tag>undo log</tag>
+        <tag>多版本并发控制</tag>
+        <tag>MVCC</tag>
+        <tag>Buffer Pool</tag>
+        <tag>rollback segment</tag>
+        <tag>回滚段</tag>
+        <tag>redo log</tag>
+        <tag>两阶段提交</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>JAVA：AOT入门</title>
+    <url>/2024/03/18/backend/language/java/JIT_AOT/</url>
+    <content><![CDATA[<p>本文将介绍使用AOT相比使用JVM运行java程序的优点，以及如何使用AOT生成可执行文件。</p>
+<blockquote>
+<p>资料来源：<br><a href="https://www.graalvm.org/">GraalVM官网</a><br><a href="https://mp.weixin.qq.com/s/4haTyXUmh8m-dBQaEzwDJw">阿里巴巴微信公众号</a></p>
+</blockquote>
+<h1 id="JIT"><a href="#JIT" class="headerlink" title="JIT"></a>JIT</h1><p>传统的一个 Java 应用从代码编写到启动运行大致可以分为如下步骤：</p>
+<ol>
+<li>首先，编写<code>.java</code>源代码程序。</li>
+<li>然后，借助<strong>javac</strong>工具将<code>.java</code>文件翻译为<code>.class</code>的<strong>字节码</strong>。字节码是 Java 中非常重要的内容之一，正是因为它的出现，Java 才实现对底层环境的屏蔽，达到 Write once, run anywhere 的效果。</li>
+<li>基于步骤2的<code>.class</code>文件会被打包成 <strong>jar</strong> 包或者 <strong>war</strong> 包进行部署执行，部署过程中通过Java虚拟机加载应用程序然后<strong>解释字节码</strong>运行业务逻辑。<ul>
+<li>我们需要格外注意的是，<code>.class-&gt;机器码</code>的过程中，JVM类加载器首先加载字节码文件，然后通过解释器逐行解释执行，这种方式的执行速度会相对比较慢。而且，有些方法和代码块是经常需要被调用的(也就是所谓的热点代码)，所以后面引进了<strong>JIT（Just in Time Compilation）</strong>编译器，而 JIT 属于运行时编译。当 JIT 编译器完成第一次编译后，其会将字节码对应的机器码保存下来，下次可以直接使用。而我们知道，机器码的运行效率肯定是高于 Java 解释器的。这也解释了我们为什么经常会说Java 是<strong>编译与解释共存</strong>的语言。</li>
+</ul>
+</li>
+</ol>
+<p>示意图：<br><img src="/2024/03/18/backend/language/java/JIT_AOT/java_jdk.svg"></p>
+<p><img src="/2024/03/18/backend/language/java/JIT_AOT/java2.svg"></p>
+<h1 id="AOT"><a href="#AOT" class="headerlink" title="AOT"></a>AOT</h1><h2 id="传统方案的缺陷"><a href="#传统方案的缺陷" class="headerlink" title="传统方案的缺陷"></a>传统方案的缺陷</h2><p><img src="/2024/03/18/backend/language/java/JIT_AOT/JVM_invoke.png"><br>Java 程序启动运行详细过程如上图所示。</p>
+<p>具体过程：</p>
+<ol>
+<li>一个 Java 应用启动过程首先需要<strong>加载</strong>该应用程序对应的<strong>JVM 虚拟机软件程序到内存中</strong>，如上图<span style="color: #fe4006;">红色</span>部分描述所示。</li>
+<li>然后 JVM 虚拟机再<strong>加载对应的应用程序到内存中</strong>，该过程对应上图中的<span style="color: #ccfefe;">浅蓝色</span>类加载（Class Load，CL）部分。</li>
+<li>在类加载过程中，<strong>应用程序</strong>就会开始<strong>被解释执行</strong>，对应上图中<span style="color: #adce00;">浅绿色</span>部分。</li>
+<li>解释执行过程 JVM 对垃圾对象进行回收，对应上图中的<span style="color: #fed220;">黄色</span>部分。</li>
+<li>随着程序的运行的深入，JVM 会采用<strong>及时编译（Just In Time，JIT）技术</strong>对执行频率较高的代码进行编译优化，以便提升应用程序运行速度。JIT 过程对应上图中的<span style="color: #fefefe;">白色</span>部分。</li>
+<li>经过 JIT 编译优化后的代码对应图中<span style="color: #00ad00;">深绿色</span>部分。</li>
+</ol>
+<p>经过上述分析，不难看出，一个 Java 程序从启动到达到被JIT动态编译优化会经过<strong>VM init</strong>，<strong>App init</strong>和<strong>App active</strong>几个阶段，相比于其他一些编译型语言，其<strong>冷启动问题</strong>比较严重。</p>
+<p>除了冷启动问题，在一个 Java 程序运行过程中，什么都不做首先就需要加载一个 JVM 虚拟机，该操作一般占用一定内存。另外，由于 Java 程序是先解释执行字节码，然后再做 JIT 编译优化。由于相比于一些编译型语言其将编译优化的动作后置到运行时，因此非常容易出现实际加载的代码比实际需要运行的代码多很多的情况，造成了一些无效内存占用情况。综上所述就是为什么很多人常诟病 Java 程序<strong>运行内存占用高</strong>的几点主要原因。</p>
+<h2 id="解决方案：AOT"><a href="#解决方案：AOT" class="headerlink" title="解决方案：AOT"></a>解决方案：AOT</h2><p><strong>提前编译（Ahead-of-Time Compilation，AOT Compilation）</strong>或者叫<strong>静态编译</strong>在 Java 领域很早就被提了出来。其核心思想就是让 Java 程序也跟其他程序语言，比如 C&#x2F;C++ 一样，先编译后执行解决上述问题，将 Java 程序的编译阶段提前到程序启动前，然后在编译阶段进行代码编译优化，让程序启动既巅峰，消除冷启动，降低运行时内存开销。</p>
+<p>Java 领域静态编译的实现技术有很多，其中最具代表性的还属 Oracle 推出的 <strong>GraalVM</strong> 开源高性能多语言运行时平台。</p>
+<blockquote>
+<p><img src="/2024/03/18/backend/language/java/JIT_AOT/GraalVM.png"><br>GraalVM 中通过提供 Truffle 解释器实现框架，让开发人员可以使用 Truffle 提供的 API 快速实现特定语言的解释器从而实现对上图中各种编程语言所写的程序都能进行编译运行的效果，从而成为一个多语言运行时平台。GraalVM 实现静态编译能力的编译器就是 GraalVM JIT Compiler。静态编译框架和运行时由 Substrate VM 子项目实现，兼容 OpenJDK 运行时实现，提供了原生镜像程序运行时的异常处理、同步调度、线程管理、内存管理等功能。<br>因此，GraalVM 不仅可以作为一个多语言运行时平台，而且由于其中提供的 GraalVM JIT Compiler 静态编译器，其可用来对 Java 程序进行静态编译。</p>
+</blockquote>
+<p>基于静态编译的 Java 程序相比于目前应用广泛的 JVM 运行时编译 Java 程序，整个从代码编写到编译执行的区别如下：<br><img src="/2024/03/18/backend/language/java/JIT_AOT/nativeImage.png"></p>
+<p>相比于 JVM 运行时方式，静态编译在运行之前会先对程序解析编译，然后生成一个跟运行时环境强相关的 <strong>native image 可执行文件</strong>，最后直接执行该文件即可启动程序进行执行。</p>
+<h3 id="静态编译过程"><a href="#静态编译过程" class="headerlink" title="静态编译过程"></a>静态编译过程</h3><blockquote>
+<p>静态编译过程到底会对 Java 程序做哪些解析操作？静态编译后的可执行程序垃圾回收问题怎么解决？</p>
+</blockquote>
+<p>GraalVM 静态编译实现示意图：<br><img src="/2024/03/18/backend/language/java/JIT_AOT/%E9%9D%99%E6%80%81%E7%BC%96%E8%AF%91.png"></p>
+<p>图中左侧前三个输入内容 Applicaton，Libraries 和 JDK 是一个 Java 程序编译运行必备的三部分，不必多说。而 <strong>Substrate VM</strong> 就是 GraalVM 中实现静态编译的核心部分，在整个静态编译过程中扮演了重要作用。<br>在静态分析过程中Substrate VM 通过<strong>上下文不敏感的指向分析（Points-to Analysis）</strong>来对应用程序做<strong>静态分析</strong>，其可以在不需要运行程序的情况下，基于源程序分析给出所有可能的可达函数列表然后作为后续编译阶段的输入对程序<strong>进行静态编译</strong>。<br>在静态分析完成后，基于静态分析结果的可达函数列表，会调用介绍的 GraalVM 中的 GraalVM JIT Compiler 编译器将应用程序编译为与目标平台强相关的本地代码以完成编译过程。<br>编译完成后，就会进入到上图中右侧 Native 可执行文件生成阶段。在该过程中，Substrate VM 会将静态编译阶段确定和初始化的内容以及跟 Substrate VM 运行时以及 JDK 库中的数据一起保存到最终可执行文件的 Image Heap 中。其中 <strong>Substrate VM 运行时</strong>就为最终可执行文件提供了运行过程中所需的垃圾回收、异常处理等能力。</p>
+<h4 id="静态分析局限性"><a href="#静态分析局限性" class="headerlink" title="静态分析局限性"></a>静态分析局限性</h4><p>在Substrate VM的静态分析过程中，由于静态分析无法覆盖 Java 中的反射、动态代理、JNI 调用等动态特性。这也造成了很多的 Java 框架由于在实现过程中使用了大量的上述特性，因此，都难以直接基于 Substrate VM 完成对自身所有代码的静态分析，需要通过<strong>额外的外部配置</strong>来解决静态分析本身的不足。</p>
+<blockquote>
+<p>一个java项目，该如何进行静态编译适配呢？其最核心要解决的本质问题，就是将开源框架中的 GraalVM 无法识别和处理的动态内容转换为其可识别的内容即可。</p>
+<p>Spring 社区为了应对Spring项目中反射和动态代理等特性在静态编译环境下的挑战，开发了<strong>AOT Engine</strong>工具。AOT Engine专注于在构建阶段对Spring应用中的特定内容进行静态分析与转换处理，这些内容包括但不限于使用@Configuration注解声明的配置类及其初始化逻辑。<br>通过AOT Engine，能够识别并预先处理那些原本只能在运行时动态生成的类结构，如基于Java的动态代理类。这样，在静态编译阶段就能够有效生成这些原本动态创建的对象，确保它们能被Substrate VM或类似支持提前编译的技术识别和兼容。<br>因此，AOT Engine有效地解决了Spring应用在静态编译场景下可能遇到的问题，使得Spring应用能够适应静态编译并实现性能优化，同时保持框架的灵活性和功能完整性。</p>
+<p>对于非 Spring 体系项目或者自身使用了一些 JDK 中原生的反射或者其他 Java 动态特性，针对自身代码中的 Java 动态用法需要在项目中提供对应的静态配置文件才能在静态编译过程中让编译器识别其中的动态特性，对其进行编译构建才能实现项目的顺利编译与执行。<br>针对这种情况，GraalVM 提供了一个名叫 <strong>native-image-agent</strong> 的 Tracing Agent 来帮助大家更方便地收集元数据并准备配置文件。该 Agent 会在常规 Java VM 上的应用程序运行过程中自动收集其中的动态特性使用情况并将其转换为 GraalVM 可以识别的配置文件。最后，将通过 Agent 生成的框架自身的动态配置文件存放在项目的：META-INF&#x2F;native-image&#x2F;&lt;group.id&gt;&#x2F;&lt;artifact.id&gt; 目录下，就可以在静态编译过程中根据这些配置内容，识别项目包中的动态特性。</p>
+</blockquote>
+<h2 id="基于静态编译构建微服务"><a href="#基于静态编译构建微服务" class="headerlink" title="基于静态编译构建微服务"></a>基于静态编译构建微服务</h2><blockquote>
+<p>Spring Cloud Alibaba 2022.0.0.0 版本所包含的所有中间件客户端已完成了构建 GraalVM 原生应用的适配。为用户提供了开箱即用的静态编译能力。</p>
+</blockquote>
+<h3 id="环境准备"><a href="#环境准备" class="headerlink" title="环境准备"></a>环境准备</h3><ol>
+<li>安装 GraalVM 发行版。（windows安装可参考：<a href="https://medium.com/graalvm/using-graalvm-and-native-image-on-windows-10-9954dc071311">Using GraalVM and Native Image on Windows 10</a>）</li>
+<li>检查 java -version 的输出来验证是否配置了正确的版本。</li>
+</ol>
+<blockquote>
+<p>建议不要使用Windows。</p>
+</blockquote>
+<h3 id="应用构建"><a href="#应用构建" class="headerlink" title="应用构建"></a>应用构建</h3><ol>
+<li>要使用 GraalVM 静态编译能力构建微服务，首先确保项目的<code>Spring Boot</code>版本为<code>3.0.0</code>或以上<code>Spring Cloud</code>版本为<code>2022.0.0</code>或以上。然后在项目中引入<code>Spring Cloud Alibaba 2022.0.0.0</code>版本的所需模块依赖即可。</li>
+<li>通过maven命令生成应用中反射、序列化和动态代理所需的 Hints 配置文件：<code>mvn -Pnative spring-boot:run</code>（前提是应用中引入了<code>spring-boot-starter-parent</code>父模块）</li>
+<li>之后应用会启动，进行预执行，需要尽可能完整的测试一遍应用的所有功能，保证应用的大部分代码都被测试用例覆盖，该过程会基于 GraalVM 的 native-image-agent 收集程序中的动态特性，这样可以确保完整生成应用运行过程中的所有必须的动态属性。</li>
+<li>运行完所有测试用例后，我们发现<code>resource/META-INF/native-image</code>目录下会生成以下一些<code>hints</code>文件:<ul>
+<li>resource-config.json：应用中资源 hint 文件</li>
+<li>reflect-config.json：应用中反射定义 hint 文件</li>
+<li>serialization-config.json：应用中序列化内容 hint 文件</li>
+<li>proxy-config.json：应用中 Java 代理相关内容 hint 文件</li>
+<li>jni-config.json：应用中 Java Native Interface（JNI）内容 hint 文件</li>
+</ul>
+</li>
+</ol>
+<blockquote>
+<p>上述预执行过程主要为了扫描应用自身业务代码以及其他第三方包中的动态特性，以便后续静态编译过程能顺利进行，应用能正常启动。</p>
+<p>如果没有使用动态特性，可直接进行下一步。</p>
+</blockquote>
+<h3 id="静态编译"><a href="#静态编译" class="headerlink" title="静态编译"></a>静态编译</h3><p>通过maven命令来构建原生镜像：<code>mvn -Pnative native:compile</code><br>成功执行后，可在<code>/target</code>目录看到生成的可执行文件。</p>
+<h3 id="执行可执行文件"><a href="#执行可执行文件" class="headerlink" title="执行可执行文件"></a>执行可执行文件</h3><p>进入<code>/target</code>，命令行输入<code>./&lt;可执行文件名称&gt;</code>，即可发现项目被光速启动了。</p>
+<blockquote>
+<p>这是真TM快啊！</p>
+</blockquote>
+]]></content>
+      <categories>
+        <category>后端开发</category>
+        <category>语言</category>
+        <category>Java</category>
+      </categories>
+      <tags>
+        <tag>JAVA</tag>
+        <tag>JDK</tag>
+        <tag>AOT</tag>
+        <tag>JIT</tag>
+        <tag>GraalVM</tag>
+        <tag>运行时编译</tag>
+        <tag>及时编译</tag>
+        <tag>静态编译</tag>
+        <tag>静态分析</tag>
+        <tag>提前编译</tag>
+        <tag>字节码</tag>
+        <tag>冷启动问题</tag>
+        <tag>native image</tag>
+        <tag>Substrate VM</tag>
+        <tag>Substrate VM运行时</tag>
       </tags>
   </entry>
   <entry>
@@ -962,283 +1242,120 @@ newProxyInstance方法的三个参数：</li>
       </tags>
   </entry>
   <entry>
-    <title>MySQL：日志</title>
-    <url>/2024/03/21/backend/database/mysql/mysql_log/</url>
-    <content><![CDATA[<p>MySQL 日志 主要包括错误日志、查询日志、慢查询日志、事务日志、二进制日志几大类。本文将讲解其中比较重要的<strong>二进制日志binlog（归档日志）</strong>、<strong>事务日志redo log（重做日志）</strong>和<strong>undo log（回滚日志）</strong>。</p>
-<h1 id="binlog"><a href="#binlog" class="headerlink" title="binlog"></a>binlog</h1><p>MySQL<strong>二制进日志（binlog）</strong>，也叫做<strong>变更日志（update log）</strong>。<br>二进制日志中记录了<strong>对MySQL数据库执行更改的所有操作</strong>，并且记录了语句发生时间、执行时长、操作数据等其它额外信息。</p>
-<p>二进制日志主要用于<strong>数据库恢复</strong>和<strong>主从复制</strong>，以及审计操作，它包含了所有能够重现数据库状态变更所必需的信息。。如果 MySQL 数据库意外停止，可以通过二进制日志文件来查看用户执行了哪些操作，对数据库服务器文件做了哪些修改，然后根据二进制日志文件中的记录来恢复数据库服务器。</p>
-<h2 id="内容"><a href="#内容" class="headerlink" title="内容"></a>内容</h2><p>二进制日志（binlog）中记录了对MySQL数据库执行更改的所有操作，并且记录了语句发生时间、执行时长、操作数据等其它额外信息：<br>主要包含以下内容：</p>
-<ul>
-<li><strong>逻辑操作</strong>：对数据库执行的原始SQL语句或其等价物。具体内容与格式有关：<ul>
-<li><strong>Statement格式</strong>：记录执行的SQL语句本身，例如INSERT INTO table VALUES(…)、UPDATE table SET column&#x3D;… WHERE condition等。</li>
-<li><strong>Row格式</strong>：记录每个受影响行的实际变化，而不是整个SQL语句。它会详细说明哪个表的哪一行如何被修改。</li>
-<li><strong>Mixed格式</strong>：混合使用Statement和Row格式，MySQL根据SQL语句的特点自动选择最佳方式。</li>
-</ul>
-</li>
-<li><strong>事务边界</strong>：<ul>
-<li>Binlog以事务为单位记录变更，确保了事务的原子性和一致性。每个事务的所有操作作为一个整体被记录，且事务开始和结束都有相应的标志。</li>
-</ul>
-</li>
-<li><strong>GTID（Global Transaction Identifier）</strong>：在支持GTID的MySQL版本中，binlog还会包含全局事务ID，用于主从复制时精确地跟踪和同步事务。</li>
-<li><strong>DDL操作</strong>：对于数据定义语言（如CREATE TABLE、ALTER TABLE、DROP TABLE等）也会记录在binlog中。</li>
-<li>其他元数据：事件头信息，如事务ID、时间戳、服务器ID等，用于数据恢复和复制过程中的校验和同步。</li>
-</ul>
-<h2 id="写入机制"><a href="#写入机制" class="headerlink" title="写入机制"></a>写入机制</h2><p>事务执行过程中，会先把日志写到binlog cache，事务提交的时候，再把binlog cache写到binlog文件中。<br>系统会给每个线程分配一个块内存作为binlog cache，以确保一个事务的binlog的一次性写入的。</p>
-<p>示意图：<br><img src="/2024/03/21/backend/database/mysql/mysql_log/writeBinlog.png"></p>
-<p>注意，如果<code>write</code>操作不会将binlog文件写入磁盘（仅仅是存入缓存），<code>fsync</code>才是将binlog文件写入磁盘的真正动作。如果机器宕机，Buffer Pool里面的 binlog 就会丢失。</p>
-<blockquote>
-<p><strong>sync_binlog参数</strong>可用于控制write和fsync的时机。</p>
-<ul>
-<li>0：sync_binlog为0时，每次提交事务都进行write，执行fsync时机由操作系统决定。</li>
-<li>1：每次提交事务都会执行fsync。</li>
-<li>N(N&gt;1)：表示每次提交事务都write，但累积N个事务后才fsync。</li>
-</ul>
-</blockquote>
-<h2 id="作用"><a href="#作用" class="headerlink" title="作用"></a>作用</h2><ol>
-<li><strong>基于时间点的恢复</strong>：在备份文件恢复的基础上，通过binlog日志，可以将数据库恢复到某一时间点；</li>
-<li><strong>主从复制</strong>：在主从复制模式下，必须在主服务器上开启binlog日志；</li>
-<li><strong>操作审计</strong>：对所有更改数据的操作进行审计。</li>
-</ol>
-<blockquote>
-<p>操作审计：</p>
-<ul>
-<li>数据追踪与回溯：通过分析binlog，可以追溯数据库中的任何数据变更历史，这对于数据安全性、合规性要求高的场景尤其重要，比如金融、医疗等行业，需要记录详细的交易历史以供审计或法律调查。</li>
-<li>审计复核：binlog可用于数据完整性验证，通过重新播放binlog中的事件，可以检查数据库是否按照预期进行了操作，从而帮助发现潜在的误操作或恶意篡改行为。</li>
-<li>安全审计：安全审计时，binlog可以帮助识别未经授权的访问尝试、非法数据修改等安全事件，因为它记录了所有的数据修改语句。</li>
-</ul>
-<p>注意：MySQL本身的审计功能并非直接依赖binlog，而是通过专门的审计插件（如MySQL Enterprise Audit Plugin）或其他审计工具来实现更全面和规范的审计需求，这些工具可以提供更多定制化的审计过滤、报告生成等功能。不过，binlog确实是进行事后审计和数据一致性检查的重要数据源之一。</p>
-</blockquote>
-<h1 id="undo-log"><a href="#undo-log" class="headerlink" title="undo log"></a>undo log</h1><p><strong>undo log</strong>是一种用于<strong>撤销回退</strong>的日志。<br>在事务没提交之前，MySQL会先<strong>记录更新前的数据到 undo log日志文件里面</strong>，当事务回滚时或者数据库崩溃时，可以利用 undo log来进行回退。</p>
-<h2 id="作用-1"><a href="#作用-1" class="headerlink" title="作用"></a>作用</h2><ol>
-<li><strong>提供回滚操作</strong>：在进行数据更新操作的时候，会记录undo log。如果因为某些原因导致事务回滚，那么这个时候MySQL就要执行回滚（rollback）操作，利用undo log将数据恢复到事务开始之前的状态。<ol>
-<li>比如我们执行下面一条update语句：<code>update user set name = &quot;李四&quot; where id = 1;   ---修改之前name=张三</code></li>
-<li>此时undo log会记录update之前的状态（id&#x3D;1,name&#x3D;‘张三’）；如果这个修改出现异常，就可以使用undo log日志中的操作来实现回滚操作，如：<code>update user set name = &quot;张三&quot; where id = 1;</code>，以保证事务的一致性。</li>
-</ol>
-</li>
-<li><strong>实现多版本并发控制（MVCC）</strong>。</li>
-</ol>
-<p><strong>MVCC</strong>，即<strong>多版本控制</strong>。在MySQL数据库InnoDB存储引擎中，用undo Log来实现多版本并发控制(MVCC)。当读取的某一行被其他事务锁定时，它可以从undo log中分析出该行记录以前的数据版本是怎样的，从而让用户能够<strong>快照读</strong>读取到当前事务操作之前的数据。</p>
-<blockquote>
-<p><strong>快照读</strong>：SQL读取的数据是快照版本，也就是历史版本，不用加锁，普通的SELECT就是快照读。<br><strong>当前读</strong>：SQL读取的数据是最新版本。通过锁机制来保证读取的数据无法被其他事务进行修改。UPDATE、DELETE、INSERT、SELECT … LOCK IN SHARE MODE、SELECT … FOR UPDATE都是当前读。</p>
-</blockquote>
-<h2 id="存储机制"><a href="#存储机制" class="headerlink" title="存储机制"></a>存储机制</h2><p>undo log的存储由<code>InnoDB存储引擎</code>实现，其采用<strong>分段(segment)<strong>的方式进行存储的。<br><strong>rollback segment</strong>称为</strong>回滚段</strong>，每个回滚段中有1024个<code>undo log segment</code>。在MySQL5.5之后，可以支持128个rollback segment，每一个回滚段，内部由1024个undo segment 组成，即总共可以记录128 * 1024个undo操作。</p>
-<p>存储结构示意图：<br><img src="/2024/03/21/backend/database/mysql/mysql_log/undolog1.svg"></p>
-<p>回滚指针第一次如果是insert语句的话，回滚指针为NULL，第二次update之后的undo log的回滚指针就会指向刚刚那一条undo log日志，依次类推，就会形成一条undo log的回滚链，方便找到该条记录的历史版本。</p>
-<h2 id="工作原理"><a href="#工作原理" class="headerlink" title="工作原理"></a>工作原理</h2><p>在更新数据之前，MySQL会提前生成undo log日志，当事务提交的时候，并不会立即删除undo log，因为后面可能需要进行回滚操作。<br>要执行回滚（rollback）操作时，从缓存中读取数据。undo log日志的删除是通过通过后台<strong>purge线程</strong>进行回收处理的。</p>
-<p>示意图：<br><img src="/2024/03/21/backend/database/mysql/mysql_log/undolog2.svg"></p>
-<p>举例：</p>
-<ol>
-<li>事务A执行update操作，此时事务还没提交，会将数据进行备份到对应的undo buffer，然后由undo buffer持久化到磁盘中的undo log文件中，<strong>此时undo log保存了未提交之前的操作日志</strong>，接着将操作的数据，也就是Teacher表的数据持久保存到InnoDB的数据文件IBD。</li>
-<li>此时事务B进行查询操作，直接<strong>从undo buffer缓存中进行读取</strong>，这时事务A还没提交事务，如果要<strong>回滚（rollback）事务，就直接从undo buffer缓存读取。</strong></li>
-</ol>
-<h2 id="流程"><a href="#流程" class="headerlink" title="流程"></a>流程</h2><p>使用undo log实现<strong>原子性</strong>和<strong>持久化</strong>的事务的流程：</p>
-<ol>
-<li>事务开始</li>
-<li>第一次更改：<ol>
-<li>将name&#x3D;A记录至undo log</li>
-<li>更改Buffer Pool中的name&#x3D;B（原name&#x3D;A）</li>
-</ol>
-</li>
-<li>第二次更改：<ol>
-<li>将name&#x3D;B记录至undo log</li>
-<li>更改Buffer Pool中的name&#x3D;C</li>
-</ol>
-</li>
-<li>持久化undo log（Undo Log在事务执行过程中就已经逐步地持久化到了磁盘中）</li>
-<li>提交事务，此时事务才真正完成，同时持久化Buffer Pool中的改动至磁盘。对于MySQL复制环境，在提交事务后，Binlog也会被持久化到磁盘。</li>
-</ol>
-<p><strong>注意：在更新数据前会提前记录undo log。</strong></p>
-<p>执行该流程的优点：</p>
-<ol>
-<li><strong>成功情况</strong>：事务提交将与数据一起写入磁盘。</li>
-<li><strong>异常情况</strong>：<ol>
-<li>持久化undo log后发生异常：undo log是完整的，可以用来回滚。</li>
-<li>持久化undo log前或时发生异常：磁盘上的数据保持在事务开始前。</li>
-</ol>
-</li>
-</ol>
-<blockquote>
-<p>感觉思路有点像磁盘的RAID1级或缓存的差异失效时间，提供了两个备份，因此任何时间点发生崩溃都可以保证数据不丢失。</p>
-</blockquote>
-<h1 id="redo-log"><a href="#redo-log" class="headerlink" title="redo log"></a>redo log</h1><p><strong>redo log（重做日志）</strong>，也叫重放日志。和undo log回滚日志一样，都是在数据库发生意外时用来进行数据恢复的，之前已经介绍了undo log，我们都知道undo log记录的是数据更新前的样子，主要保证事务的原子性；而redo log则记录的是<strong>事务执行过程中的修改情况</strong>，redo log主要保证事务的持久性。</p>
-<p>Redo Log 并不是直接用于保存事务提交后的“脏页”本身，而是用于<strong>保存那些在事务执行过程中对数据页所做的修改操作的日志记录</strong>。当一个事务在InnoDB存储引擎中执行时，它首先修改内存中的数据页（这些数据页位于Buffer Pool中），这些被修改过的数据页被称为“脏页”。</p>
-<p>Redo Log 记录了足以重新执行（redo）这些修改操作所需的信息，即使在系统发生故障（如宕机）的情况下，也能确保当数据库重启时，能够<strong>通过重做(redo)这些日志记录来恢复未持久化到磁盘的事务影响</strong>。<br><strong>在事务提交时，Redo Log 会被刷新到磁盘上的 redo log 文件中，这个过程通常早于对应数据页被刷回磁盘（即脏页flush到磁盘数据文件）。</strong>这种机制使得MySQL能够满足ACID中的持久性要求，即一旦事务提交，其对数据库的影响即使在系统崩溃后也能保持不变。</p>
-<h2 id="作用-2"><a href="#作用-2" class="headerlink" title="作用"></a>作用</h2><ol>
-<li><strong>保证事务的持久性</strong>：如果buffer pool缓冲池中的<strong>脏数据还没有进行刷盘</strong>的时候，此时数据库发生崩溃，重启服务后，我们可以通过redo log日志找到需要重放到磁盘文件的那些数据记录。</li>
-<li><strong>提高事务提交的速度</strong>：buffer pool缓冲池中的数据直接刷新到磁盘，是一个随机IO，效率较差，而把buffer pool中的数据记录到redo log，是一个顺序IO，可以提高事务提交的速度。可将redo log持久化作为事务完成的标志（崩溃了也能通过redo log恢复），所以速度更快。</li>
-</ol>
-<h2 id="工作原理-1"><a href="#工作原理-1" class="headerlink" title="工作原理"></a>工作原理</h2><p>redo log由两部分组成：</p>
-<ul>
-<li>redo log buffer：重做日志缓存，存在于内存中，容易发生丢失。</li>
-<li>redo log file：重做日志文件，存在于磁盘中，不容易发生丢失。</li>
-</ul>
-<p>为了确保每次日志都能写入到事务日志文件中，在每次将log buffer中的日志写入日志文件的过程中都会调用一次操作系统的<strong>fsync操作（即fsync()系统调用）</strong>。因为MySQL是工作在用户空间的，log buffer处于用户空间的内存中。要写入到磁盘上的log file中，中间还要经过操作系统内核空间的os buffer，调用fsync()的作用就是将OS buffer中的日志刷到磁盘上的log file中。</p>
-<p>redo log的工作原理示意图：（包括binlog、undo log、redo log）<br><img src="/2024/03/21/backend/database/mysql/mysql_log/log_all.svg"></p>
-<h2 id="流程-1"><a href="#流程-1" class="headerlink" title="流程"></a>流程</h2><p>之前的undo log中的事务执行流程并不完整，现在提供补充redo log后的完整流程：<br>数据需要在事务提交前写到磁盘，<strong>只要事务成功提交，数据必然已经持久化到磁盘。</strong></p>
-<ol>
-<li>事务开始</li>
-<li>每次数据更改步骤：<ol>
-<li>对于第一次更改（如将name从A改为B）：<ol>
-<li>创建一个Undo Log条目，记录原始值A以及变更前的数据状态。</li>
-<li>更新内存中的Buffer Pool（即Page Cache），将name字段改为B。</li>
-</ol>
-</li>
-<li>对于第二次更改（如将name从B改为C）：<ol>
-<li>再创建一个新的Undo Log条目，记录原始值B及变更前的状态。</li>
-<li>更新内存中的Buffer Pool，将name字段改为C。</li>
-</ol>
-</li>
-</ol>
-</li>
-<li><strong>Undo Log在事务执行过程中按照checkpoint机制或者达到一定条件时会被刷入磁盘，以保证事务的持久性</strong>。</li>
-<li>在事务准备提交阶段，<strong>Redo Log会被先于事务提交持久化到磁盘</strong>，通常通过fsync()系统调用确保其内容已经稳定存储。</li>
-<li>提交事务，此时事务才真正完成，同时持久化Buffer Pool中的改动至磁盘（通过Redo Log恢复）。对于MySQL复制环境，在提交事务后，Binlog也会被持久化到磁盘。</li>
-</ol>
-<p>异常情况说明：</p>
-<ul>
-<li>成功情况：一旦事务成功提交，意味着Redo Log已持久化，通过Redo Log可以重播事务的所有更改，即使系统崩溃重启也能恢复数据到最新状态。<strong>只要事务成功提交，数据必然已经持久化到磁盘。</strong></li>
-<li>异常情况：<ul>
-<li>如果在持久化Undo Log之后发生异常，由于Undo Log和Redo Log都已经持久化，可以根据Redo Log进行前滚恢复，若需要回滚事务，则可以使用Undo Log来还原数据。</li>
-<li>如果在持久化Undo Log之前或过程中发生异常，由于InnoDB遵循“Write-Ahead Logging”原则（即修改数据前先写日志），因此磁盘上的数据仍然是事务开始前的状态，不会出现数据不一致的情况。在系统恢复时，未完成的事务可以通过检查Undo Log来决定是否需要回滚。</li>
-</ul>
-</li>
-</ul>
-<h1 id="日志一致"><a href="#日志一致" class="headerlink" title="日志一致"></a>日志一致</h1><p>由于binlog和redo log的写入并不是一个原子性操作，所以可能发生写完redo log日志后，binlog日志写期间发生了异常的情况。<br>对此，InnoDB使用了<strong>两阶段提交</strong>的方案。</p>
-<p>将redo log的写入拆成了两个步骤prepare和commit，这就是两阶段提交。示意图：<br><img src="/2024/03/21/backend/database/mysql/mysql_log/%E4%B8%A4%E9%98%B6%E6%AE%B5%E6%8F%90%E4%BA%A4.png"></p>
-<p>使用两阶段提交后，写入binlog时发生异常也不会有影响，因为MySQL根据redo log日志恢复数据时，发现redo log还处于prepare阶段，并且没有对应的binlog日志，就会回滚该事务。</p>
-]]></content>
-      <categories>
-        <category>后端开发</category>
-        <category>数据库</category>
-        <category>MySQL</category>
-      </categories>
-      <tags>
-        <tag>数据库</tag>
-        <tag>MySQL</tag>
-        <tag>日志</tag>
-        <tag>binlog</tag>
-        <tag>Statement格式</tag>
-        <tag>Row格式</tag>
-        <tag>Mixed格式</tag>
-        <tag>sync_binlog</tag>
-        <tag>undo log</tag>
-        <tag>多版本并发控制</tag>
-        <tag>MVCC</tag>
-        <tag>Buffer Pool</tag>
-        <tag>rollback segment</tag>
-        <tag>回滚段</tag>
-        <tag>redo log</tag>
-        <tag>两阶段提交</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>JAVA：AOT入门</title>
-    <url>/2024/03/18/backend/language/java/JIT_AOT/</url>
-    <content><![CDATA[<p>本文将介绍使用AOT相比使用JVM运行java程序的优点，以及如何使用AOT生成可执行文件。</p>
-<blockquote>
-<p>资料来源：<br><a href="https://www.graalvm.org/">GraalVM官网</a><br><a href="https://mp.weixin.qq.com/s/4haTyXUmh8m-dBQaEzwDJw">阿里巴巴微信公众号</a></p>
-</blockquote>
-<h1 id="JIT"><a href="#JIT" class="headerlink" title="JIT"></a>JIT</h1><p>传统的一个 Java 应用从代码编写到启动运行大致可以分为如下步骤：</p>
-<ol>
-<li>首先，编写<code>.java</code>源代码程序。</li>
-<li>然后，借助<strong>javac</strong>工具将<code>.java</code>文件翻译为<code>.class</code>的<strong>字节码</strong>。字节码是 Java 中非常重要的内容之一，正是因为它的出现，Java 才实现对底层环境的屏蔽，达到 Write once, run anywhere 的效果。</li>
-<li>基于步骤2的<code>.class</code>文件会被打包成 <strong>jar</strong> 包或者 <strong>war</strong> 包进行部署执行，部署过程中通过Java虚拟机加载应用程序然后<strong>解释字节码</strong>运行业务逻辑。<ul>
-<li>我们需要格外注意的是，<code>.class-&gt;机器码</code>的过程中，JVM类加载器首先加载字节码文件，然后通过解释器逐行解释执行，这种方式的执行速度会相对比较慢。而且，有些方法和代码块是经常需要被调用的(也就是所谓的热点代码)，所以后面引进了<strong>JIT（Just in Time Compilation）</strong>编译器，而 JIT 属于运行时编译。当 JIT 编译器完成第一次编译后，其会将字节码对应的机器码保存下来，下次可以直接使用。而我们知道，机器码的运行效率肯定是高于 Java 解释器的。这也解释了我们为什么经常会说Java 是<strong>编译与解释共存</strong>的语言。</li>
-</ul>
-</li>
-</ol>
-<p>示意图：<br><img src="/2024/03/18/backend/language/java/JIT_AOT/java_jdk.svg"></p>
-<p><img src="/2024/03/18/backend/language/java/JIT_AOT/java2.svg"></p>
-<h1 id="AOT"><a href="#AOT" class="headerlink" title="AOT"></a>AOT</h1><h2 id="传统方案的缺陷"><a href="#传统方案的缺陷" class="headerlink" title="传统方案的缺陷"></a>传统方案的缺陷</h2><p><img src="/2024/03/18/backend/language/java/JIT_AOT/JVM_invoke.png"><br>Java 程序启动运行详细过程如上图所示。</p>
-<p>具体过程：</p>
-<ol>
-<li>一个 Java 应用启动过程首先需要<strong>加载</strong>该应用程序对应的<strong>JVM 虚拟机软件程序到内存中</strong>，如上图<span style="color: #fe4006;">红色</span>部分描述所示。</li>
-<li>然后 JVM 虚拟机再<strong>加载对应的应用程序到内存中</strong>，该过程对应上图中的<span style="color: #ccfefe;">浅蓝色</span>类加载（Class Load，CL）部分。</li>
-<li>在类加载过程中，<strong>应用程序</strong>就会开始<strong>被解释执行</strong>，对应上图中<span style="color: #adce00;">浅绿色</span>部分。</li>
-<li>解释执行过程 JVM 对垃圾对象进行回收，对应上图中的<span style="color: #fed220;">黄色</span>部分。</li>
-<li>随着程序的运行的深入，JVM 会采用<strong>及时编译（Just In Time，JIT）技术</strong>对执行频率较高的代码进行编译优化，以便提升应用程序运行速度。JIT 过程对应上图中的<span style="color: #fefefe;">白色</span>部分。</li>
-<li>经过 JIT 编译优化后的代码对应图中<span style="color: #00ad00;">深绿色</span>部分。</li>
-</ol>
-<p>经过上述分析，不难看出，一个 Java 程序从启动到达到被JIT动态编译优化会经过<strong>VM init</strong>，<strong>App init</strong>和<strong>App active</strong>几个阶段，相比于其他一些编译型语言，其<strong>冷启动问题</strong>比较严重。</p>
-<p>除了冷启动问题，在一个 Java 程序运行过程中，什么都不做首先就需要加载一个 JVM 虚拟机，该操作一般占用一定内存。另外，由于 Java 程序是先解释执行字节码，然后再做 JIT 编译优化。由于相比于一些编译型语言其将编译优化的动作后置到运行时，因此非常容易出现实际加载的代码比实际需要运行的代码多很多的情况，造成了一些无效内存占用情况。综上所述就是为什么很多人常诟病 Java 程序<strong>运行内存占用高</strong>的几点主要原因。</p>
-<h2 id="解决方案：AOT"><a href="#解决方案：AOT" class="headerlink" title="解决方案：AOT"></a>解决方案：AOT</h2><p><strong>提前编译（Ahead-of-Time Compilation，AOT Compilation）</strong>或者叫<strong>静态编译</strong>在 Java 领域很早就被提了出来。其核心思想就是让 Java 程序也跟其他程序语言，比如 C&#x2F;C++ 一样，先编译后执行解决上述问题，将 Java 程序的编译阶段提前到程序启动前，然后在编译阶段进行代码编译优化，让程序启动既巅峰，消除冷启动，降低运行时内存开销。</p>
-<p>Java 领域静态编译的实现技术有很多，其中最具代表性的还属 Oracle 推出的 <strong>GraalVM</strong> 开源高性能多语言运行时平台。</p>
-<blockquote>
-<p><img src="/2024/03/18/backend/language/java/JIT_AOT/GraalVM.png"><br>GraalVM 中通过提供 Truffle 解释器实现框架，让开发人员可以使用 Truffle 提供的 API 快速实现特定语言的解释器从而实现对上图中各种编程语言所写的程序都能进行编译运行的效果，从而成为一个多语言运行时平台。GraalVM 实现静态编译能力的编译器就是 GraalVM JIT Compiler。静态编译框架和运行时由 Substrate VM 子项目实现，兼容 OpenJDK 运行时实现，提供了原生镜像程序运行时的异常处理、同步调度、线程管理、内存管理等功能。<br>因此，GraalVM 不仅可以作为一个多语言运行时平台，而且由于其中提供的 GraalVM JIT Compiler 静态编译器，其可用来对 Java 程序进行静态编译。</p>
-</blockquote>
-<p>基于静态编译的 Java 程序相比于目前应用广泛的 JVM 运行时编译 Java 程序，整个从代码编写到编译执行的区别如下：<br><img src="/2024/03/18/backend/language/java/JIT_AOT/nativeImage.png"></p>
-<p>相比于 JVM 运行时方式，静态编译在运行之前会先对程序解析编译，然后生成一个跟运行时环境强相关的 <strong>native image 可执行文件</strong>，最后直接执行该文件即可启动程序进行执行。</p>
-<h3 id="静态编译过程"><a href="#静态编译过程" class="headerlink" title="静态编译过程"></a>静态编译过程</h3><blockquote>
-<p>静态编译过程到底会对 Java 程序做哪些解析操作？静态编译后的可执行程序垃圾回收问题怎么解决？</p>
-</blockquote>
-<p>GraalVM 静态编译实现示意图：<br><img src="/2024/03/18/backend/language/java/JIT_AOT/%E9%9D%99%E6%80%81%E7%BC%96%E8%AF%91.png"></p>
-<p>图中左侧前三个输入内容 Applicaton，Libraries 和 JDK 是一个 Java 程序编译运行必备的三部分，不必多说。而 <strong>Substrate VM</strong> 就是 GraalVM 中实现静态编译的核心部分，在整个静态编译过程中扮演了重要作用。<br>在静态分析过程中Substrate VM 通过<strong>上下文不敏感的指向分析（Points-to Analysis）</strong>来对应用程序做<strong>静态分析</strong>，其可以在不需要运行程序的情况下，基于源程序分析给出所有可能的可达函数列表然后作为后续编译阶段的输入对程序<strong>进行静态编译</strong>。<br>在静态分析完成后，基于静态分析结果的可达函数列表，会调用介绍的 GraalVM 中的 GraalVM JIT Compiler 编译器将应用程序编译为与目标平台强相关的本地代码以完成编译过程。<br>编译完成后，就会进入到上图中右侧 Native 可执行文件生成阶段。在该过程中，Substrate VM 会将静态编译阶段确定和初始化的内容以及跟 Substrate VM 运行时以及 JDK 库中的数据一起保存到最终可执行文件的 Image Heap 中。其中 <strong>Substrate VM 运行时</strong>就为最终可执行文件提供了运行过程中所需的垃圾回收、异常处理等能力。</p>
-<h4 id="静态分析局限性"><a href="#静态分析局限性" class="headerlink" title="静态分析局限性"></a>静态分析局限性</h4><p>在Substrate VM的静态分析过程中，由于静态分析无法覆盖 Java 中的反射、动态代理、JNI 调用等动态特性。这也造成了很多的 Java 框架由于在实现过程中使用了大量的上述特性，因此，都难以直接基于 Substrate VM 完成对自身所有代码的静态分析，需要通过<strong>额外的外部配置</strong>来解决静态分析本身的不足。</p>
-<blockquote>
-<p>一个java项目，该如何进行静态编译适配呢？其最核心要解决的本质问题，就是将开源框架中的 GraalVM 无法识别和处理的动态内容转换为其可识别的内容即可。</p>
-<p>Spring 社区为了应对Spring项目中反射和动态代理等特性在静态编译环境下的挑战，开发了<strong>AOT Engine</strong>工具。AOT Engine专注于在构建阶段对Spring应用中的特定内容进行静态分析与转换处理，这些内容包括但不限于使用@Configuration注解声明的配置类及其初始化逻辑。<br>通过AOT Engine，能够识别并预先处理那些原本只能在运行时动态生成的类结构，如基于Java的动态代理类。这样，在静态编译阶段就能够有效生成这些原本动态创建的对象，确保它们能被Substrate VM或类似支持提前编译的技术识别和兼容。<br>因此，AOT Engine有效地解决了Spring应用在静态编译场景下可能遇到的问题，使得Spring应用能够适应静态编译并实现性能优化，同时保持框架的灵活性和功能完整性。</p>
-<p>对于非 Spring 体系项目或者自身使用了一些 JDK 中原生的反射或者其他 Java 动态特性，针对自身代码中的 Java 动态用法需要在项目中提供对应的静态配置文件才能在静态编译过程中让编译器识别其中的动态特性，对其进行编译构建才能实现项目的顺利编译与执行。<br>针对这种情况，GraalVM 提供了一个名叫 <strong>native-image-agent</strong> 的 Tracing Agent 来帮助大家更方便地收集元数据并准备配置文件。该 Agent 会在常规 Java VM 上的应用程序运行过程中自动收集其中的动态特性使用情况并将其转换为 GraalVM 可以识别的配置文件。最后，将通过 Agent 生成的框架自身的动态配置文件存放在项目的：META-INF&#x2F;native-image&#x2F;&lt;group.id&gt;&#x2F;&lt;artifact.id&gt; 目录下，就可以在静态编译过程中根据这些配置内容，识别项目包中的动态特性。</p>
-</blockquote>
-<h2 id="基于静态编译构建微服务"><a href="#基于静态编译构建微服务" class="headerlink" title="基于静态编译构建微服务"></a>基于静态编译构建微服务</h2><blockquote>
-<p>Spring Cloud Alibaba 2022.0.0.0 版本所包含的所有中间件客户端已完成了构建 GraalVM 原生应用的适配。为用户提供了开箱即用的静态编译能力。</p>
-</blockquote>
-<h3 id="环境准备"><a href="#环境准备" class="headerlink" title="环境准备"></a>环境准备</h3><ol>
-<li>安装 GraalVM 发行版。（windows安装可参考：<a href="https://medium.com/graalvm/using-graalvm-and-native-image-on-windows-10-9954dc071311">Using GraalVM and Native Image on Windows 10</a>）</li>
-<li>检查 java -version 的输出来验证是否配置了正确的版本。</li>
-</ol>
-<blockquote>
-<p>建议不要使用Windows。</p>
-</blockquote>
-<h3 id="应用构建"><a href="#应用构建" class="headerlink" title="应用构建"></a>应用构建</h3><ol>
-<li>要使用 GraalVM 静态编译能力构建微服务，首先确保项目的<code>Spring Boot</code>版本为<code>3.0.0</code>或以上<code>Spring Cloud</code>版本为<code>2022.0.0</code>或以上。然后在项目中引入<code>Spring Cloud Alibaba 2022.0.0.0</code>版本的所需模块依赖即可。</li>
-<li>通过maven命令生成应用中反射、序列化和动态代理所需的 Hints 配置文件：<code>mvn -Pnative spring-boot:run</code>（前提是应用中引入了<code>spring-boot-starter-parent</code>父模块）</li>
-<li>之后应用会启动，进行预执行，需要尽可能完整的测试一遍应用的所有功能，保证应用的大部分代码都被测试用例覆盖，该过程会基于 GraalVM 的 native-image-agent 收集程序中的动态特性，这样可以确保完整生成应用运行过程中的所有必须的动态属性。</li>
-<li>运行完所有测试用例后，我们发现<code>resource/META-INF/native-image</code>目录下会生成以下一些<code>hints</code>文件:<ul>
-<li>resource-config.json：应用中资源 hint 文件</li>
-<li>reflect-config.json：应用中反射定义 hint 文件</li>
-<li>serialization-config.json：应用中序列化内容 hint 文件</li>
-<li>proxy-config.json：应用中 Java 代理相关内容 hint 文件</li>
-<li>jni-config.json：应用中 Java Native Interface（JNI）内容 hint 文件</li>
-</ul>
-</li>
-</ol>
-<blockquote>
-<p>上述预执行过程主要为了扫描应用自身业务代码以及其他第三方包中的动态特性，以便后续静态编译过程能顺利进行，应用能正常启动。</p>
-<p>如果没有使用动态特性，可直接进行下一步。</p>
-</blockquote>
-<h3 id="静态编译"><a href="#静态编译" class="headerlink" title="静态编译"></a>静态编译</h3><p>通过maven命令来构建原生镜像：<code>mvn -Pnative native:compile</code><br>成功执行后，可在<code>/target</code>目录看到生成的可执行文件。</p>
-<h3 id="执行可执行文件"><a href="#执行可执行文件" class="headerlink" title="执行可执行文件"></a>执行可执行文件</h3><p>进入<code>/target</code>，命令行输入<code>./&lt;可执行文件名称&gt;</code>，即可发现项目被光速启动了。</p>
-<blockquote>
-<p>这是真TM快啊！</p>
-</blockquote>
-]]></content>
-      <categories>
-        <category>后端开发</category>
-        <category>语言</category>
-        <category>Java</category>
-      </categories>
-      <tags>
-        <tag>JAVA</tag>
-        <tag>JDK</tag>
-        <tag>AOT</tag>
-        <tag>JIT</tag>
-        <tag>GraalVM</tag>
-        <tag>运行时编译</tag>
-        <tag>及时编译</tag>
-        <tag>静态编译</tag>
-        <tag>静态分析</tag>
-        <tag>提前编译</tag>
-        <tag>字节码</tag>
-        <tag>冷启动问题</tag>
-        <tag>native image</tag>
-        <tag>Substrate VM</tag>
-        <tag>Substrate VM运行时</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>Shell入门</title>
+    <title>Shell：基础篇</title>
     <url>/2024/03/21/backend/language/shell/shell1/</url>
-    <content><![CDATA[<h1 id="运行方式"><a href="#运行方式" class="headerlink" title="运行方式"></a>运行方式</h1><h1 id="语法"><a href="#语法" class="headerlink" title="语法"></a>语法</h1><h1 id="应用案例"><a href="#应用案例" class="headerlink" title="应用案例"></a>应用案例</h1>]]></content>
+    <content><![CDATA[<h1 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h1><p>Shell 是计算机操作系统中的一个重要组成部分，尤其在类Unix系统（如Linux、BSD等）以及早期的MS-DOS等系统中扮演着核心角色。</p>
+<p><strong>Shell 是一种命令行界面（CLI）程序，通常被称为命令解释器，它是用户与操作系统内核之间交互的接口或桥梁。</strong></p>
+<blockquote>
+<p>命令行界面（CLI）程序是一种软件应用程序，它专为通过字符界面与用户交互而设计，用户通过键盘输入特定的文本命令及其相关参数来进行操作。在CLI程序中，没有图形元素，如窗口、按钮或菜单，所有的交互完全依赖于文本命令和响应。</p>
+</blockquote>
+<p>具体而言，Shell 主要具有以下几个特点和功能：</p>
+<ul>
+<li><strong>命令解释器</strong>：Shell 接收用户通过键盘输入的命令，解析这些命令并将其转换成内核能理解的操作请求。</li>
+<li><strong>脚本语言</strong>：Shell 不仅允许用户输入单个命令，还支持编写包含一系列命令和控制结构的脚本文件（称为Shell脚本或Shell程序）。这些脚本可以实现自动化任务，简化重复性工作，或是构建复杂的系统管理流程。</li>
+<li>用户交互：Shell 提供了交互式的命令行环境，用户可以在提示符下实时输入和执行命令，获取即时反馈。</li>
+<li>环境配置：Shell 可以设置和管理用户的环境变量，影响程序的行为和系统环境配置。</li>
+<li>I&#x2F;O重定向与管道：Shell 允许用户将命令的标准输入、输出重定向至文件或其他命令，同时支持通过管道（|）连接多个命令，形成数据流式处理。</li>
+<li>命令扩展与别名：Shell 可以为命令添加额外的便利功能，比如命令补全、命令历史记录，以及定义命令别名等。</li>
+</ul>
+<p>流行的Shell有多种，例如<strong>Bash（Bourne-Again SHell）</strong>、sh（Bourne Shell）、csh（C Shell）、zsh（Z Shell）等。其中，bash在大多数Linux发行版中被用作默认的登录Shell。</p>
+<h1 id="运行"><a href="#运行" class="headerlink" title="运行"></a>运行</h1><p>运行 Shell 脚本有多种方法：</p>
+<ol>
+<li><strong>作为可执行程序运行</strong>：<strong>直接执行</strong>，需有执行权限，<ul>
+<li>确保脚本文件的第一行包含了正确的Shebang（#!），例如 #!&#x2F;bin&#x2F;bash 或 #!&#x2F;usr&#x2F;bin&#x2F;env bash，用于指定解释此脚本的Shell版本。</li>
+<li>给脚本添加执行权限：<code>chmod +x script.sh</code></li>
+<li>使用相对路径或绝对路径执行：相对路径<code>./script.sh</code>；绝对路径<code>/path/to/script.sh</code>。</li>
+</ul>
+</li>
+<li><strong>作为解释器参数</strong>：<ul>
+<li>如<code>bash script.sh</code></li>
+<li>即使脚本没有执行权限，也可以通过明确指定解释器来执行</li>
+</ul>
+</li>
+<li>source命令：当希望脚本中的环境变量更改、函数定义等对当前Shell会话生效时，可以使用source命令。<ul>
+<li>如<code>source script.sh</code></li>
+</ul>
+</li>
+</ol>
+<h1 id="语法"><a href="#语法" class="headerlink" title="语法"></a>语法</h1><h2 id="变量"><a href="#变量" class="headerlink" title="变量"></a>变量</h2><p>在Shell中定义变量非常直观且简单，无需事先声明变量类型，<strong>只需给变量分配一个值即可完成定义</strong>。<br>如<code>name=&quot;chilun&quot;</code>，即定义了一个变量name为字符串“chilun”。</p>
+<h3 id="变量命名规则"><a href="#变量命名规则" class="headerlink" title="变量命名规则"></a>变量命名规则</h3><ul>
+<li><strong>只包含字母、数字和下划线</strong>： 变量名可以包含字母（大小写敏感）、数字和下划线 _，不能包含其他特殊字符。</li>
+<li><strong>不能以数字开头</strong>： 变量名不能以数字开头，但可以包含数字。</li>
+<li><strong>避免使用 Shell 关键字</strong>： 不要使用Shell的关键字（例如 if、then、else、fi、for、while 等）作为变量名，以免引起混淆。</li>
+<li>使用大写字母表示常量： 习惯上，常量的变量名通常使用大写字母，例如 PI&#x3D;3.14。</li>
+</ul>
+<h3 id="定义变量"><a href="#定义变量" class="headerlink" title="定义变量"></a>定义变量</h3><ol>
+<li><strong>直接赋值</strong>：通过等号（&#x3D;）来给变量赋值，注意变量名和等号之间不能有空格。<ul>
+<li><code>name=&quot;chilun&quot;</code>：将“chilun”字符串赋给变量 name。</li>
+</ul>
+</li>
+<li><strong>语句赋值</strong>：可使用for循环等语句对变量进行赋值。<ul>
+<li><code>for file in $(ls /etc) </code>：将 &#x2F;etc 目录下的所有文件和目录名逐个赋值给变量 file。</li>
+</ul>
+</li>
+<li><strong>命令赋值</strong>：可使用标准输入读取命令等对变量进行赋值。<ul>
+<li><code>read -p &quot;请输入你的名字: &quot; name</code>：用户输入的名字会被赋值给变量 name。</li>
+</ul>
+</li>
+<li><strong>定义变量</strong>：使用<code>declare</code>或<code>typeset</code>命令定义变量时可以指定变量的类型（如整型、数组等）。<ul>
+<li><code>declare -i age=30</code>：定义一个整数类型的变量age并赋值为30。</li>
+</ul>
+</li>
+<li><strong>计算变量</strong>：使用<code>let</code>命令执行简单的算术运算并赋值给变量。<ul>
+<li><code>let b=a+1</code>：将b赋值为a+1后的整数；如果直接<code>b=a+1</code>，b会被赋值为“a+1”的字符串。</li>
+</ul>
+</li>
+<li><strong>定义环境变量</strong>：使用<code>export</code>命令可以定义环境变量，在子shell进程中变量也能被访问。<ul>
+<li><code>export PATH=$PATH:/usr/local/bin</code>：将新的路径添加到已存在的PATH环境变量中。</li>
+</ul>
+</li>
+<li><strong>删除变量</strong>：使用<code>unset</code>命令删除已定义的变量。<ul>
+<li><code>unset name</code>：删除变量name。</li>
+</ul>
+</li>
+<li><strong>只读变量</strong>：使用<code>readonly</code>命令可以将变量定义为只读变量，只读变量的值不能被改变，不能被删除。<ul>
+<li><code>readonly name</code>：之后再修改就会报错：<code>name: readonly variable</code>。</li>
+</ul>
+</li>
+</ol>
+<h3 id="使用变量"><a href="#使用变量" class="headerlink" title="使用变量"></a>使用变量</h3><p>使用一个定义过的变量，只要在变量名前面加美元符号即可。<br>变量名外面的花括号是可选的，加不加都行，加花括号是为了帮助解释器识别变量的边界（推荐给所有变量加上花括号）。</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><code class="hljs shell">name=&quot;chilun&quot;<br>echo $name<br>echo $&#123;name&#125;<br></code></pre></td></tr></table></figure>
+<p>输出为：</p>
+<blockquote>
+<p>chilun<br>chilun</p>
+</blockquote>
+<h3 id="变量类型"><a href="#变量类型" class="headerlink" title="变量类型"></a>变量类型</h3><p>Shell 支持不同类型的变量。</p>
+<h4 id="字符串变量"><a href="#字符串变量" class="headerlink" title="字符串变量"></a>字符串变量</h4><p>在 Shell中，变量通常被视为字符串。<br>在Bash中，所有变量值本质上都是字符串。即使一个变量可用于数值计算，其在内部依旧是以字符串的形式存储的，只是在进行算术运算时进行了相应的转换和处理。<br>可使用单引号或双引号来定义字符串，比如：<code>a=&#39;Hello, World!&#39;</code>或者<code>b=&quot;Hello, World!&quot;</code>。</p>
+<p>当直接赋值一个不包含变量扩展、算术扩展或其他形式扩展的纯文本给一个变量时，Bash也会将这个值当作字符串来处理，如<code>c=hello,World!</code>。<br>（当设置一个变量时，其值默认被视为一个整体，直到遇到第一个未经转义的特殊字符为止。如果<code>c=hello, World!</code>就会报错，因为存在空格，空格是Bash解析命令行参数时的分隔符，会导致Bash会尝试将<code>hello,</code>、<code>World!</code>视为不同的参数。）</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><code class="hljs shell"><span class="hljs-meta prompt_">#</span><span class="language-bash">!/bin/bash</span><br>a=&#x27;Hello, World!&#x27;<br>b=&quot;Hello, World!&quot;<br>c=hello,World!<br>echo $&#123;a&#125; $&#123;b&#125; $&#123;c&#125; <br></code></pre></td></tr></table></figure>
+
+<p>输出结果为：</p>
+<blockquote>
+<p>Hello, World! Hello, World! hello,World!</p>
+</blockquote>
+<h4 id="整数变量"><a href="#整数变量" class="headerlink" title="整数变量"></a>整数变量</h4><p>可以使用 declare 或 typeset 命令来声明整数变量。<br>这样的变量只包含整数值，例如：<code>declare -i a=42</code>。<br>这样的声明告诉Shell将a视为整数，如果尝试将非整数值赋给它，Shell会尝试将其转换为整数。</p>
+<p>示例：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><code class="hljs shell"><span class="hljs-meta prompt_">#</span><span class="language-bash">!/bin/bash</span><br>a=42<br>declare -i b=a+1<br>echo $&#123;b&#125;<br></code></pre></td></tr></table></figure>
+<p>输出为：</p>
+<blockquote>
+<p>43</p>
+</blockquote>
+<p>（如果不声明为整数，b就会被看做是“a+1”的字符串。）</p>
+<h4 id="数组变量"><a href="#数组变量" class="headerlink" title="数组变量"></a>数组变量</h4><p>Shell 支持数组，允许在一个变量中存储多个值。括号用来表示数组，数组元素用”空格”符号分割开。<br>数组可以是<strong>整数索引数组</strong>或<strong>关联数组</strong>：</p>
+<ul>
+<li>整数索引数组：<code>array1=(1 2 3 4 5)</code></li>
+<li>关联数组：<figure class="highlight shell"><table><tr><td class="code"><pre><code class="hljs shell">declare -A array2<br>array2[&#x27;he&#x27;]=&quot;wor&quot;<br>array2[&#x27;llo,&#x27;]=&quot;ld!&quot;<br></code></pre></td></tr></table></figure></li>
+</ul>
+<p>示例：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><code class="hljs shell">array1=(1 2 3 4 5)<br>echo $&#123;array1[0]&#125; $&#123;array1[1]&#125; $&#123;array1[2]&#125; $&#123;array1[3]&#125; $&#123;array1[4]&#125;<br>declare -A array2<br>array2[&#x27;he&#x27;]=&quot;wor&quot;<br>array2[&#x27;llo,&#x27;]=&quot;ld!&quot;<br>echo $&#123;array2[&#x27;he&#x27;]&#125;$&#123;array2[&#x27;llo,&#x27;]&#125;<br></code></pre></td></tr></table></figure>
+<p>输出为：</p>
+<blockquote>
+<p>1 2 3 4 5<br>world!</p>
+</blockquote>
+<blockquote>
+<p>未完待续……</p>
+</blockquote>
+<h1 id="应用案例"><a href="#应用案例" class="headerlink" title="应用案例"></a>应用案例</h1>]]></content>
       <categories>
         <category>后端开发</category>
         <category>语言</category>
@@ -1247,6 +1364,9 @@ newProxyInstance方法的三个参数：</li>
       <tags>
         <tag>Linux</tag>
         <tag>Shell</tag>
+        <tag>CLI</tag>
+        <tag>Bash</tag>
+        <tag>Bourne-Again SHell</tag>
       </tags>
   </entry>
   <entry>
@@ -1343,6 +1463,79 @@ newProxyInstance方法的三个参数：</li>
         <tag>canal</tag>
         <tag>双写一致性</tag>
         <tag>redis</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>消息队列：1.认识篇</title>
+    <url>/2024/03/13/backend/middleware/messagequeue/mq-introducte/</url>
+    <content><![CDATA[<h1 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h1><p>消息队列，顾名思义，存放消息（可类比为请求）的队列（一种先进先出的数据结构）。<br>其是一种常用于分布式系统的中间件，可以在不同的应用程序、服务或系统之间传递消息，并且常用于解耦合不同部分的系统，使得系统更加可扩展和灵活。<br><strong>基本原理：发送者将消息放入队列，接收者从队列中获取消息并处理。</strong><br>消息队列实质是一种方式，一种<strong>在不同组件之间传递消息的通信方式</strong>。发送者和接收者之间不需要直接通信，它们只需了解如何发送和接收消息即可。</p>
+<h1 id="作用与优点"><a href="#作用与优点" class="headerlink" title="作用与优点"></a>作用与优点</h1><p>由上述内容，可推断出消息队列的一些作用：</p>
+<ul>
+<li><strong>解耦</strong>：发送者和接收者只需要关心发送消息和接受消息，不用关心彼此。</li>
+<li><strong>异步</strong>：发送者不关心消息的处理，即不用等待消息的响应，故支持异步。</li>
+<li><strong>削锋</strong>：某些活动的流量过大、请求过多，可能导致系统宕机；消息队列可以作为缓冲区，将这些请求暂时存储起来，以避免瞬时高流量，然后按照系统处理能力逐步消费，实现流量的平滑处理，从而降低系统的压力，避免宕机。<br>以及其身为分布式系统的固有优点：</li>
+<li><strong>可扩展性</strong>：在解耦后，可方便地单独对发送者或接收者或消息队列进行动态伸缩。</li>
+<li><strong>可靠性</strong>：由于消息队列允许多个消费者和生产者，并且通常支持消息持久化和复制，因此即使其中一个组件出现故障，系统仍然可以继续运行并且消息也不会丢失。</li>
+</ul>
+<h1 id="适用场景"><a href="#适用场景" class="headerlink" title="适用场景"></a>适用场景</h1><p>（此处仅介绍一些常见场景）</p>
+<h2 id="异步场景举例：用户注册"><a href="#异步场景举例：用户注册" class="headerlink" title="异步场景举例：用户注册"></a>异步场景举例：用户注册</h2><h3 id="需求"><a href="#需求" class="headerlink" title="需求"></a>需求</h3><p>用户注册后需向其发送注册邮件和注册短信。</p>
+<h3 id="设计"><a href="#设计" class="headerlink" title="设计"></a>设计</h3><p>用户注册后，将注册信息写入数据库；发送注册邮件；发送短信。<br>如不使用消息队列，不进行异步解耦，即注册服务器需要同步远程调用写入数据库、发送注册邮件、发送短信的三个函数，将与其他应用发生多次交互，同时还得等待响应，假设一个操作需要0.5s，则该操作会占用注册服务器一个线程的1.5s。<br>使用消息队列后，注册服务器直接向消息队列中写入三个消息（数据库写入消息、邮件发送消息、短信发送消息），并且是异步发送不用等待返回，假设一次发送消息为0.1s，也仅需0.3s。</p>
+<h2 id="解耦场景举例：订单-库存管理"><a href="#解耦场景举例：订单-库存管理" class="headerlink" title="解耦场景举例：订单-库存管理"></a>解耦场景举例：订单-库存管理</h2><h3 id="需求-1"><a href="#需求-1" class="headerlink" title="需求"></a>需求</h3><p>用户下订单后，库存系统需要减少相对数量。</p>
+<h3 id="设计-1"><a href="#设计-1" class="headerlink" title="设计"></a>设计</h3><p>用户下单后，订单系统需要通知库存系统。</p>
+<h3 id="详细设计"><a href="#详细设计" class="headerlink" title="详细设计"></a>详细设计</h3><ul>
+<li>原设计：订单系统调用库存系统的接口。<ul>
+<li>存在缺陷：假如库存系统无法访问，则订单减库存将失败，从而导致订单失败；订单系统依赖库存系统接口，存在耦合。</li>
+</ul>
+</li>
+<li>使用消息队列改进：订单系统发送订单消息（用户下单后，订单系统完成持久化处理，将消息写入消息队列，返回用户订单下单成功），库存系统读取订单消息并自行处理（订阅订单消息，采用拉&#x2F;推的方式，获取下单信息，库存系统根据下单信息，进行库存操作）。<ul>
+<li>解决缺陷：假如库存系统无法访问，订单系统仅需要发送消息，可保持运转；订单消息仅发送消息，消息解读由库存系统进行（发布-订阅或消息队列模式），降低耦合度。</li>
+</ul>
+</li>
+</ul>
+<h2 id="削锋场景举例：秒杀活动"><a href="#削锋场景举例：秒杀活动" class="headerlink" title="削锋场景举例：秒杀活动"></a>削锋场景举例：秒杀活动</h2><h3 id="需求-2"><a href="#需求-2" class="headerlink" title="需求"></a>需求</h3><p>在秒杀活动中，大量用户同时抢购商品，可能会导致系统压力激增。为了应对这一情况，需要一种机制来平稳处理激增的请求流量，避免系统崩溃或性能下降。</p>
+<h3 id="设计-2"><a href="#设计-2" class="headerlink" title="设计"></a>设计</h3><p>传统的处理方式可能会导致系统崩溃或性能下降。为了解决这个问题，可以使用消息队列来削峰填谷。</p>
+<h3 id="详细设计-1"><a href="#详细设计-1" class="headerlink" title="详细设计"></a>详细设计</h3><ol>
+<li>秒杀活动开始：当秒杀活动开始时，用户可以提交秒杀请求。</li>
+<li>请求入队：订单系统接收到用户的秒杀请求后，将请求消息写入消息队列，而不是立即处理。</li>
+<li>消息处理：秒杀请求消息被消息队列按照一定的规则（如先进先出）分发给后端处理程序。</li>
+<li>后端处理：后端处理程序逐条处理消息，检查库存并进行相应的处理（如减少库存、生成<br>订单等）。</li>
+</ol>
+<p>以此消息队列可平滑处理激增的请求流量，避免系统因突发流量而崩溃。</p>
+<h2 id="日志处理场景"><a href="#日志处理场景" class="headerlink" title="日志处理场景"></a>日志处理场景</h2><h3 id="需求-3"><a href="#需求-3" class="headerlink" title="需求"></a>需求</h3><p>需要一种解决大量日志传输和实时处理的方案，以便对日志数据进行分析和可视化展示。</p>
+<h3 id="设计-3"><a href="#设计-3" class="headerlink" title="设计"></a>设计</h3><p>设计一个分布式日志处理系统，包括以下组件：</p>
+<ol>
+<li>日志采集客户端：负责从各个日志源采集日志数据，并将数据定期写入消息队列中。</li>
+<li>消息队列：接收来自日志采集客户端的日志数据，负责数据的存储和转发。</li>
+<li>日志处理应用：订阅并消费Kafka队列中的日志数据，进行实时处理和分析。</li>
+<li>Logstash：作为日志处理应用的一部分，负责对原始日志进行解析和转换，统一输出为JSON格式的数据。</li>
+<li>Elasticsearch：作为日志处理应用的核心数据存储服务，接收Logstash处理后的JSON格式日志数据，实现实时的数据索引和查询。</li>
+<li>Kibana：基于Elasticsearch 的数据可视化组件，用于将Elasticsearch中的数据进行可视化展示和分析。</li>
+</ol>
+<h2 id="消息通讯场景"><a href="#消息通讯场景" class="headerlink" title="消息通讯场景"></a>消息通讯场景</h2><h3 id="需求-4"><a href="#需求-4" class="headerlink" title="需求"></a>需求</h3><p>需要一种高效的消息通讯机制，可以用于点对点通讯或者创建聊天室等场景，以实现实时的消息传递和交流。</p>
+<h3 id="设计-4"><a href="#设计-4" class="headerlink" title="设计"></a>设计</h3><p>设计一个基于消息队列的消息通讯系统，包括以下两种场景：</p>
+<ol>
+<li>点对点通讯：客户端A和客户端B使用同一队列进行消息通讯；消息队列负责接收和转发客户端A和客户端B的消息。</li>
+<li>客户端A、客户端B等多个客户端订阅同一主题：当有客户端发布消息时，消息队列将消息广播给所有订阅了该主题的客户端，客户端收到消息后进行展示。</li>
+</ol>
+<h1 id="常用消息队列框架"><a href="#常用消息队列框架" class="headerlink" title="常用消息队列框架"></a>常用消息队列框架</h1><ol>
+<li><strong>RabbitMQ</strong>：RabbitMQ 是一个开源的消息队列系统，实现了高级消息队列协议（AMQP），它是一个可靠、高可用、可扩展的消息代理。RabbitMQ提供了多种消息传递模式，如点对点、发布&#x2F;订阅等，适用于各种场景的应用程序。</li>
+<li><strong>RocketMQ</strong>：RocketMQ 是阿里巴巴开源的分布式消息队列系统，具有高吞吐量、低延迟、高可用性等特点。它支持丰富的消息模型，包括顺序消息、事务消息等，适用于大规模分布式系统的消息通信。</li>
+<li><strong>Kafka</strong>：Kafka是由Apache软件基金会开发的分布式流处理平台和消息队列系统。Kafka设计用于支持大规模的消息处理，具有高吞吐量、持久性、分区等特点，广泛应用于大数据领域。</li>
+<li><strong>ActiveMQ</strong>：ActiveMQ 是一个开源的消息中间件，实现了JavaMessageService(JMS)规范。它支持多种传输协议，如TCP、UDP、SSL等，提供了丰富的功能，包括消息持久化、事务支持等。</li>
+<li><strong>Amazon SQS</strong>：AmazonSQS（Simple Queue Service）是亚马逊提供的消息队列服务，可帮助构建分布式应用程序。它具有高可用性、可扩展性、灵活性等特点，适用于构建在亚马逊云平台上的应用程序。</li>
+</ol>
+]]></content>
+      <categories>
+        <category>分布式</category>
+        <category>中间件</category>
+        <category>消息队列</category>
+      </categories>
+      <tags>
+        <tag>消息队列</tag>
+        <tag>RocketMQ</tag>
+        <tag>解耦</tag>
+        <tag>异步</tag>
+        <tag>削锋</tag>
       </tags>
   </entry>
   <entry>
@@ -1463,79 +1656,6 @@ newProxyInstance方法的三个参数：</li>
         <tag>Dump</tag>
         <tag>Binary log</tag>
         <tag>mysql slave</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>消息队列：1.认识篇</title>
-    <url>/2024/03/13/backend/middleware/messagequeue/mq-introducte/</url>
-    <content><![CDATA[<h1 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h1><p>消息队列，顾名思义，存放消息（可类比为请求）的队列（一种先进先出的数据结构）。<br>其是一种常用于分布式系统的中间件，可以在不同的应用程序、服务或系统之间传递消息，并且常用于解耦合不同部分的系统，使得系统更加可扩展和灵活。<br><strong>基本原理：发送者将消息放入队列，接收者从队列中获取消息并处理。</strong><br>消息队列实质是一种方式，一种<strong>在不同组件之间传递消息的通信方式</strong>。发送者和接收者之间不需要直接通信，它们只需了解如何发送和接收消息即可。</p>
-<h1 id="作用与优点"><a href="#作用与优点" class="headerlink" title="作用与优点"></a>作用与优点</h1><p>由上述内容，可推断出消息队列的一些作用：</p>
-<ul>
-<li><strong>解耦</strong>：发送者和接收者只需要关心发送消息和接受消息，不用关心彼此。</li>
-<li><strong>异步</strong>：发送者不关心消息的处理，即不用等待消息的响应，故支持异步。</li>
-<li><strong>削锋</strong>：某些活动的流量过大、请求过多，可能导致系统宕机；消息队列可以作为缓冲区，将这些请求暂时存储起来，以避免瞬时高流量，然后按照系统处理能力逐步消费，实现流量的平滑处理，从而降低系统的压力，避免宕机。<br>以及其身为分布式系统的固有优点：</li>
-<li><strong>可扩展性</strong>：在解耦后，可方便地单独对发送者或接收者或消息队列进行动态伸缩。</li>
-<li><strong>可靠性</strong>：由于消息队列允许多个消费者和生产者，并且通常支持消息持久化和复制，因此即使其中一个组件出现故障，系统仍然可以继续运行并且消息也不会丢失。</li>
-</ul>
-<h1 id="适用场景"><a href="#适用场景" class="headerlink" title="适用场景"></a>适用场景</h1><p>（此处仅介绍一些常见场景）</p>
-<h2 id="异步场景举例：用户注册"><a href="#异步场景举例：用户注册" class="headerlink" title="异步场景举例：用户注册"></a>异步场景举例：用户注册</h2><h3 id="需求"><a href="#需求" class="headerlink" title="需求"></a>需求</h3><p>用户注册后需向其发送注册邮件和注册短信。</p>
-<h3 id="设计"><a href="#设计" class="headerlink" title="设计"></a>设计</h3><p>用户注册后，将注册信息写入数据库；发送注册邮件；发送短信。<br>如不使用消息队列，不进行异步解耦，即注册服务器需要同步远程调用写入数据库、发送注册邮件、发送短信的三个函数，将与其他应用发生多次交互，同时还得等待响应，假设一个操作需要0.5s，则该操作会占用注册服务器一个线程的1.5s。<br>使用消息队列后，注册服务器直接向消息队列中写入三个消息（数据库写入消息、邮件发送消息、短信发送消息），并且是异步发送不用等待返回，假设一次发送消息为0.1s，也仅需0.3s。</p>
-<h2 id="解耦场景举例：订单-库存管理"><a href="#解耦场景举例：订单-库存管理" class="headerlink" title="解耦场景举例：订单-库存管理"></a>解耦场景举例：订单-库存管理</h2><h3 id="需求-1"><a href="#需求-1" class="headerlink" title="需求"></a>需求</h3><p>用户下订单后，库存系统需要减少相对数量。</p>
-<h3 id="设计-1"><a href="#设计-1" class="headerlink" title="设计"></a>设计</h3><p>用户下单后，订单系统需要通知库存系统。</p>
-<h3 id="详细设计"><a href="#详细设计" class="headerlink" title="详细设计"></a>详细设计</h3><ul>
-<li>原设计：订单系统调用库存系统的接口。<ul>
-<li>存在缺陷：假如库存系统无法访问，则订单减库存将失败，从而导致订单失败；订单系统依赖库存系统接口，存在耦合。</li>
-</ul>
-</li>
-<li>使用消息队列改进：订单系统发送订单消息（用户下单后，订单系统完成持久化处理，将消息写入消息队列，返回用户订单下单成功），库存系统读取订单消息并自行处理（订阅订单消息，采用拉&#x2F;推的方式，获取下单信息，库存系统根据下单信息，进行库存操作）。<ul>
-<li>解决缺陷：假如库存系统无法访问，订单系统仅需要发送消息，可保持运转；订单消息仅发送消息，消息解读由库存系统进行（发布-订阅或消息队列模式），降低耦合度。</li>
-</ul>
-</li>
-</ul>
-<h2 id="削锋场景举例：秒杀活动"><a href="#削锋场景举例：秒杀活动" class="headerlink" title="削锋场景举例：秒杀活动"></a>削锋场景举例：秒杀活动</h2><h3 id="需求-2"><a href="#需求-2" class="headerlink" title="需求"></a>需求</h3><p>在秒杀活动中，大量用户同时抢购商品，可能会导致系统压力激增。为了应对这一情况，需要一种机制来平稳处理激增的请求流量，避免系统崩溃或性能下降。</p>
-<h3 id="设计-2"><a href="#设计-2" class="headerlink" title="设计"></a>设计</h3><p>传统的处理方式可能会导致系统崩溃或性能下降。为了解决这个问题，可以使用消息队列来削峰填谷。</p>
-<h3 id="详细设计-1"><a href="#详细设计-1" class="headerlink" title="详细设计"></a>详细设计</h3><ol>
-<li>秒杀活动开始：当秒杀活动开始时，用户可以提交秒杀请求。</li>
-<li>请求入队：订单系统接收到用户的秒杀请求后，将请求消息写入消息队列，而不是立即处理。</li>
-<li>消息处理：秒杀请求消息被消息队列按照一定的规则（如先进先出）分发给后端处理程序。</li>
-<li>后端处理：后端处理程序逐条处理消息，检查库存并进行相应的处理（如减少库存、生成<br>订单等）。</li>
-</ol>
-<p>以此消息队列可平滑处理激增的请求流量，避免系统因突发流量而崩溃。</p>
-<h2 id="日志处理场景"><a href="#日志处理场景" class="headerlink" title="日志处理场景"></a>日志处理场景</h2><h3 id="需求-3"><a href="#需求-3" class="headerlink" title="需求"></a>需求</h3><p>需要一种解决大量日志传输和实时处理的方案，以便对日志数据进行分析和可视化展示。</p>
-<h3 id="设计-3"><a href="#设计-3" class="headerlink" title="设计"></a>设计</h3><p>设计一个分布式日志处理系统，包括以下组件：</p>
-<ol>
-<li>日志采集客户端：负责从各个日志源采集日志数据，并将数据定期写入消息队列中。</li>
-<li>消息队列：接收来自日志采集客户端的日志数据，负责数据的存储和转发。</li>
-<li>日志处理应用：订阅并消费Kafka队列中的日志数据，进行实时处理和分析。</li>
-<li>Logstash：作为日志处理应用的一部分，负责对原始日志进行解析和转换，统一输出为JSON格式的数据。</li>
-<li>Elasticsearch：作为日志处理应用的核心数据存储服务，接收Logstash处理后的JSON格式日志数据，实现实时的数据索引和查询。</li>
-<li>Kibana：基于Elasticsearch 的数据可视化组件，用于将Elasticsearch中的数据进行可视化展示和分析。</li>
-</ol>
-<h2 id="消息通讯场景"><a href="#消息通讯场景" class="headerlink" title="消息通讯场景"></a>消息通讯场景</h2><h3 id="需求-4"><a href="#需求-4" class="headerlink" title="需求"></a>需求</h3><p>需要一种高效的消息通讯机制，可以用于点对点通讯或者创建聊天室等场景，以实现实时的消息传递和交流。</p>
-<h3 id="设计-4"><a href="#设计-4" class="headerlink" title="设计"></a>设计</h3><p>设计一个基于消息队列的消息通讯系统，包括以下两种场景：</p>
-<ol>
-<li>点对点通讯：客户端A和客户端B使用同一队列进行消息通讯；消息队列负责接收和转发客户端A和客户端B的消息。</li>
-<li>客户端A、客户端B等多个客户端订阅同一主题：当有客户端发布消息时，消息队列将消息广播给所有订阅了该主题的客户端，客户端收到消息后进行展示。</li>
-</ol>
-<h1 id="常用消息队列框架"><a href="#常用消息队列框架" class="headerlink" title="常用消息队列框架"></a>常用消息队列框架</h1><ol>
-<li><strong>RabbitMQ</strong>：RabbitMQ 是一个开源的消息队列系统，实现了高级消息队列协议（AMQP），它是一个可靠、高可用、可扩展的消息代理。RabbitMQ提供了多种消息传递模式，如点对点、发布&#x2F;订阅等，适用于各种场景的应用程序。</li>
-<li><strong>RocketMQ</strong>：RocketMQ 是阿里巴巴开源的分布式消息队列系统，具有高吞吐量、低延迟、高可用性等特点。它支持丰富的消息模型，包括顺序消息、事务消息等，适用于大规模分布式系统的消息通信。</li>
-<li><strong>Kafka</strong>：Kafka是由Apache软件基金会开发的分布式流处理平台和消息队列系统。Kafka设计用于支持大规模的消息处理，具有高吞吐量、持久性、分区等特点，广泛应用于大数据领域。</li>
-<li><strong>ActiveMQ</strong>：ActiveMQ 是一个开源的消息中间件，实现了JavaMessageService(JMS)规范。它支持多种传输协议，如TCP、UDP、SSL等，提供了丰富的功能，包括消息持久化、事务支持等。</li>
-<li><strong>Amazon SQS</strong>：AmazonSQS（Simple Queue Service）是亚马逊提供的消息队列服务，可帮助构建分布式应用程序。它具有高可用性、可扩展性、灵活性等特点，适用于构建在亚马逊云平台上的应用程序。</li>
-</ol>
-]]></content>
-      <categories>
-        <category>分布式</category>
-        <category>中间件</category>
-        <category>消息队列</category>
-      </categories>
-      <tags>
-        <tag>消息队列</tag>
-        <tag>RocketMQ</tag>
-        <tag>解耦</tag>
-        <tag>异步</tag>
-        <tag>削锋</tag>
       </tags>
   </entry>
   <entry>
