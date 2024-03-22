@@ -29,8 +29,11 @@
 <meta property="og:image" content="http://shoumingchilun.github.io/2024/03/22/backend/database/mysql/mysql_concurrent/%E4%B8%A2%E5%A4%B1%E4%BF%AE%E6%94%B9.svg">
 <meta property="og:image" content="http://shoumingchilun.github.io/2024/03/22/backend/database/mysql/mysql_concurrent/%E4%B8%8D%E5%8F%AF%E9%87%8D%E5%A4%8D%E8%AF%BB.svg">
 <meta property="og:image" content="http://shoumingchilun.github.io/2024/03/22/backend/database/mysql/mysql_concurrent/%E5%B9%BB%E8%AF%BB.svg">
+<meta property="og:image" content="http://shoumingchilun.github.io/2024/03/22/backend/database/mysql/mysql_concurrent/MVCC_ReadView.svg">
+<meta property="og:image" content="http://shoumingchilun.github.io/2024/03/22/backend/database/mysql/mysql_concurrent/RR%E6%99%AE%E9%80%9A.png">
+<meta property="og:image" content="http://shoumingchilun.github.io/2024/03/22/backend/database/mysql/mysql_concurrent/RR%E6%97%A0.png">
 <meta property="article:published_time" content="2024-03-21T16:01:03.000Z">
-<meta property="article:modified_time" content="2024-03-21T17:37:35.726Z">
+<meta property="article:modified_time" content="2024-03-22T17:10:58.612Z">
 <meta property="article:author" content="寿命齿轮">
 <meta property="article:tag" content="数据库">
 <meta property="article:tag" content="MySQL">
@@ -54,6 +57,36 @@
 <meta property="article:tag" content="可重复读">
 <meta property="article:tag" content="SERIALIZABLE">
 <meta property="article:tag" content="可串行化">
+<meta property="article:tag" content="一致性非锁定读">
+<meta property="article:tag" content="锁定读">
+<meta property="article:tag" content="undo log">
+<meta property="article:tag" content="快照读">
+<meta property="article:tag" content="snapshot read">
+<meta property="article:tag" content="当前读">
+<meta property="article:tag" content="current read">
+<meta property="article:tag" content="隐藏字段">
+<meta property="article:tag" content="ReadView">
+<meta property="article:tag" content="DB_TRX_ID">
+<meta property="article:tag" content="DB_ROLL_PTR">
+<meta property="article:tag" content="共享锁">
+<meta property="article:tag" content="S锁">
+<meta property="article:tag" content="排他锁">
+<meta property="article:tag" content="X锁">
+<meta property="article:tag" content="意向锁">
+<meta property="article:tag" content="意向共享锁">
+<meta property="article:tag" content="IS锁">
+<meta property="article:tag" content="意向排他锁">
+<meta property="article:tag" content="IX锁">
+<meta property="article:tag" content="Intention Shared Lock">
+<meta property="article:tag" content="Intention Exclusive Lock">
+<meta property="article:tag" content="记录锁">
+<meta property="article:tag" content="Record Lock">
+<meta property="article:tag" content="间隙锁">
+<meta property="article:tag" content="Gap Lock">
+<meta property="article:tag" content="临建锁">
+<meta property="article:tag" content="Next-Key Lock">
+<meta property="article:tag" content="插入意向锁">
+<meta property="article:tag" content="自增锁">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:image" content="http://shoumingchilun.github.io/2024/03/22/backend/database/mysql/mysql_concurrent/%E8%84%8F%E8%AF%BB.svg">
   
@@ -252,7 +285,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          1.8k 字
+          7.3k 字
         
       </span>
     
@@ -263,7 +296,7 @@
         
         
         
-          16 分钟
+          61 分钟
         
       </span>
     
@@ -318,7 +351,7 @@
               <p id="updated-time" class="note note-info" style="display: none">
                 
                   
-                    本文最后更新于 2024-03-22T01:37:35+08:00
+                    本文最后更新于 2024-03-23T01:10:58+08:00
                   
                   
 
@@ -398,8 +431,265 @@
 </ul>
 <p>MySQL 的隔离级别基于锁和 MVCC 机制共同实现的。<br>SERIALIZABLE 隔离级别是通过锁来实现的，READ-COMMITTED 和 REPEATABLE-READ 隔离级别是基于 MVCC 实现的。不过， SERIALIZABLE 之外的其他隔离级别可能也需要用到锁机制，就比如 REPEATABLE-READ 在当前读情况下需要使用加锁读来保证不会出现幻读。</p>
 <h1 id="并发事务的控制方式"><a href="#并发事务的控制方式" class="headerlink" title="并发事务的控制方式"></a>并发事务的控制方式</h1><p>MySQL中并发事务的控制方式为以下两种：<strong>MVCC</strong>、<strong>锁</strong>。</p>
-<p>我们将先介绍MVCC，然后介绍锁。</p>
-<h2 id="多版本并发控制-Multi-Version-Concurrency-Control"><a href="#多版本并发控制-Multi-Version-Concurrency-Control" class="headerlink" title="多版本并发控制 (Multi-Version Concurrency Control)"></a>多版本并发控制 (Multi-Version Concurrency Control)</h2><blockquote>
+<p>我们将先介绍MVCC，然后讲解锁。</p>
+<h2 id="多版本并发控制-Multi-Version-Concurrency-Control"><a href="#多版本并发控制-Multi-Version-Concurrency-Control" class="headerlink" title="多版本并发控制 (Multi-Version Concurrency Control)"></a>多版本并发控制 (Multi-Version Concurrency Control)</h2><p>MVCC的核心思想：<strong>让读操作并不直接读取数据库中的最新数据，而是读取历史版本的数据，这些历史版本是在读操作开始时就已经存在的已提交版本。</strong><br>MVCC最大的优势：读不加锁，读写不冲突。在读多写少的OLTP应用中，读写不冲突是非常重要的，极大的增加了系统的并发性能。</p>
+<p>MVCC 是一种并发控制机制，用于在多个并发事务同时读写数据库时保持数据的一致性和隔离性。它是通过<strong>在每个数据行上维护多个版本的数据</strong>来实现的。当一个事务要对数据库中的数据进行修改时，MVCC 会为该事务创建一个数据快照，而不是直接修改实际的数据行。</p>
+<p>简单讲述一下在MVCC下读、写、事务提交&#x2F;回滚的思路：</p>
+<ol>
+<li><strong>读（select）</strong>：当一个事务执行读操作时，它会<strong>使用快照读取</strong>。快照读取是基于事务开始时数据库中的状态创建的，因此<strong>事务不会读取其他事务尚未提交的修改</strong>。具体工作情况如下：<ul>
+<li>对于读取操作，事务会查找符合条件的数据行，并选择合适的数据版本进行读取。</li>
+<li>由于<strong>事务读取的是旧版的快照数据</strong>，因此其他并发事务对数据行的修改不会影响当前事务的读取操作。</li>
+</ul>
+</li>
+<li><strong>写操作（INSERT、UPDATE、DELETE）</strong>：当一个事务执行写操作时，它会<strong>生成一个新的数据版本，并将修改后的数据写入数据库</strong>。具体工作情况如下：<ul>
+<li>对于写操作，事务会<strong>为要修改的数据行创建一个新的版本，并将修改后的数据写入新版本</strong>。</li>
+<li>新版本的数据会带有当前事务的版本号，以便其他事务能够正确读取旧版本的数据，避免发生脏读。</li>
+</ul>
+</li>
+<li><strong>事务提交和回滚</strong>：<ul>
+<li>当一个事务提交时，<strong>它所做的修改将成为数据库的最新版本</strong>，并且对其他事务可见。</li>
+<li>当一个事务回滚时，它所做的修改将被撤销，始终对其他事务不可见。</li>
+</ul>
+</li>
+</ol>
+<blockquote>
+<p>版本的回收：为了防止数据库中的版本无限增长，MVCC 会定期进行版本的回收。回收机制会删除已经不再需要的旧版本数据，从而释放空间。</p>
+</blockquote>
+<h3 id="一致性非锁定读和锁定读"><a href="#一致性非锁定读和锁定读" class="headerlink" title="一致性非锁定读和锁定读"></a>一致性非锁定读和锁定读</h3><p><strong>一致性非锁定读</strong>和<strong>锁定读</strong>是MySQL数据库中InnoDB存储引擎在处理事务并发控制时采用的两种不同的读取数据的方式。</p>
+<h4 id="一致性非锁定读"><a href="#一致性非锁定读" class="headerlink" title="一致性非锁定读"></a>一致性非锁定读</h4><p>对于<strong>一致性非锁定读（Consistent Nonlocking Reads）</strong>的实现，通常做法是加一个版本号或者时间戳字段，在更新数据的同时版本号 + 1 或者更新时间戳。查询时，将当前可见的版本号与对应记录的版本号进行比对，如果记录的版本小于可见版本，则表示该记录可见。</p>
+<p>在 InnoDB 存储引擎中，<strong>多版本并发控制</strong>就是对非锁定读的实现。如果读取的行正在执行 DELETE 或 UPDATE 操作，这时读取操作不会去等待行上锁的释放。相反地，InnoDB 存储引擎会去读取行的一个快照数据，对于这种读取历史数据的方式，我们叫它<strong>快照读（snapshot read）</strong>。</p>
+<p>MVCC的实现依赖于<strong>undo log（回滚日志）</strong>，每当有事务对某一行进行修改时，都会生成一个旧版本，并将其存储在undo日志中。这样，即使该行被其他事务锁定或修改，当前事务仍能读取到之前的版本数据，而无需对这行记录加锁，从而提高并发性能。</p>
+<p>在 <code>Repeatable Read</code> 和 <code>Read Committed</code> 两个隔离级别下，如果是执行<strong>普通的 select 语句</strong>（不包括<code>select ... lock in share mode</code>，<code>select ... for update</code>）就会使用一致性非锁定读。并且在 <code>Repeatable Read</code> 下 MVCC 实现了可重复读和防止部分幻读。</p>
+<blockquote>
+<p>在不同的事务隔离级别下，一致性非锁定读的行为会有一定差异，比如在REPEATABLE READ隔离级别下，每次一致性读取都会看到事务开始时的同一视图，而在READ COMMITTED隔离级别下，每次读取可能会看到稍有不同的已提交版本。</p>
+</blockquote>
+<h4 id="锁定读"><a href="#锁定读" class="headerlink" title="锁定读"></a>锁定读</h4><p>锁定读是<strong>传统的锁定机制</strong>，它会<strong>在读取数据时对数据行加锁，以确保在读取期间不会有其他事务修改这些数据</strong> ，这种读也被称为<strong>当前读（current read）</strong>。<br>对于<code>SELECT ... FOR UPDATE</code>或<code>SELECT ... LOCK IN SHARE MODE</code>这样的查询语句，InnoDB会对读取到的数据行加行锁，使得其他事务不能对该行进行更新或删除，直到持有锁的事务结束为止。</p>
+<p>相比之下，锁定读虽然提供了更强的事务隔离效果，但可能导致更高的并发环境下出现锁等待和死锁等问题。</p>
+<h3 id="MVCC实现"><a href="#MVCC实现" class="headerlink" title="MVCC实现"></a>MVCC实现</h3><p>MVCC 的实现依赖于：<strong>隐藏字段</strong>、<strong>Read View</strong>、<strong>undo log</strong>。<br>在内部实现中，InnoDB 通过数据行的 DB_TRX_ID 和 Read View 来判断数据的可见性，如不可见，则通过数据行的 DB_ROLL_PTR 找到 undo log 中的历史版本。</p>
+<h4 id="undo-log"><a href="#undo-log" class="headerlink" title="undo-log"></a>undo-log</h4><p>当读取记录时，若该记录被其他事务占用或当前版本对该事务不可见，则可以通过 undo log 读取之前的版本数据，以此实现非锁定读。</p>
+<blockquote>
+<p>undo log 分为两种：</p>
+<ul>
+<li><strong>insert undo log</strong>：指在 insert 操作中产生的 undo log。因为 insert 操作的记录只对事务本身可见，对其他事务不可见，故该 undo log 可以在事务提交后直接删除。</li>
+<li><strong>update undo log</strong>：update 或 delete 操作中产生的undo log。该undo log可能需要提供 MVCC 机制，因此不能在事务提交时就进行删除。提交时放入undo log链表，等待purge线程 进行最后的删除。</li>
+</ul>
+</blockquote>
+<h4 id="隐藏字段"><a href="#隐藏字段" class="headerlink" title="隐藏字段"></a>隐藏字段</h4><p>在内部，InnoDB 存储引擎为<strong>每行数据</strong>添加了三个隐藏字段：</p>
+<ul>
+<li><strong>DB_TRX_ID</strong>：用于记录最后一次修改该行记录的事务ID。注意，delete操作在内部被视为更新，只不过会在记录头<code>Record header</code>中的 <code>deleted_flag</code>字段将其标记为已删除。</li>
+<li>DB_ROLL_PTR：回滚指针，指向该行的<code>undo log</code>。如果该行未被更新，则为空。</li>
+<li>DB_ROW_ID：如果没有设置主键且该表没有唯一非空索引时，InnoDB 会使用该id来生成聚簇索引。</li>
+</ul>
+<p>当我们更新一条数据，InnoDB会更新行记录的 DB_TRX_ID 属性为当前的事务Id。</p>
+<h4 id="ReadView"><a href="#ReadView" class="headerlink" title="ReadView"></a>ReadView</h4><p>Read View主要是用来做<strong>可见性判断</strong>，里面保存了 <strong>“当前对本事务不可见的其他活跃事务”</strong>。</p>
+<blockquote>
+<p>在数据库系统中，<strong>活跃事务</strong>是指已经执行了一部分操作（如读取或写入数据），但尚未最终确认或撤销其更改的事务。</p>
+</blockquote>
+<p>主要有以下字段：</p>
+<ul>
+<li><strong>m_low_limit_id</strong>：“高水位线”，生成ReadView时系统将要分配给下一个事务的Id值。</li>
+<li><strong>m_up_limit_id</strong>：“低水位线”，低水位，取m_ids列表的第一个节点，因为m_ids是升序列表，因此也就是m_ids中事务Id最小的那个。</li>
+<li><strong>m_ids</strong>：一个自定义类型的容器，存储了一系列事务ID，表示在Read View创建时活跃的未提交事务ID集合，Read View不会看到这些事务所做的修改。（由于事务Id大的也可能提交比较早，所以不能仅仅依靠<code>m_up_limit_id</code>，需要做进一步判断，通过m_id来判断该事务是否提交）</li>
+<li>m_creator_trx_id：创建当前Read View的事务ID。</li>
+<li>m_low_limit_no：Read View不需要查看事务号严格小于此值的事务的undo日志，这些事务的undo日志在purge过程中可以被安全移除，如果不被其他Read View需要的话。</li>
+<li>m_closed：标志Read View是否已经被关闭，如果关闭，则表示这个Read View不再有效。</li>
+</ul>
+<p>高低水位线说明：<br><img src="/2024/03/22/backend/database/mysql/mysql_concurrent/MVCC_ReadView.svg" srcset="/img/loading.gif" lazyload></p>
+<h4 id="数据可见性算法"><a href="#数据可见性算法" class="headerlink" title="数据可见性算法"></a>数据可见性算法</h4><p>读已提交级别下，在 InnoDB 存储引擎中，创建一个新事务后，执行每个 select 语句前，都会创建一个Read View。<br>可重复读级别下，只在事务开始后的第一次select 数据前生成一个Read View。</p>
+<p>当用户在这个事务中要读取某个记录行的时候，InnoDB 会将该记录行的DB_TRX_ID与Read View中的一些变量及当前事务ID进行比较，判断是否满足可见性条件。</p>
+<p><strong>具体判断过程</strong>：</p>
+<ol>
+<li>判断<code>DB_TRX_ID==m_creator_trx_id</code>：即记录版本上一次修改为当前事务自己的修改，那么无论何种情况，事务总是能看到自己做的修改。</li>
+<li>判断<code>DB_TRX_ID &lt; m_up_limit_id</code>：表明被访问版本的事务在当前事务生成ReadView前已经提交，所以该版本可以被当前事务访问。</li>
+<li>判断<code>DB_TRX_ID &gt;= m_low_limit_id</code>：表明被访问版本的事务在当前事务生成 ReadView 后才开启，所以该版本不可以被当前事务访问。需通过记录行的<code>DB_ROLL_PTR</code>指向的<code>undo log</code>取出快照记录，用快照记录的<code>DB_TRX_ID</code>重新进入判断。</li>
+<li>如果被访问版本的 trx_id 属性值在 ReadView 的 m_up_limit_id 和 m_low_limit_id 之间，那就需要判断 trx_id 属性值是不是在 m_ids 列表中，这边会通过二分法查找。如果在，说明创建 ReadView 时生成该版本的事务还是活跃的，该版本不可以被访问；如果不在，说明创建 ReadView 时生成该版本的事务已经被提交，该版本可以被访问。</li>
+</ol>
+<p>由于可重复读级别下，Read View只有一个，因此多次select间隔期间，即使有旧事务进行修改并提交，当前读事务也会由于该提交事务的ID在m_ids中导致葫芦该提交结果，进行访问undo log；而在读已提交的情况下，多次select间隔期间，如果有新事务进行修改并提交，由于新事务已被提交，不会存在有新构建的快照中的m_ids中，所以可读到新事务提交的结果。</p>
+<h3 id="MVCC对幻读的解决程度"><a href="#MVCC对幻读的解决程度" class="headerlink" title="MVCC对幻读的解决程度"></a>MVCC对幻读的解决程度</h3><p>MVCC 解决了部分幻读，但并没有完全解决幻读。<br>对于快照读，MVCC 因为因为从 ReadView 读取，所以必然不会看到新插入的行，所以天然就解决了幻读的问题。而对于当前读的幻读，MVCC 是无法解决的。</p>
+<h2 id="锁"><a href="#锁" class="headerlink" title="锁"></a>锁</h2><blockquote>
+<p><a target="_blank" rel="noopener" href="https://juejin.cn/post/7094049650428084232">参考文章</a></p>
+</blockquote>
+<h3 id="锁类型介绍"><a href="#锁类型介绍" class="headerlink" title="锁类型介绍"></a>锁类型介绍</h3><p>InnoDB中有7种锁：</p>
+<h4 id="共享锁-排他锁"><a href="#共享锁-排他锁" class="headerlink" title="共享锁&#x2F;排他锁"></a>共享锁&#x2F;排他锁</h4><ul>
+<li><strong>共享锁（S锁）</strong>：在事务要读一条记录时，需要先获取该记录的S锁。</li>
+<li><strong>排他锁（X锁）</strong>：在事务需要改动一条记录时，需要先获取该记录的X锁。</li>
+</ul>
+<p>如果一行已经一个事务被上了<strong>S锁</strong>，当另一个事务试图再次上锁时：</p>
+<ul>
+<li>试图上S锁：通过，该记录上存在了由两个不同事务持有的S锁。</li>
+<li>试图上X锁：拒绝，上锁操作被堵塞。</li>
+</ul>
+<p>如果一行已经一个事务被上了<strong>X锁</strong>，当另一个事务试图再次上锁时：</p>
+<ul>
+<li>试图上S锁：拒绝，上锁操作被堵塞。</li>
+<li>试图上X锁：拒绝，上锁操作被堵塞。</li>
+</ul>
+<p>S锁和X锁的兼容关系示意表：</p>
+<table>
+<thead>
+<tr>
+<th>兼容性</th>
+<th>S锁</th>
+<th>X锁</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>S锁</strong></td>
+<td>兼容</td>
+<td>不兼容</td>
+</tr>
+<tr>
+<td><strong>X锁</strong></td>
+<td>不兼容</td>
+<td>不兼容</td>
+</tr>
+</tbody></table>
+<p>共享锁和排他锁一样可以存在于表上。</p>
+<h4 id="意向锁"><a href="#意向锁" class="headerlink" title="意向锁"></a>意向锁</h4><p>意向锁是一种不与行级锁冲突的<strong>表级锁</strong>。<br>在未来的某个时刻，事务可能要加S锁或者X锁时，因此先提前声明一个意向。</p>
+<p>由于InnoDB同时存在行级锁和表级锁，如果一个表的某些记录被添加了X锁或S锁，当另一个事务试图获得表级S锁或表级X锁时，需要遍历每一行来保证没有冲突的锁，这是一个非常耗时的操作，因此InnoDB提出了意向锁，用来代表一个表是否已经被上了行级的X锁或S锁。</p>
+<ul>
+<li><strong>意向共享锁（IS锁）</strong>：<strong>Intention Shared Lock</strong>，当事务准备在某些记录上加S锁时，需要现在表级别加一个IS锁。</li>
+<li><strong>意向排他锁（IX锁）</strong>：<strong>Intention Exclusive Lock</strong>，当事务准备在某条记录上加上X锁时，需要现在表级别加一个IX锁。</li>
+</ul>
+<p>当一个事务需要给一个表的某几行添加S锁时，其需要同时给表添加一个IS锁；如果一个表上有IS锁，就说明该表有几行正在被读，因此不能添加表级的X锁。<br>当一个事务需要给一个表的某几行添加X锁时，其需要同时给表添加一个IX锁；如果一个表上有IX锁，就说明该表有几行正在被写，因此不能添加表级的S锁和X锁。</p>
+<blockquote>
+<p>注意：由于IX和IS锁仅仅是意向，并不会真正锁住对应的表，因此IX和IS是相互兼容的。</p>
+</blockquote>
+<p>兼容性示意图：</p>
+<table>
+<thead>
+<tr>
+<th>兼容性</th>
+<th>IS锁</th>
+<th>IX锁</th>
+<th>表级S锁</th>
+<th>表级X锁</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>IS锁</strong></td>
+<td>兼容</td>
+<td>兼容</td>
+<td>兼容</td>
+<td>不兼容</td>
+</tr>
+<tr>
+<td><strong>IX锁</strong></td>
+<td>兼容</td>
+<td>兼容</td>
+<td>不兼容</td>
+<td>不兼容</td>
+</tr>
+<tr>
+<td><strong>表级S锁</strong></td>
+<td>兼容</td>
+<td>不兼容</td>
+<td>兼容</td>
+<td>不兼容</td>
+</tr>
+<tr>
+<td><strong>表级X锁</strong></td>
+<td>不兼容</td>
+<td>不兼容</td>
+<td>不兼容</td>
+<td>不兼容</td>
+</tr>
+</tbody></table>
+<p>注意：意向锁的存在是为了让数据库系统高效地管理行级锁，但是其不会影响行级S锁或X锁的添加。</p>
+<h4 id="记录锁（Record-Lock）"><a href="#记录锁（Record-Lock）" class="headerlink" title="记录锁（Record Lock）"></a>记录锁（Record Lock）</h4><p><strong>记录锁（Record Lock）</strong>是数据库管理系统中一种<strong>针对单行记录</strong>的锁定方式，是一种X锁。<br>它会在对应的记录上加上记录锁，以<strong>阻止其他事务插入，更新，删除</strong>。</p>
+<blockquote>
+<p>记录锁是加在索引上的，即使一个表没有索引，InnoDB也会隐式的创建一个索引，并使用这个索引实施记录锁。它会阻塞其他事务对这行记录的插入、更新、删除。</p>
+</blockquote>
+<h4 id="间隙锁（Gap-Lock）"><a href="#间隙锁（Gap-Lock）" class="headerlink" title="间隙锁（Gap Lock）"></a>间隙锁（Gap Lock）</h4><p>间隙锁（Gap Lock）是InnoDB用来解决幻读问题的一种锁。<br>间隙锁是一种加在两个索引之间的锁，或者加在第一个索引之前，或最后一个索引之后的间隙。它锁住的是一个区间，而不仅仅是这个区间中的每一条数据。</p>
+<p>当一个事务对某个索引区间使用范围查询并申请了间隙锁时，其他事务无法在这个区间内插入新的记录。这样可以防止事务在第一次读取范围后，由于新插入的数据满足原始查询条件而出现不一致的查询结果。</p>
+<h4 id="临键锁（Next-Key-Lock）"><a href="#临键锁（Next-Key-Lock）" class="headerlink" title="临键锁（Next-Key Lock）"></a>临键锁（Next-Key Lock）</h4><p><strong>Next-key锁</strong>是<strong>记录锁和间隙锁的组合</strong>，它指的是加在某条记录以及这条记录前面间隙上的锁。说得更具体一点就是：临键锁会封锁索引记录本身，以及索引记录之前的区间，即它的锁区间是前开后闭，比如锁住了id&#x3D;1，会锁住(x,1]。</p>
+<h4 id="插入意向锁"><a href="#插入意向锁" class="headerlink" title="插入意向锁"></a>插入意向锁</h4><p>插入意向锁，是插入一行记录操作之前需要获得的一种间隙锁，这个锁释放了一种插入方式的信号。 其是行级别的锁的一种特殊形式，但它并不是直接锁定某个具体的行记录，而是锁定索引记录之间的间隙，表示事务打算在该间隙内插入新行。<br>作用：</p>
+<ul>
+<li><strong>并发插入协调（提升效率）</strong>：当多个事务同时尝试在同一个索引间隙中插入数据时，<strong>每个事务首先都会获取一个插入意向锁</strong>，而不是立即（使用写锁）阻塞彼此。这样可以允许多个事务在不同的间隙位置并发插入数据，因为插入意向锁之间是兼容的。</li>
+</ul>
+<h4 id="锁模式兼容矩阵"><a href="#锁模式兼容矩阵" class="headerlink" title="锁模式兼容矩阵"></a>锁模式兼容矩阵</h4><p>兼容矩阵：（一个事务对一条记录持有锁，另一个事务申请）</p>
+<table>
+<thead>
+<tr>
+<th>兼容性</th>
+<th>申请间隙锁</th>
+<th>申请插入意向锁锁</th>
+<th>申请记录锁</th>
+<th>申请临键锁</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>已持有<strong>间隙锁</strong></td>
+<td>兼容</td>
+<td>冲突</td>
+<td>兼容</td>
+<td>兼容</td>
+</tr>
+<tr>
+<td>已持有<strong>插入意向锁</strong></td>
+<td>兼容</td>
+<td>兼容</td>
+<td>兼容</td>
+<td>兼容</td>
+</tr>
+<tr>
+<td>已持有<strong>记录锁</strong></td>
+<td>兼容</td>
+<td>兼容</td>
+<td>冲突</td>
+<td>冲突</td>
+</tr>
+<tr>
+<td>已持有<strong>临键锁</strong></td>
+<td>兼容</td>
+<td>冲突</td>
+<td>冲突</td>
+<td>冲突</td>
+</tr>
+</tbody></table>
+<p>说明：</p>
+<ul>
+<li>持有了间隙锁&#x2F;临键锁后，不可插入，自然不支持获得插入意向锁。</li>
+<li>记录锁和临键锁不可共享，自然是冲突的。</li>
+<li>一个事务持有了插入意向锁，这意味着它计划在某个间隙内插入数据，但还没有实际执行插入操作。此时，其他事务仍有可能获取到该相同间隙的间隙锁。这是因为插入意向锁与间隙锁服务的目标不同，插入意向锁并不阻止其他事务锁定间隙，它仅仅表明了事务有在该间隙内插入数据的意向，而间隙锁则负责阻止其他事务在该范围内插入数据。</li>
+</ul>
+<h4 id="自增锁"><a href="#自增锁" class="headerlink" title="自增锁"></a>自增锁</h4><p>自增锁是一种特殊的表级别锁。它是专门针对AUTO_INCREMENT类型的列，对于这种列，如果表中新增数据时就会去持有自增锁。简言之，如果一个事务正在往表中插入记录，所有其他事务的插入必须等待，以便第一个事务插入的行，是连续的主键值。</p>
+<p>参数innodb_autoinc_lock_mode：</p>
+<ul>
+<li>0：传统锁模式，使用表级AUTO_INC锁。一个事务的INSERT-LIKE语句在语句执行结束后释放AUTO_INC表级锁，而不是在事务结束后释放。</li>
+<li>1：连续锁模式，连续锁模式对于Simple inserts不会使用表级锁，而是使用一个轻量级锁来生成自增值，因为InnoDB可以提前直到插入多少行数据。自增值生成阶段使用轻量级互斥锁来生成所有的值，而不是一直加锁直到插入完成。对于bulk inserts类语句使用AUTO_INC表级锁直到语句完成。</li>
+<li>2：交错锁模式，所有的INSERT-LIKE语句都不使用表级锁，而是使用轻量级互斥锁。</li>
+</ul>
+<h3 id="加锁"><a href="#加锁" class="headerlink" title="加锁"></a>加锁</h3><p>介绍完InnoDB的七种锁后，将讲解如何给一条SQL加锁。<br>主要分为9种情况：</p>
+<p>组合一：查询条件是主键，RC隔离级别<br>组合二：查询条件是唯一索引，RC隔离级别<br>组合三：查询条件是普通索引，RC隔离级别<br>组合四：查询条件上没有索引，RC隔离级别<br>组合五：查询条件是主键，RR隔离级别<br>组合六：查询条件是唯一索引，RR隔离级别<br>组合七：查询条件是普通索引，RR隔离级别<br>组合八：查询条件上没有索引，RR隔离级别<br>组合九：Serializable隔离级别</p>
+<h4 id="RC隔离级别：主键为查询条件"><a href="#RC隔离级别：主键为查询条件" class="headerlink" title="RC隔离级别：主键为查询条件"></a>RC隔离级别：主键为查询条件</h4><p>如：在一个事务中执行删除操作：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs SQL"><span class="hljs-keyword">create</span> <span class="hljs-keyword">table</span> t_A (id <span class="hljs-type">int</span>,name <span class="hljs-type">varchar</span>(<span class="hljs-number">16</span>),<span class="hljs-keyword">primary</span> key ( id));<br><span class="hljs-keyword">insert</span> <span class="hljs-keyword">into</span> t_A <span class="hljs-keyword">values</span>(<span class="hljs-number">1</span>,<span class="hljs-string">&#x27;a&#x27;</span>);<br><span class="hljs-keyword">delete</span> <span class="hljs-keyword">from</span> t_A <span class="hljs-keyword">where</span> id <span class="hljs-operator">=</span> <span class="hljs-number">1</span>;<br></code></pre></td></tr></table></figure>
+<p>该记录（聚簇索引）会被添加<strong>一</strong>个<strong>X记录锁</strong>。</p>
+<h4 id="RC隔离级别：唯一索引为查询条件"><a href="#RC隔离级别：唯一索引为查询条件" class="headerlink" title="RC隔离级别：唯一索引为查询条件"></a>RC隔离级别：唯一索引为查询条件</h4><p>如：在一个事务中执行删除操作：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs SQL"><span class="hljs-keyword">create</span> <span class="hljs-keyword">table</span> t_A (name <span class="hljs-type">varchar</span>(<span class="hljs-number">16</span>),id <span class="hljs-type">int</span>,<span class="hljs-keyword">primary</span> key (name),<span class="hljs-keyword">unique</span> key(id));<br><span class="hljs-keyword">insert</span> <span class="hljs-keyword">into</span> t_A <span class="hljs-keyword">values</span>(<span class="hljs-number">1</span>,<span class="hljs-string">&#x27;a&#x27;</span>);<br><span class="hljs-keyword">delete</span> <span class="hljs-keyword">from</span> t_A <span class="hljs-keyword">where</span> id <span class="hljs-operator">=</span> <span class="hljs-number">1</span>;<br></code></pre></td></tr></table></figure>
+<p>会加<strong>两</strong>个<strong>X记录锁</strong>，一把锁对应于<strong>id唯一索引</strong>上的<code>id=1</code>的记录，另一把锁对应于聚簇索引上的<code>[name=&#39;a&#39;,id=1]</code>的记录。</p>
+<h4 id="RC隔离级别：普通索引为查询条件"><a href="#RC隔离级别：普通索引为查询条件" class="headerlink" title="RC隔离级别：普通索引为查询条件"></a>RC隔离级别：普通索引为查询条件</h4><p>如：在一个事务中执行删除操作：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs SQL"><span class="hljs-keyword">create</span> <span class="hljs-keyword">table</span> t_A (name <span class="hljs-type">varchar</span>(<span class="hljs-number">16</span>),id <span class="hljs-type">int</span>,<span class="hljs-keyword">primary</span> key (name),key(id));<br><span class="hljs-keyword">insert</span> <span class="hljs-keyword">into</span> t_A <span class="hljs-keyword">values</span>(<span class="hljs-number">1</span>,<span class="hljs-string">&#x27;a&#x27;</span>),(<span class="hljs-number">1</span>,<span class="hljs-string">&#x27;b&#x27;</span>);<br><span class="hljs-keyword">delete</span> <span class="hljs-keyword">from</span> t_A <span class="hljs-keyword">where</span> id <span class="hljs-operator">=</span> <span class="hljs-number">1</span>;<br></code></pre></td></tr></table></figure>
+<p>会加<strong>多</strong>个<strong>X记录锁</strong>，几把锁对应于<strong>id普通索引</strong>上的<code>id=1</code>的记录，另外几把锁对应于聚簇索引上的<code>[name=&#39;a&#39;,id=1][name=&#39;b&#39;,id=1]</code>的记录。</p>
+<h4 id="RC隔离级别：无索引为查询条件"><a href="#RC隔离级别：无索引为查询条件" class="headerlink" title="RC隔离级别：无索引为查询条件"></a>RC隔离级别：无索引为查询条件</h4><p>如：在一个事务中执行删除操作：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs SQL"><span class="hljs-keyword">create</span> <span class="hljs-keyword">table</span> t_A (name <span class="hljs-type">varchar</span>(<span class="hljs-number">16</span>),id <span class="hljs-type">int</span>,<span class="hljs-keyword">primary</span> key (name));<br><span class="hljs-keyword">insert</span> <span class="hljs-keyword">into</span> t_A <span class="hljs-keyword">values</span>(<span class="hljs-number">1</span>,<span class="hljs-string">&#x27;a&#x27;</span>),(<span class="hljs-number">1</span>,<span class="hljs-string">&#x27;b&#x27;</span>);<br><span class="hljs-keyword">delete</span> <span class="hljs-keyword">from</span> t_A <span class="hljs-keyword">where</span> id <span class="hljs-operator">=</span> <span class="hljs-number">1</span>;<br></code></pre></td></tr></table></figure>
+<p>会加<strong>多</strong>个<strong>X记录锁</strong>，所有锁对应于聚簇索引上的<code>[name=&#39;a&#39;,id=1][name=&#39;b&#39;,id=1]</code>的记录。</p>
+<h4 id="RR隔离级别：主键为查询条件"><a href="#RR隔离级别：主键为查询条件" class="headerlink" title="RR隔离级别：主键为查询条件"></a>RR隔离级别：主键为查询条件</h4><p>与<strong>RC隔离级别：主键为查询条件</strong>一致。</p>
+<h4 id="RR隔离级别：唯一索引为查询条件"><a href="#RR隔离级别：唯一索引为查询条件" class="headerlink" title="RR隔离级别：唯一索引为查询条件"></a>RR隔离级别：唯一索引为查询条件</h4><p>与<strong>RC隔离级别：唯一索引为查询条件</strong>一致。</p>
+<h4 id="RR隔离级别：普通索引为查询条件"><a href="#RR隔离级别：普通索引为查询条件" class="headerlink" title="RR隔离级别：普通索引为查询条件"></a>RR隔离级别：普通索引为查询条件</h4><p>会添加<strong>X锁</strong>与<strong>间隙锁Gap Lock</strong>。</p>
+<p>如：在一个事务中执行更新操作：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs SQL"><span class="hljs-keyword">CREATE</span> <span class="hljs-keyword">TABLE</span> t5 ( id <span class="hljs-type">int</span>(<span class="hljs-number">11</span>) <span class="hljs-keyword">NOT</span> <span class="hljs-keyword">NULL</span>, c <span class="hljs-type">int</span>(<span class="hljs-number">11</span>) <span class="hljs-keyword">DEFAULT</span> <span class="hljs-keyword">NULL</span>, d <span class="hljs-type">int</span>(<span class="hljs-number">11</span>) <span class="hljs-keyword">DEFAULT</span> <span class="hljs-keyword">NULL</span>, <span class="hljs-keyword">PRIMARY</span> KEY (id), KEY c (c)) ENGINE<span class="hljs-operator">=</span>InnoDB;<br><span class="hljs-keyword">insert</span> <span class="hljs-keyword">into</span> t5 <span class="hljs-keyword">values</span>(<span class="hljs-number">5</span>,<span class="hljs-number">5</span>,<span class="hljs-number">5</span>),(<span class="hljs-number">10</span>,<span class="hljs-number">10</span>,<span class="hljs-number">10</span>),(<span class="hljs-number">15</span>,<span class="hljs-number">15</span>,<span class="hljs-number">15</span>),(<span class="hljs-number">20</span>,<span class="hljs-number">20</span>,<span class="hljs-number">20</span>),(<span class="hljs-number">25</span>,<span class="hljs-number">25</span>,<span class="hljs-number">25</span>);<br><span class="hljs-keyword">update</span> t5 <span class="hljs-keyword">set</span> d<span class="hljs-operator">=</span>d<span class="hljs-operator">+</span><span class="hljs-number">1</span> <span class="hljs-keyword">where</span> c <span class="hljs-operator">=</span> <span class="hljs-number">10</span>;<br></code></pre></td></tr></table></figure>
+
+<p>示意图：<br><img src="/2024/03/22/backend/database/mysql/mysql_concurrent/RR%E6%99%AE%E9%80%9A.png" srcset="/img/loading.gif" lazyload></p>
+<p>c&#x3D;10这个记录更新时，不仅会有两把X锁，还会把区间（10,15）加间隙锁，因此要插入（12,12,12）记录时，会阻塞。</p>
+<h4 id="RR隔离级别：无索引为查询条件"><a href="#RR隔离级别：无索引为查询条件" class="headerlink" title="RR隔离级别：无索引为查询条件"></a>RR隔离级别：无索引为查询条件</h4><p>会添加<strong>X锁</strong>与<strong>间隙锁Gap Lock</strong>。</p>
+<p>如：在一个事务中执行更新操作：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs SQL"><span class="hljs-keyword">CREATE</span> <span class="hljs-keyword">TABLE</span> t5 ( id <span class="hljs-type">int</span>(<span class="hljs-number">11</span>) <span class="hljs-keyword">NOT</span> <span class="hljs-keyword">NULL</span>, c <span class="hljs-type">int</span>(<span class="hljs-number">11</span>) <span class="hljs-keyword">DEFAULT</span> <span class="hljs-keyword">NULL</span>, d <span class="hljs-type">int</span>(<span class="hljs-number">11</span>) <span class="hljs-keyword">DEFAULT</span> <span class="hljs-keyword">NULL</span>, <span class="hljs-keyword">PRIMARY</span> KEY (id)) ENGINE<span class="hljs-operator">=</span>InnoDB;<br><span class="hljs-keyword">insert</span> <span class="hljs-keyword">into</span> t5 <span class="hljs-keyword">values</span>(<span class="hljs-number">5</span>,<span class="hljs-number">5</span>,<span class="hljs-number">5</span>),(<span class="hljs-number">10</span>,<span class="hljs-number">10</span>,<span class="hljs-number">10</span>),(<span class="hljs-number">15</span>,<span class="hljs-number">15</span>,<span class="hljs-number">15</span>),(<span class="hljs-number">20</span>,<span class="hljs-number">20</span>,<span class="hljs-number">20</span>),(<span class="hljs-number">25</span>,<span class="hljs-number">25</span>,<span class="hljs-number">25</span>);<br><span class="hljs-keyword">update</span> t5 <span class="hljs-keyword">set</span> d<span class="hljs-operator">=</span>d<span class="hljs-operator">+</span><span class="hljs-number">1</span> <span class="hljs-keyword">where</span> c <span class="hljs-operator">=</span> <span class="hljs-number">10</span>;<br></code></pre></td></tr></table></figure>
+
+<p>示意图：<br><img src="/2024/03/22/backend/database/mysql/mysql_concurrent/RR%E6%97%A0.png" srcset="/img/loading.gif" lazyload></p>
+<p>如果查询条件列没有索引，主键索引的所有记录，都将加上X锁，每条记录间也都加上间隙Gap锁。大家可以想象一下，任何加锁并发的SQL，都是不能执行的，全表都是锁死的状态。如果表的数据量大，那效率就更低。</p>
+<h4 id="Serializable串行化"><a href="#Serializable串行化" class="headerlink" title="Serializable串行化"></a>Serializable串行化</h4><p>在Serializable串行化的隔离级别下，对于写的语句，比如update account set balance&#x3D; balance-10 where name&#x3D;‘Jay’;，跟RC和RR隔离级别是一样的。不一样的地方是，在查询语句，如select balance from account where name &#x3D; ‘Jay’;，在RC和RR是不会加锁的（仅MVCC），但是在Serializable串行化的隔离级别，即会加锁。</p>
+<h3 id="RR隔离级别-加锁规则详解"><a href="#RR隔离级别-加锁规则详解" class="headerlink" title="RR隔离级别-加锁规则详解"></a>RR隔离级别-加锁规则详解</h3><blockquote>
 <p>未完待续……</p>
 </blockquote>
 
@@ -492,6 +782,66 @@
         <a href="/tags/SERIALIZABLE/" class="print-no-link">#SERIALIZABLE</a>
       
         <a href="/tags/%E5%8F%AF%E4%B8%B2%E8%A1%8C%E5%8C%96/" class="print-no-link">#可串行化</a>
+      
+        <a href="/tags/%E4%B8%80%E8%87%B4%E6%80%A7%E9%9D%9E%E9%94%81%E5%AE%9A%E8%AF%BB/" class="print-no-link">#一致性非锁定读</a>
+      
+        <a href="/tags/%E9%94%81%E5%AE%9A%E8%AF%BB/" class="print-no-link">#锁定读</a>
+      
+        <a href="/tags/undo-log/" class="print-no-link">#undo log</a>
+      
+        <a href="/tags/%E5%BF%AB%E7%85%A7%E8%AF%BB/" class="print-no-link">#快照读</a>
+      
+        <a href="/tags/snapshot-read/" class="print-no-link">#snapshot read</a>
+      
+        <a href="/tags/%E5%BD%93%E5%89%8D%E8%AF%BB/" class="print-no-link">#当前读</a>
+      
+        <a href="/tags/current-read/" class="print-no-link">#current read</a>
+      
+        <a href="/tags/%E9%9A%90%E8%97%8F%E5%AD%97%E6%AE%B5/" class="print-no-link">#隐藏字段</a>
+      
+        <a href="/tags/ReadView/" class="print-no-link">#ReadView</a>
+      
+        <a href="/tags/DB-TRX-ID/" class="print-no-link">#DB_TRX_ID</a>
+      
+        <a href="/tags/DB-ROLL-PTR/" class="print-no-link">#DB_ROLL_PTR</a>
+      
+        <a href="/tags/%E5%85%B1%E4%BA%AB%E9%94%81/" class="print-no-link">#共享锁</a>
+      
+        <a href="/tags/S%E9%94%81/" class="print-no-link">#S锁</a>
+      
+        <a href="/tags/%E6%8E%92%E4%BB%96%E9%94%81/" class="print-no-link">#排他锁</a>
+      
+        <a href="/tags/X%E9%94%81/" class="print-no-link">#X锁</a>
+      
+        <a href="/tags/%E6%84%8F%E5%90%91%E9%94%81/" class="print-no-link">#意向锁</a>
+      
+        <a href="/tags/%E6%84%8F%E5%90%91%E5%85%B1%E4%BA%AB%E9%94%81/" class="print-no-link">#意向共享锁</a>
+      
+        <a href="/tags/IS%E9%94%81/" class="print-no-link">#IS锁</a>
+      
+        <a href="/tags/%E6%84%8F%E5%90%91%E6%8E%92%E4%BB%96%E9%94%81/" class="print-no-link">#意向排他锁</a>
+      
+        <a href="/tags/IX%E9%94%81/" class="print-no-link">#IX锁</a>
+      
+        <a href="/tags/Intention-Shared-Lock/" class="print-no-link">#Intention Shared Lock</a>
+      
+        <a href="/tags/Intention-Exclusive-Lock/" class="print-no-link">#Intention Exclusive Lock</a>
+      
+        <a href="/tags/%E8%AE%B0%E5%BD%95%E9%94%81/" class="print-no-link">#记录锁</a>
+      
+        <a href="/tags/Record-Lock/" class="print-no-link">#Record Lock</a>
+      
+        <a href="/tags/%E9%97%B4%E9%9A%99%E9%94%81/" class="print-no-link">#间隙锁</a>
+      
+        <a href="/tags/Gap-Lock/" class="print-no-link">#Gap Lock</a>
+      
+        <a href="/tags/%E4%B8%B4%E5%BB%BA%E9%94%81/" class="print-no-link">#临建锁</a>
+      
+        <a href="/tags/Next-Key-Lock/" class="print-no-link">#Next-Key Lock</a>
+      
+        <a href="/tags/%E6%8F%92%E5%85%A5%E6%84%8F%E5%90%91%E9%94%81/" class="print-no-link">#插入意向锁</a>
+      
+        <a href="/tags/%E8%87%AA%E5%A2%9E%E9%94%81/" class="print-no-link">#自增锁</a>
       
     </div>
   
