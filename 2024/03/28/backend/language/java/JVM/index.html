@@ -18,29 +18,26 @@
   <meta name="author" content="寿命齿轮">
   <meta name="keywords" content="">
   
-    <meta name="description" content="介绍Shell 是计算机操作系统中的一个重要组成部分，尤其在类Unix系统（如Linux、BSD等）以及早期的MS-DOS等系统中扮演着核心角色。 Shell 是一种命令行界面（CLI）程序，通常被称为命令解释器，它是用户与操作系统内核之间交互的接口或桥梁。  命令行界面（CLI）程序是一种软件应用程序，它专为通过字符界面与用户交互而设计，用户通过键盘输入特定的文本命令及其相关参数来进行操作。在C">
+    <meta name="description" content="JVM主要分为三大模块内容：类加载器、运行时数据区和执行引擎。 示意图： 类加载类加载过程： 类加载器： 运行时数据区">
 <meta property="og:type" content="article">
-<meta property="og:title" content="Shell：基础篇">
-<meta property="og:url" content="http://shoumingchilun.github.io/2024/03/21/backend/language/shell/shell1/">
+<meta property="og:title" content="JVM各类图示">
+<meta property="og:url" content="http://shoumingchilun.github.io/2024/03/28/backend/language/java/JVM/">
 <meta property="og:site_name" content="Chilun&#39;s Blogs">
-<meta property="og:description" content="介绍Shell 是计算机操作系统中的一个重要组成部分，尤其在类Unix系统（如Linux、BSD等）以及早期的MS-DOS等系统中扮演着核心角色。 Shell 是一种命令行界面（CLI）程序，通常被称为命令解释器，它是用户与操作系统内核之间交互的接口或桥梁。  命令行界面（CLI）程序是一种软件应用程序，它专为通过字符界面与用户交互而设计，用户通过键盘输入特定的文本命令及其相关参数来进行操作。在C">
+<meta property="og:description" content="JVM主要分为三大模块内容：类加载器、运行时数据区和执行引擎。 示意图： 类加载类加载过程： 类加载器： 运行时数据区">
 <meta property="og:locale" content="zh_CN">
-<meta property="article:published_time" content="2024-03-20T17:23:50.000Z">
-<meta property="article:modified_time" content="2024-03-23T06:55:41.989Z">
+<meta property="og:image" content="http://shoumingchilun.github.io/2024/03/28/backend/language/java/JVM/%E4%B8%89%E5%A4%A7%E6%A8%A1%E5%9D%97.png">
+<meta property="og:image" content="http://shoumingchilun.github.io/2024/03/28/backend/language/java/JVM/%E7%B1%BB%E5%8A%A0%E8%BD%BD%E8%BF%87%E7%A8%8B.svg">
+<meta property="og:image" content="http://shoumingchilun.github.io/2024/03/28/backend/language/java/JVM/%E7%B1%BB%E5%8A%A0%E8%BD%BD%E5%99%A8.svg">
+<meta property="article:published_time" content="2024-03-27T17:24:18.000Z">
+<meta property="article:modified_time" content="2024-03-27T17:27:30.369Z">
 <meta property="article:author" content="寿命齿轮">
-<meta property="article:tag" content="Linux">
-<meta property="article:tag" content="Shell">
-<meta property="article:tag" content="CLI">
-<meta property="article:tag" content="Bash">
-<meta property="article:tag" content="Bourne-Again SHell">
-<meta property="article:tag" content="变量">
-<meta property="article:tag" content="字符串">
-<meta property="article:tag" content="数组">
+<meta property="article:tag" content="Java">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="http://shoumingchilun.github.io/2024/03/28/backend/language/java/JVM/%E4%B8%89%E5%A4%A7%E6%A8%A1%E5%9D%97.png">
   
   
   
-  <title>Shell：基础篇 - Chilun&#39;s Blogs</title>
+  <title>JVM各类图示 - Chilun&#39;s Blogs</title>
 
   <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
 
@@ -210,7 +207,7 @@
       <div class="banner-text text-center fade-in-up">
         <div class="h2">
           
-            <span id="subtitle">Shell：基础篇</span>
+            <span id="subtitle">JVM各类图示</span>
           
         </div>
 
@@ -221,8 +218,8 @@
     
       <span class="post-meta">
         <i class="iconfont icon-date-fill" aria-hidden="true"></i>
-        <time datetime="2024-03-21 01:23" pubdate>
-          2024年3月21日 凌晨
+        <time datetime="2024-03-28 01:24" pubdate>
+          2024年3月28日 凌晨
         </time>
       </span>
     
@@ -233,7 +230,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          2.1k 字
+          47 字
         
       </span>
     
@@ -244,7 +241,7 @@
         
         
         
-          18 分钟
+          1 分钟
         
       </span>
     
@@ -294,12 +291,12 @@
       <div class="container nopadding-x-md" id="board-ctn">
         <div id="board">
           <article class="post-content mx-auto">
-            <h1 id="seo-header">Shell：基础篇</h1>
+            <h1 id="seo-header">JVM各类图示</h1>
             
               <p id="updated-time" class="note note-info" style="display: none">
                 
                   
-                    本文最后更新于 2024-03-23T14:55:41+08:00
+                    本文最后更新于 2024-03-28T01:27:30+08:00
                   
                   
 
@@ -309,138 +306,11 @@
             
               <div class="markdown-body">
                 
-                <h1 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h1><p>Shell 是计算机操作系统中的一个重要组成部分，尤其在类Unix系统（如Linux、BSD等）以及早期的MS-DOS等系统中扮演着核心角色。</p>
-<p><strong>Shell 是一种命令行界面（CLI）程序，通常被称为命令解释器，它是用户与操作系统内核之间交互的接口或桥梁。</strong></p>
-<blockquote>
-<p>命令行界面（CLI）程序是一种软件应用程序，它专为通过字符界面与用户交互而设计，用户通过键盘输入特定的文本命令及其相关参数来进行操作。在CLI程序中，没有图形元素，如窗口、按钮或菜单，所有的交互完全依赖于文本命令和响应。</p>
-</blockquote>
-<p>具体而言，Shell 主要具有以下几个特点和功能：</p>
-<ul>
-<li><strong>命令解释器</strong>：Shell 接收用户通过键盘输入的命令，解析这些命令并将其转换成内核能理解的操作请求。</li>
-<li><strong>脚本语言</strong>：Shell 不仅允许用户输入单个命令，还支持编写包含一系列命令和控制结构的脚本文件（称为Shell脚本或Shell程序）。这些脚本可以实现自动化任务，简化重复性工作，或是构建复杂的系统管理流程。</li>
-<li>用户交互：Shell 提供了交互式的命令行环境，用户可以在提示符下实时输入和执行命令，获取即时反馈。</li>
-<li>环境配置：Shell 可以设置和管理用户的环境变量，影响程序的行为和系统环境配置。</li>
-<li>I&#x2F;O重定向与管道：Shell 允许用户将命令的标准输入、输出重定向至文件或其他命令，同时支持通过管道（|）连接多个命令，形成数据流式处理。</li>
-<li>命令扩展与别名：Shell 可以为命令添加额外的便利功能，比如命令补全、命令历史记录，以及定义命令别名等。</li>
-</ul>
-<p>流行的Shell有多种，例如<strong>Bash（Bourne-Again SHell）</strong>、sh（Bourne Shell）、csh（C Shell）、zsh（Z Shell）等。其中，bash在大多数Linux发行版中被用作默认的登录Shell。</p>
-<h1 id="运行"><a href="#运行" class="headerlink" title="运行"></a>运行</h1><p>运行 Shell 脚本有多种方法：</p>
-<ol>
-<li><strong>作为可执行程序运行</strong>：<strong>直接执行</strong>，需有执行权限，<ul>
-<li>确保脚本文件的第一行包含了正确的Shebang（#!），例如 #!&#x2F;bin&#x2F;bash 或 #!&#x2F;usr&#x2F;bin&#x2F;env bash，用于指定解释此脚本的Shell版本。</li>
-<li>给脚本添加执行权限：<code>chmod +x script.sh</code></li>
-<li>使用相对路径或绝对路径执行：相对路径<code>./script.sh</code>；绝对路径<code>/path/to/script.sh</code>。</li>
-</ul>
-</li>
-<li><strong>作为解释器参数</strong>：<ul>
-<li>如<code>bash script.sh</code></li>
-<li>即使脚本没有执行权限，也可以通过明确指定解释器来执行</li>
-</ul>
-</li>
-<li>source命令：当希望脚本中的环境变量更改、函数定义等对当前Shell会话生效时，可以使用source命令。<ul>
-<li>如<code>source script.sh</code></li>
-</ul>
-</li>
-</ol>
-<h1 id="语法"><a href="#语法" class="headerlink" title="语法"></a>语法</h1><h2 id="变量"><a href="#变量" class="headerlink" title="变量"></a>变量</h2><p>在Shell中定义变量非常直观且简单，无需事先声明变量类型，<strong>只需给变量分配一个值即可完成定义</strong>。<br>如<code>name=&quot;chilun&quot;</code>，即定义了一个变量name为字符串“chilun”。</p>
-<h3 id="变量命名规则"><a href="#变量命名规则" class="headerlink" title="变量命名规则"></a>变量命名规则</h3><ul>
-<li><strong>只包含字母、数字和下划线</strong>： 变量名可以包含字母（大小写敏感）、数字和下划线 _，不能包含其他特殊字符。</li>
-<li><strong>不能以数字开头</strong>： 变量名不能以数字开头，但可以包含数字。</li>
-<li><strong>避免使用 Shell 关键字</strong>： 不要使用Shell的关键字（例如 if、then、else、fi、for、while 等）作为变量名，以免引起混淆。</li>
-<li>使用大写字母表示常量： 习惯上，常量的变量名通常使用大写字母，例如 PI&#x3D;3.14。</li>
-</ul>
-<h3 id="定义变量"><a href="#定义变量" class="headerlink" title="定义变量"></a>定义变量</h3><ol>
-<li><strong>直接赋值</strong>：通过等号（&#x3D;）来给变量赋值，注意变量名和等号之间不能有空格。<ul>
-<li><code>name=&quot;chilun&quot;</code>：将“chilun”字符串赋给变量 name。</li>
-</ul>
-</li>
-<li><strong>语句赋值</strong>：可使用for循环等语句对变量进行赋值。<ul>
-<li><code>for file in $(ls /etc) </code>：将 &#x2F;etc 目录下的所有文件和目录名逐个赋值给变量 file。</li>
-</ul>
-</li>
-<li><strong>命令赋值</strong>：可使用标准输入读取命令等对变量进行赋值。<ul>
-<li><code>read -p &quot;请输入你的名字: &quot; name</code>：用户输入的名字会被赋值给变量 name。</li>
-</ul>
-</li>
-<li><strong>定义变量</strong>：使用<code>declare</code>或<code>typeset</code>命令定义变量时可以指定变量的类型（如整型、数组等）。<ul>
-<li><code>declare -i age=30</code>：定义一个整数类型的变量age并赋值为30。</li>
-</ul>
-</li>
-<li><strong>计算变量</strong>：使用<code>let</code>命令执行简单的算术运算并赋值给变量。<ul>
-<li><code>let b=a+1</code>：将b赋值为a+1后的整数；如果直接<code>b=a+1</code>，b会被赋值为“a+1”的字符串。</li>
-</ul>
-</li>
-<li><strong>定义环境变量</strong>：使用<code>export</code>命令可以定义环境变量，在子shell进程中变量也能被访问。<ul>
-<li><code>export PATH=$PATH:/usr/local/bin</code>：将新的路径添加到已存在的PATH环境变量中。</li>
-</ul>
-</li>
-<li><strong>删除变量</strong>：使用<code>unset</code>命令删除已定义的变量。<ul>
-<li><code>unset name</code>：删除变量name。</li>
-</ul>
-</li>
-<li><strong>只读变量</strong>：使用<code>readonly</code>命令可以将变量定义为只读变量，只读变量的值不能被改变，不能被删除。<ul>
-<li><code>readonly name</code>：之后再修改就会报错：<code>name: readonly variable</code>。</li>
-</ul>
-</li>
-</ol>
-<h3 id="使用变量"><a href="#使用变量" class="headerlink" title="使用变量"></a>使用变量</h3><p>使用一个定义过的变量，只要在变量名前面加美元符号即可。<br>变量名外面的花括号是可选的，加不加都行，加花括号是为了帮助解释器识别变量的边界（推荐给所有变量加上花括号）。</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs shell">name=&quot;chilun&quot;<br>echo $name<br>echo $&#123;name&#125;<br></code></pre></td></tr></table></figure>
-<p>输出为：</p>
-<blockquote>
-<p>chilun<br>chilun</p>
-</blockquote>
-<h3 id="变量类型"><a href="#变量类型" class="headerlink" title="变量类型"></a>变量类型</h3><p>Shell 支持不同类型的变量。</p>
-<h4 id="字符串变量"><a href="#字符串变量" class="headerlink" title="字符串变量"></a>字符串变量</h4><p>在 Shell中，变量通常被视为字符串。<br>在Bash中，所有变量值本质上都是字符串。即使一个变量可用于数值计算，其在内部依旧是以字符串的形式存储的，只是在进行算术运算时进行了相应的转换和处理。<br>可使用单引号或双引号来定义字符串，比如：<code>a=&#39;Hello, World!&#39;</code>或者<code>b=&quot;Hello, World!&quot;</code>。</p>
-<p>当直接赋值一个不包含变量扩展、算术扩展或其他形式扩展的纯文本给一个变量时，Bash也会将这个值当作字符串来处理，如<code>c=hello,World!</code>。<br>（当设置一个变量时，其值默认被视为一个整体，直到遇到第一个未经转义的特殊字符为止。如果<code>c=hello, World!</code>就会报错，因为存在空格，空格是Bash解析命令行参数时的分隔符，会导致Bash会尝试将<code>hello,</code>、<code>World!</code>视为不同的参数。）</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs shell"><span class="hljs-meta prompt_">#</span><span class="language-bash">!/bin/bash</span><br>a=&#x27;Hello, World!&#x27;<br>b=&quot;Hello, World!&quot;<br>c=hello,World!<br>echo $&#123;a&#125; $&#123;b&#125; $&#123;c&#125; <br></code></pre></td></tr></table></figure>
-
-<p>输出结果为：</p>
-<blockquote>
-<p>Hello, World! Hello, World! hello,World!</p>
-</blockquote>
-<h4 id="整数变量"><a href="#整数变量" class="headerlink" title="整数变量"></a>整数变量</h4><p>可以使用 declare 或 typeset 命令来声明整数变量。<br>这样的变量只包含整数值，例如：<code>declare -i a=42</code>。<br>这样的声明告诉Shell将a视为整数，如果尝试将非整数值赋给它，Shell会尝试将其转换为整数。</p>
-<p>示例：</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs shell"><span class="hljs-meta prompt_">#</span><span class="language-bash">!/bin/bash</span><br>a=42<br>declare -i b=a+1<br>echo $&#123;b&#125;<br></code></pre></td></tr></table></figure>
-<p>输出为：</p>
-<blockquote>
-<p>43</p>
-</blockquote>
-<p>（如果不声明为整数，b就会被看做是“a+1”的字符串。）</p>
-<h4 id="数组变量"><a href="#数组变量" class="headerlink" title="数组变量"></a>数组变量</h4><p>Shell 支持数组，允许在一个变量中存储多个值。括号用来表示数组，数组元素用”空格”符号分割开。<br>数组可以是<strong>整数索引数组</strong>或<strong>关联数组</strong>：</p>
-<ul>
-<li>整数索引数组：<code>array1=(1 2 3 4 5)</code></li>
-<li>关联数组：<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs shell">declare -A array2<br>array2[&#x27;he&#x27;]=&quot;wor&quot;<br>array2[&#x27;llo,&#x27;]=&quot;ld!&quot;<br></code></pre></td></tr></table></figure></li>
-</ul>
-<p>示例：</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs shell">array1=(1 2 3 4 5)<br>echo $&#123;array1[0]&#125; $&#123;array1[1]&#125; $&#123;array1[2]&#125; $&#123;array1[3]&#125; $&#123;array1[4]&#125;<br>declare -A array2<br>array2[&#x27;he&#x27;]=&quot;wor&quot;<br>array2[&#x27;llo,&#x27;]=&quot;ld!&quot;<br>echo $&#123;array2[&#x27;he&#x27;]&#125;$&#123;array2[&#x27;llo,&#x27;]&#125;<br></code></pre></td></tr></table></figure>
-<p>输出为：</p>
-<blockquote>
-<p>1 2 3 4 5<br>world!</p>
-</blockquote>
-<blockquote>
-<p>未完待续……</p>
-</blockquote>
-<h2 id="字符串"><a href="#字符串" class="headerlink" title="字符串"></a>字符串</h2><p>字符串可以用单引号，也可以用双引号，也可以不用引号。</p>
-<h3 id="单引号"><a href="#单引号" class="headerlink" title="单引号"></a>单引号</h3><p>单引号里的任何字符都会原样输出，单引号字符串中的变量是无效的。</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs shell"><span class="hljs-meta prompt_">#</span><span class="language-bash">!/bin/bash</span><br>a=chilun<br>echo &#x27;$&#123;a&#125;&#x27;<br></code></pre></td></tr></table></figure>
-<p>输出为：</p>
-<blockquote>
-<p>${a}</p>
-</blockquote>
-<p>由于单引号里的任何字符都会原样输出，所以单引号字符串中无法输出单引号（不支持转义），但可成对出现，作为字符串拼接使用。</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs shell"><span class="hljs-meta prompt_">#</span><span class="language-bash">!/bin/bash</span><br>a=chilun<br>echo &#x27;$&#123;a&#125;&#x27;&#x27;$&#123;a&#125;&#x27;<br></code></pre></td></tr></table></figure>
-<p>输出为：</p>
-<blockquote>
-<p>${a}${a}</p>
-</blockquote>
-<h3 id="双引号"><a href="#双引号" class="headerlink" title="双引号"></a>双引号</h3><p>双引号字符串支持变量展开和转义字符。</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs shell"><span class="hljs-meta prompt_">#</span><span class="language-bash">!/bin/bash</span><br>a=chilun<br>echo &quot;$&#123;a&#125;&quot;&quot;\$&#123;a&#125;&quot;<br></code></pre></td></tr></table></figure>
-<p>输出为：</p>
-<blockquote>
-<p>chilun${a}</p>
-</blockquote>
-<h3 id="字符串操作"><a href="#字符串操作" class="headerlink" title="字符串操作"></a>字符串操作</h3><h4 id="获得长度"><a href="#获得长度" class="headerlink" title="获得长度"></a>获得长度</h4><p>使用&#96;$</p>
-
+                <p>JVM主要分为三大模块内容：<br><strong>类加载器</strong>、<strong>运行时数据区</strong>和<strong>执行引擎</strong>。</p>
+<p>示意图：<br><img src="/2024/03/28/backend/language/java/JVM/%E4%B8%89%E5%A4%A7%E6%A8%A1%E5%9D%97.png" srcset="/img/loading.gif" lazyload></p>
+<h1 id="类加载"><a href="#类加载" class="headerlink" title="类加载"></a>类加载</h1><p>类加载过程：<br><img src="/2024/03/28/backend/language/java/JVM/%E7%B1%BB%E5%8A%A0%E8%BD%BD%E8%BF%87%E7%A8%8B.svg" srcset="/img/loading.gif" lazyload></p>
+<p>类加载器：<br><img src="/2024/03/28/backend/language/java/JVM/%E7%B1%BB%E5%8A%A0%E8%BD%BD%E5%99%A8.svg" srcset="/img/loading.gif" lazyload></p>
+<h1 id="运行时数据区"><a href="#运行时数据区" class="headerlink" title="运行时数据区"></a>运行时数据区</h1>
                 
               </div>
             
@@ -468,7 +338,7 @@
   
     <span>></span>
     
-  <a href="/categories/%E5%90%8E%E7%AB%AF%E5%BC%80%E5%8F%91/%E8%AF%AD%E8%A8%80/shell/" class="category-chain-item">shell</a>
+  <a href="/categories/%E5%90%8E%E7%AB%AF%E5%BC%80%E5%8F%91/%E8%AF%AD%E8%A8%80/Java/" class="category-chain-item">Java</a>
   
   
 
@@ -487,21 +357,7 @@
     <div class="post-meta">
       <i class="iconfont icon-tags"></i>
       
-        <a href="/tags/Linux/" class="print-no-link">#Linux</a>
-      
-        <a href="/tags/Shell/" class="print-no-link">#Shell</a>
-      
-        <a href="/tags/CLI/" class="print-no-link">#CLI</a>
-      
-        <a href="/tags/Bash/" class="print-no-link">#Bash</a>
-      
-        <a href="/tags/Bourne-Again-SHell/" class="print-no-link">#Bourne-Again SHell</a>
-      
-        <a href="/tags/%E5%8F%98%E9%87%8F/" class="print-no-link">#变量</a>
-      
-        <a href="/tags/%E5%AD%97%E7%AC%A6%E4%B8%B2/" class="print-no-link">#字符串</a>
-      
-        <a href="/tags/%E6%95%B0%E7%BB%84/" class="print-no-link">#数组</a>
+        <a href="/tags/Java/" class="print-no-link">#Java</a>
       
     </div>
   
@@ -513,8 +369,8 @@
 
   <div class="license-box my-3">
     <div class="license-title">
-      <div>Shell：基础篇</div>
-      <div>http://shoumingchilun.github.io/2024/03/21/backend/language/shell/shell1/</div>
+      <div>JVM各类图示</div>
+      <div>http://shoumingchilun.github.io/2024/03/28/backend/language/java/JVM/</div>
     </div>
     <div class="license-meta">
       
@@ -526,7 +382,7 @@
       
         <div class="license-meta-item license-meta-date">
           <div>发布于</div>
-          <div>2024年3月21日</div>
+          <div>2024年3月28日</div>
         </div>
       
       
@@ -798,17 +654,17 @@
     
     
     <div class="category-sub row nomargin-x">
-      <a class="category-subitem collapsed
+      <a class="category-subitem 
           list-group-item category-item-action col-10 col-md-11 col-xm-11" title="Java"
         id="heading-d52387880e1ea22817a72d3759213819" role="tab" data-toggle="collapse" href="#collapse-d52387880e1ea22817a72d3759213819"
-        aria-expanded="false"
+        aria-expanded="true"
       >
         Java
         <span class="list-group-count">(2)</span>
         <i class="iconfont icon-arrowright"></i>
       </a>
       
-      <div class="category-collapse collapse " id="collapse-d52387880e1ea22817a72d3759213819"
+      <div class="category-collapse collapse show" id="collapse-d52387880e1ea22817a72d3759213819"
            role="tabpanel" aria-labelledby="heading-d52387880e1ea22817a72d3759213819">
         
         
@@ -829,7 +685,7 @@
       
         <a href="/2024/03/28/backend/language/java/JVM/" title="JVM各类图示"
            class="list-group-item list-group-item-action
-           ">
+           active">
           <span class="category-post">JVM各类图示</span>
         </a>
       
@@ -844,17 +700,17 @@
     
     
     <div class="category-sub row nomargin-x">
-      <a class="category-subitem 
+      <a class="category-subitem collapsed
           list-group-item category-item-action col-10 col-md-11 col-xm-11" title="shell"
         id="heading-2591c98b70119fe624898b1e424b5e91" role="tab" data-toggle="collapse" href="#collapse-2591c98b70119fe624898b1e424b5e91"
-        aria-expanded="true"
+        aria-expanded="false"
       >
         shell
         <span class="list-group-count">(1)</span>
         <i class="iconfont icon-arrowright"></i>
       </a>
       
-      <div class="category-collapse collapse show" id="collapse-2591c98b70119fe624898b1e424b5e91"
+      <div class="category-collapse collapse " id="collapse-2591c98b70119fe624898b1e424b5e91"
            role="tabpanel" aria-labelledby="heading-2591c98b70119fe624898b1e424b5e91">
         
         
@@ -866,7 +722,7 @@
       
         <a href="/2024/03/21/backend/language/shell/shell1/" title="Shell：基础篇"
            class="list-group-item list-group-item-action
-           active">
+           ">
           <span class="category-post">Shell：基础篇</span>
         </a>
       

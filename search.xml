@@ -373,6 +373,232 @@
       </tags>
   </entry>
   <entry>
+    <title>MySQL：索引</title>
+    <url>/2024/03/20/backend/database/mysql/mysql_index/</url>
+    <content><![CDATA[<blockquote>
+<p>本文将初步介绍MySQL数据库索引的数据结构与用处。</p>
+</blockquote>
+<p>索引是一种用来<strong>快速查询</strong>和<strong>检索数据</strong>的数据结构。许多查询往往只涉及到数据库的一部分，比如查询出某个ID为xxx的学生，系统如果需要读取每个学生来遍历获得该条记录，那么这种操作方式无疑是低效的。在理想情况下，系统应该能直接定位这些记录。</p>
+<p>索引底层数据结构存在很多种类型，常见的索引结构有: B 树， B+树 和 Hash、红黑树。</p>
+<blockquote>
+<p>在 MySQL 中，无论是 Innodb 还是 MyIsam，都使用了 <strong>B+树</strong>作为索引结构。</p>
+</blockquote>
+<h1 id="索引底层数据结构"><a href="#索引底层数据结构" class="headerlink" title="索引底层数据结构"></a>索引底层数据结构</h1><h2 id="二叉查找树（BST）"><a href="#二叉查找树（BST）" class="headerlink" title="二叉查找树（BST）"></a>二叉查找树（BST）</h2><p>当二叉查找树是平衡的时候，也就是树的每个节点的左右子树深度相差不超过 1 的时候，查询的时间复杂度为 O(log2(N))，具有比较高的效率。然而，当二叉查找树不平衡时，例如在最坏情况下（有序插入节点），树会退化成线性链表（也被称为斜树），导致查询效率急剧下降，时间复杂退化为 O（N）。</p>
+<p>由于二叉查找树的性能非常依赖于它的平衡程度，这就导致其不适合作为 MySQL 底层索引的数据结构。为了解决这个问题，并提高查询效率，人们发明了多种在二叉查找树基础上的改进型数据结构，如平衡二叉树、B-Tree、B+Tree 等。</p>
+<h2 id="自平衡二叉查找树（AVL）"><a href="#自平衡二叉查找树（AVL）" class="headerlink" title="自平衡二叉查找树（AVL）"></a>自平衡二叉查找树（AVL）</h2><p>AVL 树的特点是保证任何节点的左右子树高度之差不超过 1，因此也被称为高度平衡二叉树，它的查找、插入和删除在平均和最坏情况下的时间复杂度都是 O(logn)。</p>
+<p>由于 AVL 树需要频繁地进行旋转操作来保持平衡，因此会有较大的计算开销进而降低了查询性能。并且， 在使用 AVL 树时，每个树节点仅存储一个数据，而每次进行磁盘 IO 时只能读取一个节点的数据，如果需要查询的数据分布在多个节点上，那么就需要进行多次磁盘 IO。所以在实际应用中，AVL 树使用的并不多。</p>
+<h2 id="红黑树"><a href="#红黑树" class="headerlink" title="红黑树"></a>红黑树</h2><p>红黑树是一种自平衡二叉查找树，通过在插入和删除节点时进行颜色变换和旋转操作，使得树始终保持平衡状态。</p>
+<p>虽然红黑树在插入和删除节点时只需进行 O(1) 次数的旋转和变色操作，即可保持基本平衡状态，但是红黑树并不追求严格的平衡，而是大致的平衡。正因如此，红黑树的查询效率稍有下降，因为红黑树的平衡性相对较弱，可能会导致树的高度较高，这可能会导致一些数据需要进行多次磁盘 IO 操作才能查询到，这也是 MySQL 没有选择红黑树的主要原因。</p>
+<h2 id="B树-B-树"><a href="#B树-B-树" class="headerlink" title="B树&amp;B+树"></a>B树&amp;B+树</h2><p>B 树也称 B-树,全称为<strong>多路平衡查找树</strong>。</p>
+<blockquote>
+<p>目前大部分数据库系统及文件系统都采用 B-Tree 或其变种 B+Tree 作为索引结构。</p>
+</blockquote>
+<h3 id="B-树叶节点"><a href="#B-树叶节点" class="headerlink" title="B+树叶节点"></a>B+树叶节点</h3><p>典型的B+树叶节点会包含n-1个搜索码值（即字段值）和n个指针（指向记录或下一节点）。<br>示意图：（n&#x3D;4）<br><img src="/2024/03/20/backend/database/mysql/mysql_index/B+%E5%8F%B6%E8%8A%82%E7%82%B9.svg"></p>
+<p>一个叶节点必须容纳$\lceil (n-1)&#x2F;2 \rceil 到 n-1$个值。</p>
+<h3 id="B-树非叶节点"><a href="#B-树非叶节点" class="headerlink" title="B+树非叶节点"></a>B+树非叶节点</h3><p>B+树的非叶节点是叶节点之上的一个多级（稀疏）索引，其结构和叶节点相同，但是其指针均指向非叶节点。<br>一个非叶节点必须容纳$\lceil n&#x2F;2 \rceil 到 n$个指针。一个节点中的指针树被称为<strong>扇出（fanout）</strong>。非叶节点也被称为<strong>内部节点（internal node）</strong>。（根节点的指针数可少于$\lceil n&#x2F;2 \rceil$）</p>
+<p>对于一个内部节点来说，其指针$P_i$指向的子树中，子树的最大值必须小于等于该指针后的搜索码值，子树的最小值必须大于等于该指针前的搜索码值。<br>示意图：（n&#x3D;4）<br><img src="/2024/03/20/backend/database/mysql/mysql_index/B+root.svg"></p>
+<p>B+树是一定平衡的，即根到叶节点的每个条路径长度都一致。</p>
+<blockquote>
+<p>注意：上述是最好要求搜索码值是唯一的。如果不唯一，数据库会将搜索码从一个值变成一个二元组，比如nameA&#x3D;nameB，那么当name字段变成搜索码时，nameA在节点中的搜索码值可能变成(nameA,0)，nameB变成(nameA,1)，以保证搜索码值唯一。如果不使用二元组替换，这将导致B+树的节点会变成一个链表，或者需要更改整个B+树的存储逻辑，过于繁琐。</p>
+</blockquote>
+<h3 id="B-树查询"><a href="#B-树查询" class="headerlink" title="B+树查询"></a>B+树查询</h3><blockquote>
+<p>目前不考虑搜索码值可重复的情况。</p>
+</blockquote>
+<p>查询过程：</p>
+<ol>
+<li>查询起始：<ul>
+<li>查询从根节点开始，根节点始终位于内存中。</li>
+<li>根据要查找的键值，在根节点中执行二分查找或按照索引顺序查找合适的指针。</li>
+</ul>
+</li>
+<li>节点间导航：<ul>
+<li>找到与目标键值最接近的键，对应的指针会指向下一个层级的节点。</li>
+<li>依据指针继续访问下一层级的节点，这个过程同样进行二分查找或顺序查找，不断缩小查找范围。</li>
+</ul>
+</li>
+<li>递归查找：<ul>
+<li>重复上述步骤，沿着B+树的层级结构自顶向下移动，每次都会根据中间节点中的键值指引到更低层级的节点。</li>
+</ul>
+</li>
+<li>抵达叶子节点：<ul>
+<li>当查询到达叶子节点时，该节点包含了实际的数据记录或者如果是辅助索引，则存储了主键值。</li>
+<li>对于精确匹配的查询，直接在叶子节点中找到键值相等的记录即可。</li>
+<li>对于范围查询，可以通过叶子节点之间的链表进行高效的顺序扫描。</li>
+</ul>
+</li>
+</ol>
+<p>在应用场景下，一个B+树节点通常可以容纳几百至上千个键值对（计算方式为：$(磁盘页大小-元数据)&#x2F;(键值大小 + 指针大小)$，磁盘IO一次读出一页，即一个节点），所需磁盘IO次数为$log_{100}(X)$相比平衡二叉树中一个节点仅两个子节点的搜索效率$log_2(X)$要高非常多。</p>
+<h3 id="B-树更新"><a href="#B-树更新" class="headerlink" title="B+树更新"></a>B+树更新</h3><h4 id="插入"><a href="#插入" class="headerlink" title="插入"></a>插入</h4><p>插入：先使用查询，找到将搜索码值将出现的叶节点。然后在该叶节点的对应位置进行插入操作。<br>当叶子节点的值的数量在插入后大于n-1时，需要进行拆分操作，将该叶子节点拆成两个叶子节点，前一个有$\lceil n&#x2F;2 \rceil$个节点，后一个有剩余的节点，然后将拆分的叶子节点添加到父节点中。如果父节点在添加了一个节点后也放不下了需要进行拆分，则继续进行拆分，在父父节点添加父节点拆成两个节点的节点，以此不断循环，如果根节点也放不下了，那么将根节点也拆分，并重新添加一个新的根节点。</p>
+<p>示意图：<br><img src="/2024/03/20/backend/database/mysql/mysql_index/B+insert1.svg"></p>
+<p>如果此时再插入一个id&#x3D;7.5的记录，就会将5-7的叶子节点拆分，然后第一个内部节点需要多一个指针，就会导致第一个内部节点再次拆分，进而多出一个内部节点。（画图略）</p>
+<h4 id="删除"><a href="#删除" class="headerlink" title="删除"></a>删除</h4><p>删除即是插入的逆操作，边界条件下需要将叶子节点进行合并，进而导致内部节点的合并，以致最后的减深度。（自己类推即可，不做描述）</p>
+<blockquote>
+<p>待完善……</p>
+</blockquote>
+<h3 id="B树与B-树的异同"><a href="#B树与B-树的异同" class="headerlink" title="B树与B+树的异同"></a>B树与B+树的异同</h3><ul>
+<li>B 树的所有节点既存放键(key) 也存放数据(data)，而<strong>B+树只有叶子节点存放 key 和 data</strong>，其他内节点只存放 key。</li>
+<li>B 树的叶子节点都是独立的；B+树的叶子节点有一条<strong>引用链</strong>指向与它相邻的叶子节点。</li>
+<li>在 B 树中进行范围查询时，首先找到要查找的下限，然后对 B 树进行中序遍历，直到找到查找的上限；而 B+树的范围查询，只需要对链表进行遍历即可。</li>
+</ul>
+<p>综上，B+树与 B 树相比，具备更少的 IO 次数、更稳定的查询效率和更适于范围查询这些优势。</p>
+<h2 id="Hash表"><a href="#Hash表" class="headerlink" title="Hash表"></a>Hash表</h2><p>哈希表可以做到快速检索数据（接近O(1)）。<br>MySQL 的 InnoDB 存储引擎不直接支持常规的哈希索引，但是，InnoDB 存储引擎中存在一种特殊的哈希表：<strong>自适应哈希索引（Adaptive Hash Index）</strong>。自适应哈希索引并不是传统意义上的纯哈希索引，而是结合了 B+Tree 和哈希索引的特点，以便更好地适应实际应用中的数据访问模式和性能需求。自适应哈希索引的每个哈希桶实际上是一个小型的 B+Tree 结构。这个 B+Tree 结构可以存储多个键值对，而不仅仅是一个键。这有助于减少哈希冲突链的长度，提高了索引的效率。</p>
+<p>在MySQL运行的过程中，如果InnoDB发现，有很多寻路很长（比如B+树层数太多、回表次数多等情况）的SQL，并且有很多SQL会命中相同的页面（Page）的话，InnoDB会在自己的内存缓冲区（Buffer Pool）里，开辟一块区域，建立自适应哈希索引（Adaptive Hash Index，AHI）：一个动态创建和维护的哈希索引机制，主要目的是为了提高某些工作负载下的数据检索速度。</p>
+<p>聚簇索引访问记录过程：<br><img src="/2024/03/20/backend/database/mysql/mysql_index/B+tree.png"><br>普通索引访问记录过程：<br><img src="/2024/03/20/backend/database/mysql/mysql_index/B+tree2.png"></p>
+<p>通过普通索引查询记录时，分为两步：</p>
+<ol>
+<li>查询会先访问普通索引，定位到主键值9；</li>
+<li>再通过步骤1得到的主键值，回表到聚集索引上经过二次遍历定位到具体的完整记录。</li>
+</ol>
+<p>从上面的流程图可以看出，不管是聚集索引还是普通索引，记录定位的寻路路径（Search Path）都很长。回到Adaptive Hash Index的概念上：在MySQL运行的过程中，如果InnoDB发现：有很多寻路很长（比如B+树层数太多、回表次数多等情况）的SQL；有很多SQL会命中相同的页面（Page），就会建立自适应哈希索引（Adaptive Hash Index，AHI），以加速查询。</p>
+<p>MySQL建立Adaptive Hash Index的过程：</p>
+<ol>
+<li><strong>监控与识别热点</strong>：<ul>
+<li>InnoDB存储引擎会持续监控缓冲池（Buffer Pool）中的页面访问模式。</li>
+<li>当发现某个索引频繁被访问时，特别是对于点查询（即通过主键或唯一二级索引查找行记录的操作），InnoDB会判断是否适合构建哈希索引以加速这类查询。</li>
+</ul>
+</li>
+<li><strong>自动创建哈希索引</strong>：<ul>
+<li>如果InnoDB确定建立哈希索引可以带来性能提升，它将在内存中为那些经常访问的索引页上的键值构建一个哈希索引结构。</li>
+<li>这个哈希索引是在缓冲池内部创建的，并且仅针对已经加载到内存中的索引部分。</li>
+</ul>
+</li>
+<li><strong>插入与更新操作</strong>：<ul>
+<li>随着DML操作（INSERT、UPDATE、DELETE）的发生，InnoDB会对相应的哈希索引进行同步更新，以确保哈希索引的正确性。</li>
+</ul>
+</li>
+<li><strong>自适应调整</strong>：<ul>
+<li>AHI具有自适应性，意味着它可以动态地创建、删除或者调整哈希索引，完全无需数据库管理员手动干预。</li>
+<li>如果原先认为热点的索引不再频繁访问，或者由于内存压力导致缓冲池中的其他数据更需要空间，InnoDB会自动移除不再高效的哈希索引。</li>
+</ul>
+</li>
+</ol>
+<p>在Adaptive Hash Index中，Key就是经常访问到的索引键值，Value就是该索引键值匹配的完整记录所在页面（Page）的位置。因为是MySQL InnoDB自己维护创建的，所以称之为“自适应”哈希索引。</p>
+<p><img src="/2024/03/20/backend/database/mysql/mysql_index/%E8%87%AA%E9%80%82%E5%BA%94Hash%E8%A1%A8.png"></p>
+<blockquote>
+<p>在一般的哈希索引中，如果出现哈希冲突（即两个不同的键经过哈希函数计算后映射到同一个槽位），通常采用链表或其他方法链接冲突的键值对。但在InnoDB的AHI中，为了避免长链表带来的性能下降，特别是在内存有限且热点数据冲突较多的情况下，选择将哈希冲突的键值对组织成B+树结构。这样做的好处是：</p>
+<ul>
+<li>尽管AHI仍然是哈希索引的形式，但是B+树的特性使得即使在哈希冲突的情况下也能保持相对稳定的时间复杂度（O(log n)）来查找数据，相比于单纯的链表查询效率更高。</li>
+<li>B+树天然支持范围查找，尽管AHI主要用于点查优化，但如果因为哈希冲突导致的键值分布在一个桶内，那么在这个小规模的B+树上进行局部范围查找也是可行的，这比纯哈希索引更有优势。</li>
+</ul>
+</blockquote>
+<h1 id="索引类型"><a href="#索引类型" class="headerlink" title="索引类型"></a>索引类型</h1><blockquote>
+<p>评价一个索引的因素：</p>
+<ul>
+<li><strong>访问类型</strong>：能有效支持的访问类型，如找到某个值、找到某个范围内的值。</li>
+<li><strong>访问时间</strong>：使用该索引找到一个值或一个值的集合所需要的时间。</li>
+<li><strong>插入时间</strong>：通过该索引，插入一个数据项的时间+插入后更新索引的时间。</li>
+<li><strong>删除时间</strong>：通过该索引，找到该数据项并删除的时间+删除后更新索引的时间。</li>
+<li><strong>空间花销</strong>：索引结构所需空间。</li>
+</ul>
+</blockquote>
+<p><strong>搜索码</strong>：用于在文件中查找记录的属性或属性集被称为搜索码（search key）。如果一个文件有多个索引，则它就有多个搜索码。<br><strong>索引项（index entry）</strong>：又称<strong>索引记录（index record）</strong>，由一个<code>搜索码值</code>和<code>指针</code>构成。<code>指针</code>会指向该搜索码值对应的一条或多条记录。</p>
+<h2 id="顺序索引"><a href="#顺序索引" class="headerlink" title="顺序索引"></a>顺序索引</h2><p><strong>顺序索引（ordered index）</strong>：基于值的顺序排序。</p>
+<blockquote>
+<p><strong>散列索引（hash index）</strong>：基于将值平均分布到若干桶中。值对应的桶由散列函数决定。 </p>
+</blockquote>
+<p>顺序索引有两类：</p>
+<ul>
+<li><strong>稠密索引（dense index）</strong>：每个搜索码值（即字段值）都被一个索引项所指向。具有相同搜索码值的其余记录会顺序地排序在第一条记录后。</li>
+<li><strong>稀疏索引（sparse index）</strong>：只为某些搜索码值建立索引。只有聚集索引才能使用稀疏索引。当定位记录时，从最大搜索码值小于或等于所搜索的记录的搜索码值的索引项开始遍历，直到找到为止。</li>
+</ul>
+<p>稠密索引示意图：<br><img src="/2024/03/20/backend/database/mysql/mysql_index/%E7%A8%A0%E5%AF%86%E7%B4%A2%E5%BC%95.svg"><br>稀疏索引示意图：<br><img src="/2024/03/20/backend/database/mysql/mysql_index/%E7%A8%80%E7%96%8F%E7%B4%A2%E5%BC%95.svg"></p>
+<h2 id="聚集索引"><a href="#聚集索引" class="headerlink" title="聚集索引"></a>聚集索引</h2><p><strong>聚集索引（clustering index）</strong>：又称<strong>主索引（primary index）</strong>，搜索码定义了文件的次序。<br><strong>非聚集索引（nonclustering index）</strong>：又称<strong>辅助索引（secondary index）</strong>，搜索码的次序与文件的排序次序不同。</p>
+<h2 id="多级索引"><a href="#多级索引" class="headerlink" title="多级索引"></a>多级索引</h2><blockquote>
+<p>注意：多级索引同时适用于索引顺序文件和B+树，只不过索引顺序文件中是外层索引块，B+树中是非叶节点。</p>
+</blockquote>
+<p>如果索引很小，就可以放在主存中，这样查找一个索引项的速度就会很快。但是如果索引很大，就会导致需要将其放在磁盘中，进而导致当使用索引进行搜索时，需要进行多次磁盘IO（尤其是使用二分法搜索索引时，可能导致$log_2(n)$次的磁盘IO）。多级索引就是为了解决这个问题。<br>假设有1000000条记录，一个索引块可保存100条索引项，那么就会存在10000个索引块。（一个块可能是4KB）<br>当进行查找时，二分法需要14次磁盘的随机读才能找到对应的索引块，这可能需要0.1s的时间。</p>
+<p>为此，我们需要加快找到索引块的方式，多级索引就是一种方案。<br>索引项总是顺序排序的，我们将索引文件也看做是顺序文件，并对索引块再次建立一层稀疏索引：<br>示意图：<br><img src="/2024/03/20/backend/database/mysql/mysql_index/%E5%A4%9A%E5%B1%82%E7%B4%A2%E5%BC%95.svg"></p>
+<p>好了，假设一样是10000个索引块，现在通过外层索引（将原先的索引称为内层索引），我们只需要100个外层索引块即可建立指向10000索引项的的外层索引项，并且在读取某一个记录时，只需要查找外层索引→内层索引→数据块即可，仅一次内存访问和两次磁盘IO操作。<br>如果有更多的记录，我们同样可以继续建立更外层的索引。</p>
+<h2 id="覆盖索引"><a href="#覆盖索引" class="headerlink" title="覆盖索引"></a>覆盖索引</h2><p>如果一个索引包含（或者说覆盖）所有需要查询的字段的值，我们就称之为<strong>覆盖索引（Covering Index）</strong>。<br>我们知道在 InnoDB 存储引擎中，如果不是主键索引，叶子节点存储的是主键+列值。最终是要执行“回表”操作的，也就是要通过主键再查找一次。<br>而覆盖索引即需要查询的字段正好是索引的字段，那么直接根据该索引，就可以查到数据了，而无需回表查询。</p>
+<h2 id="联合索引"><a href="#联合索引" class="headerlink" title="联合索引"></a>联合索引</h2><p>使用表中的多个字段创建索引，就是<strong>联合索引</strong>，也叫<strong>组合索引</strong>或<strong>复合索引</strong>。</p>
+<p>如果有这样一个索引定义在table (col1, col2, col3)上，那么索引记录将是按照col1升序排列，对于col1相等的记录，则按照col2升序排列，以此类推。</p>
+<h3 id="最左前缀匹配原则"><a href="#最左前缀匹配原则" class="headerlink" title="最左前缀匹配原则"></a>最左前缀匹配原则</h3><ul>
+<li>最左前缀匹配原则意味着只要查询条件中包含了索引的最左侧列（这里是A），就可以利用索引来优化查询。也就是说，不只是查询条件只包括A列时能使用索引，当查询条件包含A和B（即A&#x3D;? AND B&#x3D;?），或者A、B和C（即A&#x3D;? AND B&#x3D;? AND C&#x3D;?）时，都可以利用这个联合索引来加快查询速度。</li>
+<li>但是如果查询条件只包含B或C（即B&#x3D;? 或B&#x3D;? AND C&#x3D;?），因为(a, b, c) 是联合索引，是先按 a 排序，在 a 相同的情况再按 b 排序，在 b 相同的情况再按 c 排序。所以，b 和 c 是全局无序，局部相对有序的，这样在没有遵循最左匹配原则的情况下，是无法利用到索引的。</li>
+</ul>
+<p><strong>最左匹配原则会一直向右匹配直到遇到范围查询(&gt;、&lt;、between、like) 就会停止匹配。</strong></p>
+<ul>
+<li>向右匹配的概念是，一旦满足最左列的条件后，数据库会继续检查下一个索引列（即从左到右），只要查询条件允许。</li>
+<li>停止匹配原则在于，如果查询条件中出现了一个范围查询（如A &gt; ?、A &lt; ?、B BETWEEN ? AND ?等），那么在遇到这个范围查询的列之后的索引列将不再用于索引查找。例如，对于上述索引，若查询条件为A &#x3D; ? AND B &gt; ? AND C &#x3D; ?，虽然A列和B列都能利用索引，但由于B列进行了范围查询，因此C列将不会使用索引来优化查询，数据库系统可能需要进行额外的全表扫描或其他操作来获取满足C列条件的记录。</li>
+</ul>
+<blockquote>
+<p>注意，如果范围查询中，存在确定情况下的记录（即&gt;&#x3D;、&lt;&#x3D;、Between…and…、like导致的$[a,b)$区间），则在刚好&#x3D;的情况下，范围查询索引右侧的索引仍旧可以起效，但是如果是不确定的情况（即&gt;、&lt;、like中去除了a后的$(a,b)$），则会停止匹配。<br>比如条件为a&gt;&#x3D;1 and b&#x3D;1，针对a&#x3D;1的记录，判定b时仍然可使用联合索引；但是对于a&gt;1的记录，则只能使用联合索引中a的部分。<br>相关来源：<a href="https://mp.weixin.qq.com/s/8qemhRg5MgXs1So5YCv0fQ">小林coding</a></p>
+</blockquote>
+<h1 id="索引失效场景"><a href="#索引失效场景" class="headerlink" title="索引失效场景"></a>索引失效场景</h1><ol>
+<li><strong>联合索引失效</strong><ul>
+<li>未符合联合索引要求的最左前缀匹配原则（即不包含联合索引最左侧的字段）。<ul>
+<li>注意：MySQL8新增索引跳跃扫描的功能，即第一列索引的唯一值较少时，即使 where 条件没有第一列索引，查询的时候也可以用到联合索引。</li>
+</ul>
+</li>
+<li>向右匹配时遇到范围查询。</li>
+</ul>
+</li>
+<li><strong>where范围过大</strong><ul>
+<li>where查询范围过大，可能导致MySQL最优选择全表扫描，进而导致索引失效。</li>
+</ul>
+</li>
+<li><strong>where条件中包含函数或计算</strong><ul>
+<li>由于索引保存的是索引字段的原始值，而不是经过函数&#x2F;计算后的值，自然就没办法走索引了。<ul>
+<li>注意：MySQL 8.0 开始，索引特性增加了函数索引，可以针对函数计算后的值建立一个索引。</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><strong>like %…</strong><ul>
+<li>范围过大造成索引没有意义从而失效的情况。</li>
+</ul>
+</li>
+<li><strong>条件包含or导致失效</strong><ul>
+<li>如果在OR前的条件列是索引列，而在OR后的条件列不是索引列，那么索引会失效，因为验证后一个条件是需要遍历全表的。<ul>
+<li>在Or的条件中两边都加上索引，即可避免全表扫描。</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><strong>(not) in …</strong><ul>
+<li>当IN的取值范围较大时会导致索引失效，走全表扫描，与like %…类似。</li>
+</ul>
+</li>
+<li><strong>order By</strong><ul>
+<li>在需要排序的场景下，存在两种策略：<ul>
+<li>索引+回表：走索引，索引是排好序的，但是需要回表。</li>
+<li>全表扫描：直接全表扫描排序，不用回表。</li>
+</ul>
+</li>
+<li>MySQL认为后一种效率更高，因此orderBy情况下索引会失效。</li>
+</ul>
+</li>
+</ol>
+]]></content>
+      <categories>
+        <category>后端开发</category>
+        <category>数据库</category>
+        <category>MySQL</category>
+      </categories>
+      <tags>
+        <tag>数据库</tag>
+        <tag>MySQL</tag>
+        <tag>B+树</tag>
+        <tag>自适应哈希索引</tag>
+        <tag>Adaptive Hash Index</tag>
+        <tag>二叉查找树</tag>
+        <tag>BST</tag>
+        <tag>自平衡二叉查找树</tag>
+        <tag>AVL</tag>
+        <tag>多路平衡查找树</tag>
+        <tag>顺序索引</tag>
+        <tag>散列索引</tag>
+        <tag>聚集索引</tag>
+        <tag>主索引</tag>
+        <tag>搜索码</tag>
+        <tag>非聚集索引</tag>
+        <tag>辅助索引</tag>
+        <tag>覆盖索引</tag>
+        <tag>联合索引</tag>
+        <tag>最左前缀匹配原则</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>MySQL：并发</title>
     <url>/2024/03/22/backend/database/mysql/mysql_concurrent/</url>
     <content><![CDATA[<p>本文将讲解并发事务带来的问题、并发事务的控制方式、事务隔离级别。</p>
@@ -703,9 +929,6 @@
 <p>示意图：<br><img src="/2024/03/22/backend/database/mysql/mysql_concurrent/RR%E6%97%A0.png"></p>
 <p>如果查询条件列没有索引，主键索引的所有记录，都将加上X锁，每条记录间也都加上间隙Gap锁。大家可以想象一下，任何加锁并发的SQL，都是不能执行的，全表都是锁死的状态。如果表的数据量大，那效率就更低。</p>
 <h4 id="Serializable串行化"><a href="#Serializable串行化" class="headerlink" title="Serializable串行化"></a>Serializable串行化</h4><p>在Serializable串行化的隔离级别下，对于写的语句，比如update account set balance&#x3D; balance-10 where name&#x3D;‘Jay’;，跟RC和RR隔离级别是一样的。不一样的地方是，在查询语句，如select balance from account where name &#x3D; ‘Jay’;，在RC和RR是不会加锁的（仅MVCC），但是在Serializable串行化的隔离级别，即会加锁。</p>
-<h3 id="RR隔离级别-加锁规则详解"><a href="#RR隔离级别-加锁规则详解" class="headerlink" title="RR隔离级别-加锁规则详解"></a>RR隔离级别-加锁规则详解</h3><blockquote>
-<p>未完待续……</p>
-</blockquote>
 ]]></content>
       <categories>
         <category>后端开发</category>
@@ -765,6 +988,449 @@
         <tag>Next-Key Lock</tag>
         <tag>插入意向锁</tag>
         <tag>自增锁</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>MySQL：日志</title>
+    <url>/2024/03/21/backend/database/mysql/mysql_log/</url>
+    <content><![CDATA[<p>MySQL 日志 主要包括错误日志、查询日志、慢查询日志、事务日志、二进制日志几大类。本文将讲解其中比较重要的<strong>二进制日志binlog（归档日志）</strong>、<strong>事务日志redo log（重做日志）</strong>和<strong>undo log（回滚日志）</strong>。</p>
+<h1 id="binlog"><a href="#binlog" class="headerlink" title="binlog"></a>binlog</h1><p>MySQL<strong>二制进日志（binlog）</strong>，也叫做<strong>变更日志（update log）</strong>。<br>二进制日志中记录了<strong>对MySQL数据库执行更改的所有操作</strong>，并且记录了语句发生时间、执行时长、操作数据等其它额外信息。</p>
+<p>二进制日志主要用于<strong>数据库恢复</strong>和<strong>主从复制</strong>，以及审计操作，它包含了所有能够重现数据库状态变更所必需的信息。。如果 MySQL 数据库意外停止，可以通过二进制日志文件来查看用户执行了哪些操作，对数据库服务器文件做了哪些修改，然后根据二进制日志文件中的记录来恢复数据库服务器。</p>
+<h2 id="内容"><a href="#内容" class="headerlink" title="内容"></a>内容</h2><p>二进制日志（binlog）中记录了对MySQL数据库执行更改的所有操作，并且记录了语句发生时间、执行时长、操作数据等其它额外信息：<br>主要包含以下内容：</p>
+<ul>
+<li><strong>逻辑操作</strong>：对数据库执行的原始SQL语句或其等价物。具体内容与格式有关：<ul>
+<li><strong>Statement格式</strong>：记录执行的SQL语句本身，例如INSERT INTO table VALUES(…)、UPDATE table SET column&#x3D;… WHERE condition等。</li>
+<li><strong>Row格式</strong>：记录每个受影响行的实际变化，而不是整个SQL语句。它会详细说明哪个表的哪一行如何被修改。</li>
+<li><strong>Mixed格式</strong>：混合使用Statement和Row格式，MySQL根据SQL语句的特点自动选择最佳方式。</li>
+</ul>
+</li>
+<li><strong>事务边界</strong>：<ul>
+<li>Binlog以事务为单位记录变更，确保了事务的原子性和一致性。每个事务的所有操作作为一个整体被记录，且事务开始和结束都有相应的标志。</li>
+</ul>
+</li>
+<li><strong>GTID（Global Transaction Identifier）</strong>：在支持GTID的MySQL版本中，binlog还会包含全局事务ID，用于主从复制时精确地跟踪和同步事务。</li>
+<li><strong>DDL操作</strong>：对于数据定义语言（如CREATE TABLE、ALTER TABLE、DROP TABLE等）也会记录在binlog中。</li>
+<li>其他元数据：事件头信息，如事务ID、时间戳、服务器ID等，用于数据恢复和复制过程中的校验和同步。</li>
+</ul>
+<h2 id="写入机制"><a href="#写入机制" class="headerlink" title="写入机制"></a>写入机制</h2><p>事务执行过程中，会先把日志写到binlog cache，事务提交的时候，再把binlog cache写到binlog文件中。<br>系统会给每个线程分配一个块内存作为binlog cache，以确保一个事务的binlog的一次性写入的。</p>
+<p>示意图：<br><img src="/2024/03/21/backend/database/mysql/mysql_log/writeBinlog.png"></p>
+<p>注意，如果<code>write</code>操作不会将binlog文件写入磁盘（仅仅是存入缓存），<code>fsync</code>才是将binlog文件写入磁盘的真正动作。如果机器宕机，Buffer Pool里面的 binlog 就会丢失。</p>
+<blockquote>
+<p><strong>sync_binlog参数</strong>可用于控制write和fsync的时机。</p>
+<ul>
+<li>0：sync_binlog为0时，每次提交事务都进行write，执行fsync时机由操作系统决定。</li>
+<li>1：每次提交事务都会执行fsync。</li>
+<li>N(N&gt;1)：表示每次提交事务都write，但累积N个事务后才fsync。</li>
+</ul>
+</blockquote>
+<h2 id="作用"><a href="#作用" class="headerlink" title="作用"></a>作用</h2><ol>
+<li><strong>基于时间点的恢复</strong>：在备份文件恢复的基础上，通过binlog日志，可以将数据库恢复到某一时间点；</li>
+<li><strong>主从复制</strong>：在主从复制模式下，必须在主服务器上开启binlog日志；</li>
+<li><strong>操作审计</strong>：对所有更改数据的操作进行审计。</li>
+</ol>
+<blockquote>
+<p>操作审计：</p>
+<ul>
+<li>数据追踪与回溯：通过分析binlog，可以追溯数据库中的任何数据变更历史，这对于数据安全性、合规性要求高的场景尤其重要，比如金融、医疗等行业，需要记录详细的交易历史以供审计或法律调查。</li>
+<li>审计复核：binlog可用于数据完整性验证，通过重新播放binlog中的事件，可以检查数据库是否按照预期进行了操作，从而帮助发现潜在的误操作或恶意篡改行为。</li>
+<li>安全审计：安全审计时，binlog可以帮助识别未经授权的访问尝试、非法数据修改等安全事件，因为它记录了所有的数据修改语句。</li>
+</ul>
+<p>注意：MySQL本身的审计功能并非直接依赖binlog，而是通过专门的审计插件（如MySQL Enterprise Audit Plugin）或其他审计工具来实现更全面和规范的审计需求，这些工具可以提供更多定制化的审计过滤、报告生成等功能。不过，binlog确实是进行事后审计和数据一致性检查的重要数据源之一。</p>
+</blockquote>
+<h1 id="undo-log"><a href="#undo-log" class="headerlink" title="undo log"></a>undo log</h1><p><strong>undo log</strong>是一种用于<strong>撤销回退</strong>的日志。<br>在事务没提交之前，MySQL会先<strong>记录更新前的数据到 undo log日志文件里面</strong>，当事务回滚时或者数据库崩溃时，可以利用 undo log来进行回退。</p>
+<h2 id="作用-1"><a href="#作用-1" class="headerlink" title="作用"></a>作用</h2><ol>
+<li><strong>提供回滚操作</strong>：在进行数据更新操作的时候，会记录undo log。如果因为某些原因导致事务回滚，那么这个时候MySQL就要执行回滚（rollback）操作，利用undo log将数据恢复到事务开始之前的状态。<ol>
+<li>比如我们执行下面一条update语句：<code>update user set name = &quot;李四&quot; where id = 1;   ---修改之前name=张三</code></li>
+<li>此时undo log会记录update之前的状态（id&#x3D;1,name&#x3D;‘张三’）；如果这个修改出现异常，就可以使用undo log日志中的操作来实现回滚操作，如：<code>update user set name = &quot;张三&quot; where id = 1;</code>，以保证事务的一致性。</li>
+</ol>
+</li>
+<li><strong>实现多版本并发控制（MVCC）</strong>。</li>
+</ol>
+<p><strong>MVCC</strong>，即<strong>多版本控制</strong>。在MySQL数据库InnoDB存储引擎中，用undo Log来实现多版本并发控制(MVCC)。当读取的某一行被其他事务锁定时，它可以从undo log中分析出该行记录以前的数据版本是怎样的，从而让用户能够<strong>快照读</strong>读取到当前事务操作之前的数据。</p>
+<blockquote>
+<p><strong>快照读</strong>：SQL读取的数据是快照版本，也就是历史版本，不用加锁，普通的SELECT就是快照读。<br><strong>当前读</strong>：SQL读取的数据是最新版本。通过锁机制来保证读取的数据无法被其他事务进行修改。UPDATE、DELETE、INSERT、SELECT … LOCK IN SHARE MODE、SELECT … FOR UPDATE都是当前读。</p>
+</blockquote>
+<h2 id="存储机制"><a href="#存储机制" class="headerlink" title="存储机制"></a>存储机制</h2><p>undo log的存储由<code>InnoDB存储引擎</code>实现，其采用<strong>分段(segment)<strong>的方式进行存储的。<br><strong>rollback segment</strong>称为</strong>回滚段</strong>，每个回滚段中有1024个<code>undo log segment</code>。在MySQL5.5之后，可以支持128个rollback segment，每一个回滚段，内部由1024个undo segment 组成，即总共可以记录128 * 1024个undo操作。</p>
+<p>存储结构示意图：<br><img src="/2024/03/21/backend/database/mysql/mysql_log/undolog1.svg"></p>
+<p>回滚指针第一次如果是insert语句的话，回滚指针为NULL，第二次update之后的undo log的回滚指针就会指向刚刚那一条undo log日志，依次类推，就会形成一条undo log的回滚链，方便找到该条记录的历史版本。</p>
+<p>多个事务并行操作某一行数据时，不同事务对该行数据的修改会产生多个版本，然后通过回滚指针（roll_pointer），连成一个链表，这个链表就称为版本链。</p>
+<h2 id="工作原理"><a href="#工作原理" class="headerlink" title="工作原理"></a>工作原理</h2><p>在更新数据之前，MySQL会提前生成undo log日志，当事务提交的时候，并不会立即删除undo log，因为后面可能需要进行回滚操作。<br>要执行回滚（rollback）操作时，从缓存中读取数据。undo log日志的删除是通过通过后台<strong>purge线程</strong>进行回收处理的。</p>
+<p>示意图：<br><img src="/2024/03/21/backend/database/mysql/mysql_log/undolog2.svg"></p>
+<p>举例：</p>
+<ol>
+<li>事务A执行update操作，此时事务还没提交，会将数据进行备份到对应的undo buffer，然后由undo buffer持久化到磁盘中的undo log文件中，<strong>此时undo log保存了未提交之前的操作日志</strong>，接着将操作的数据，也就是Teacher表的数据持久保存到InnoDB的数据文件IBD。</li>
+<li>此时事务B进行查询操作，直接<strong>从undo buffer缓存中进行读取</strong>，这时事务A还没提交事务，如果要<strong>回滚（rollback）事务，就直接从undo buffer缓存读取。</strong></li>
+</ol>
+<h2 id="流程"><a href="#流程" class="headerlink" title="流程"></a>流程</h2><p>使用undo log实现<strong>原子性</strong>和<strong>持久化</strong>的事务的流程：</p>
+<ol>
+<li>事务开始</li>
+<li>第一次更改：<ol>
+<li>将name&#x3D;A记录至undo log</li>
+<li>更改Buffer Pool中的name&#x3D;B（原name&#x3D;A）</li>
+</ol>
+</li>
+<li>第二次更改：<ol>
+<li>将name&#x3D;B记录至undo log</li>
+<li>更改Buffer Pool中的name&#x3D;C</li>
+</ol>
+</li>
+<li>持久化undo log（Undo Log在事务执行过程中就已经逐步地持久化到了磁盘中）</li>
+<li>提交事务，此时事务才真正完成，同时持久化Buffer Pool中的改动至磁盘。对于MySQL复制环境，在提交事务后，Binlog也会被持久化到磁盘。</li>
+</ol>
+<p><strong>注意：在更新数据前会提前记录undo log。</strong></p>
+<p>执行该流程的优点：</p>
+<ol>
+<li><strong>成功情况</strong>：事务提交将与数据一起写入磁盘。</li>
+<li><strong>异常情况</strong>：<ol>
+<li>持久化undo log后发生异常：undo log是完整的，可以用来回滚。</li>
+<li>持久化undo log前或时发生异常：磁盘上的数据保持在事务开始前。</li>
+</ol>
+</li>
+</ol>
+<blockquote>
+<p>感觉思路有点像磁盘的RAID1级或缓存的差异失效时间，提供了两个备份，因此任何时间点发生崩溃都可以保证数据不丢失。</p>
+</blockquote>
+<h1 id="redo-log"><a href="#redo-log" class="headerlink" title="redo log"></a>redo log</h1><p><strong>redo log（重做日志）</strong>，也叫重放日志。和undo log回滚日志一样，都是在数据库发生意外时用来进行数据恢复的，之前已经介绍了undo log，我们都知道undo log记录的是数据更新前的样子，主要保证事务的原子性；而redo log则记录的是<strong>事务执行过程中的修改情况</strong>，redo log主要保证事务的持久性。</p>
+<p>Redo Log 并不是直接用于保存事务提交后的“脏页”本身，而是用于<strong>保存那些在事务执行过程中对数据页所做的修改操作的日志记录</strong>。当一个事务在InnoDB存储引擎中执行时，它首先修改内存中的数据页（这些数据页位于Buffer Pool中），这些被修改过的数据页被称为“脏页”。</p>
+<p>Redo Log 记录了足以重新执行（redo）这些修改操作所需的信息，即使在系统发生故障（如宕机）的情况下，也能确保当数据库重启时，能够<strong>通过重做(redo)这些日志记录来恢复未持久化到磁盘的事务影响</strong>。<br><strong>在事务提交时，Redo Log 会被刷新到磁盘上的 redo log 文件中，这个过程通常早于对应数据页被刷回磁盘（即脏页flush到磁盘数据文件）。</strong>这种机制使得MySQL能够满足ACID中的持久性要求，即一旦事务提交，其对数据库的影响即使在系统崩溃后也能保持不变。</p>
+<h2 id="作用-2"><a href="#作用-2" class="headerlink" title="作用"></a>作用</h2><ol>
+<li><strong>保证事务的持久性</strong>：如果buffer pool缓冲池中的<strong>脏数据还没有进行刷盘</strong>的时候，此时数据库发生崩溃，重启服务后，我们可以通过redo log日志找到需要重放到磁盘文件的那些数据记录。</li>
+<li><strong>提高事务提交的速度</strong>：buffer pool缓冲池中的数据直接刷新到磁盘，是一个随机IO，效率较差，而把buffer pool中的数据记录到redo log，是一个顺序IO，可以提高事务提交的速度。可将redo log持久化作为事务完成的标志（崩溃了也能通过redo log恢复），所以速度更快。</li>
+</ol>
+<h2 id="工作原理-1"><a href="#工作原理-1" class="headerlink" title="工作原理"></a>工作原理</h2><p>redo log由两部分组成：</p>
+<ul>
+<li>redo log buffer：重做日志缓存，存在于内存中，容易发生丢失。</li>
+<li>redo log file：重做日志文件，存在于磁盘中，不容易发生丢失。</li>
+</ul>
+<p>为了确保每次日志都能写入到事务日志文件中，在每次将log buffer中的日志写入日志文件的过程中都会调用一次操作系统的<strong>fsync操作（即fsync()系统调用）</strong>。因为MySQL是工作在用户空间的，log buffer处于用户空间的内存中。要写入到磁盘上的log file中，中间还要经过操作系统内核空间的os buffer，调用fsync()的作用就是将OS buffer中的日志刷到磁盘上的log file中。</p>
+<p>redo log的工作原理示意图：（包括binlog、undo log、redo log）<br><img src="/2024/03/21/backend/database/mysql/mysql_log/log_all.svg"></p>
+<h2 id="流程-1"><a href="#流程-1" class="headerlink" title="流程"></a>流程</h2><p>之前的undo log中的事务执行流程并不完整，现在提供补充redo log后的完整流程：<br>数据需要在事务提交前写到磁盘，<strong>只要事务成功提交，数据必然已经持久化到磁盘。</strong></p>
+<ol>
+<li>事务开始</li>
+<li>每次数据更改步骤：<ol>
+<li>对于第一次更改（如将name从A改为B）：<ol>
+<li>创建一个Undo Log条目，记录原始值A以及变更前的数据状态。</li>
+<li>更新内存中的Buffer Pool（即Page Cache），将name字段改为B。</li>
+</ol>
+</li>
+<li>对于第二次更改（如将name从B改为C）：<ol>
+<li>再创建一个新的Undo Log条目，记录原始值B及变更前的状态。</li>
+<li>更新内存中的Buffer Pool，将name字段改为C。</li>
+</ol>
+</li>
+</ol>
+</li>
+<li><strong>Undo Log在事务执行过程中按照checkpoint机制或者达到一定条件时会被刷入磁盘，以保证事务的持久性</strong>。</li>
+<li>在事务准备提交阶段，<strong>Redo Log会被先于事务提交持久化到磁盘</strong>，通常通过fsync()系统调用确保其内容已经稳定存储。</li>
+<li>提交事务，此时事务才真正完成，同时持久化Buffer Pool中的改动至磁盘（通过Redo Log恢复）。对于MySQL复制环境，在提交事务后，Binlog也会被持久化到磁盘。</li>
+</ol>
+<p>异常情况说明：</p>
+<ul>
+<li>成功情况：一旦事务成功提交，意味着Redo Log已持久化，通过Redo Log可以重播事务的所有更改，即使系统崩溃重启也能恢复数据到最新状态。<strong>只要事务成功提交，数据必然已经持久化到磁盘。</strong></li>
+<li>异常情况：<ul>
+<li>如果在持久化Undo Log之后发生异常，由于Undo Log和Redo Log都已经持久化，可以根据Redo Log进行前滚恢复，若需要回滚事务，则可以使用Undo Log来还原数据。</li>
+<li>如果在持久化Undo Log之前或过程中发生异常，由于InnoDB遵循“Write-Ahead Logging”原则（即修改数据前先写日志），因此磁盘上的数据仍然是事务开始前的状态，不会出现数据不一致的情况。在系统恢复时，未完成的事务可以通过检查Undo Log来决定是否需要回滚。</li>
+</ul>
+</li>
+</ul>
+<h1 id="日志一致"><a href="#日志一致" class="headerlink" title="日志一致"></a>日志一致</h1><p>由于binlog和redo log的写入并不是一个原子性操作，所以可能发生写完redo log日志后，binlog日志写期间发生了异常的情况。<br>对此，InnoDB使用了<strong>两阶段提交</strong>的方案。</p>
+<p>将redo log的写入拆成了两个步骤prepare和commit，这就是两阶段提交。示意图：<br><img src="/2024/03/21/backend/database/mysql/mysql_log/%E4%B8%A4%E9%98%B6%E6%AE%B5%E6%8F%90%E4%BA%A4.png"></p>
+<p>使用两阶段提交后，写入binlog时发生异常也不会有影响，因为MySQL根据redo log日志恢复数据时，发现redo log还处于prepare阶段，并且没有对应的binlog日志，就会回滚该事务。</p>
+]]></content>
+      <categories>
+        <category>后端开发</category>
+        <category>数据库</category>
+        <category>MySQL</category>
+      </categories>
+      <tags>
+        <tag>数据库</tag>
+        <tag>MySQL</tag>
+        <tag>MVCC</tag>
+        <tag>多版本并发控制</tag>
+        <tag>undo log</tag>
+        <tag>日志</tag>
+        <tag>binlog</tag>
+        <tag>Statement格式</tag>
+        <tag>Row格式</tag>
+        <tag>Mixed格式</tag>
+        <tag>sync_binlog</tag>
+        <tag>Buffer Pool</tag>
+        <tag>rollback segment</tag>
+        <tag>回滚段</tag>
+        <tag>redo log</tag>
+        <tag>两阶段提交</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>JAVA：AOT入门</title>
+    <url>/2024/03/18/backend/language/java/JIT_AOT/</url>
+    <content><![CDATA[<p>本文将介绍使用AOT相比使用JVM运行java程序的优点，以及如何使用AOT生成可执行文件。</p>
+<blockquote>
+<p>资料来源：<br><a href="https://www.graalvm.org/">GraalVM官网</a><br><a href="https://mp.weixin.qq.com/s/4haTyXUmh8m-dBQaEzwDJw">阿里巴巴微信公众号</a></p>
+</blockquote>
+<h1 id="JIT"><a href="#JIT" class="headerlink" title="JIT"></a>JIT</h1><p>传统的一个 Java 应用从代码编写到启动运行大致可以分为如下步骤：</p>
+<ol>
+<li>首先，编写<code>.java</code>源代码程序。</li>
+<li>然后，借助<strong>javac</strong>工具将<code>.java</code>文件翻译为<code>.class</code>的<strong>字节码</strong>。字节码是 Java 中非常重要的内容之一，正是因为它的出现，Java 才实现对底层环境的屏蔽，达到 Write once, run anywhere 的效果。</li>
+<li>基于步骤2的<code>.class</code>文件会被打包成 <strong>jar</strong> 包或者 <strong>war</strong> 包进行部署执行，部署过程中通过Java虚拟机加载应用程序然后<strong>解释字节码</strong>运行业务逻辑。<ul>
+<li>我们需要格外注意的是，<code>.class-&gt;机器码</code>的过程中，JVM类加载器首先加载字节码文件，然后通过解释器逐行解释执行，这种方式的执行速度会相对比较慢。而且，有些方法和代码块是经常需要被调用的(也就是所谓的热点代码)，所以后面引进了<strong>JIT（Just in Time Compilation）</strong>编译器，而 JIT 属于运行时编译。当 JIT 编译器完成第一次编译后，其会将字节码对应的机器码保存下来，下次可以直接使用。而我们知道，机器码的运行效率肯定是高于 Java 解释器的。这也解释了我们为什么经常会说Java 是<strong>编译与解释共存</strong>的语言。</li>
+</ul>
+</li>
+</ol>
+<p>示意图：<br><img src="/2024/03/18/backend/language/java/JIT_AOT/java_jdk.svg"></p>
+<p><img src="/2024/03/18/backend/language/java/JIT_AOT/java2.svg"></p>
+<h1 id="AOT"><a href="#AOT" class="headerlink" title="AOT"></a>AOT</h1><h2 id="传统方案的缺陷"><a href="#传统方案的缺陷" class="headerlink" title="传统方案的缺陷"></a>传统方案的缺陷</h2><p><img src="/2024/03/18/backend/language/java/JIT_AOT/JVM_invoke.png"><br>Java 程序启动运行详细过程如上图所示。</p>
+<p>具体过程：</p>
+<ol>
+<li>一个 Java 应用启动过程首先需要<strong>加载</strong>该应用程序对应的<strong>JVM 虚拟机软件程序到内存中</strong>，如上图<span style="color: #fe4006;">红色</span>部分描述所示。</li>
+<li>然后 JVM 虚拟机再<strong>加载对应的应用程序到内存中</strong>，该过程对应上图中的<span style="color: #ccfefe;">浅蓝色</span>类加载（Class Load，CL）部分。</li>
+<li>在类加载过程中，<strong>应用程序</strong>就会开始<strong>被解释执行</strong>，对应上图中<span style="color: #adce00;">浅绿色</span>部分。</li>
+<li>解释执行过程 JVM 对垃圾对象进行回收，对应上图中的<span style="color: #fed220;">黄色</span>部分。</li>
+<li>随着程序的运行的深入，JVM 会采用<strong>及时编译（Just In Time，JIT）技术</strong>对执行频率较高的代码进行编译优化，以便提升应用程序运行速度。JIT 过程对应上图中的<span style="color: #fefefe;">白色</span>部分。</li>
+<li>经过 JIT 编译优化后的代码对应图中<span style="color: #00ad00;">深绿色</span>部分。</li>
+</ol>
+<p>经过上述分析，不难看出，一个 Java 程序从启动到达到被JIT动态编译优化会经过<strong>VM init</strong>，<strong>App init</strong>和<strong>App active</strong>几个阶段，相比于其他一些编译型语言，其<strong>冷启动问题</strong>比较严重。</p>
+<p>除了冷启动问题，在一个 Java 程序运行过程中，什么都不做首先就需要加载一个 JVM 虚拟机，该操作一般占用一定内存。另外，由于 Java 程序是先解释执行字节码，然后再做 JIT 编译优化。由于相比于一些编译型语言其将编译优化的动作后置到运行时，因此非常容易出现实际加载的代码比实际需要运行的代码多很多的情况，造成了一些无效内存占用情况。综上所述就是为什么很多人常诟病 Java 程序<strong>运行内存占用高</strong>的几点主要原因。</p>
+<h2 id="解决方案：AOT"><a href="#解决方案：AOT" class="headerlink" title="解决方案：AOT"></a>解决方案：AOT</h2><p><strong>提前编译（Ahead-of-Time Compilation，AOT Compilation）</strong>或者叫<strong>静态编译</strong>在 Java 领域很早就被提了出来。其核心思想就是让 Java 程序也跟其他程序语言，比如 C&#x2F;C++ 一样，先编译后执行解决上述问题，将 Java 程序的编译阶段提前到程序启动前，然后在编译阶段进行代码编译优化，让程序启动既巅峰，消除冷启动，降低运行时内存开销。</p>
+<p>Java 领域静态编译的实现技术有很多，其中最具代表性的还属 Oracle 推出的 <strong>GraalVM</strong> 开源高性能多语言运行时平台。</p>
+<blockquote>
+<p><img src="/2024/03/18/backend/language/java/JIT_AOT/GraalVM.png"><br>GraalVM 中通过提供 Truffle 解释器实现框架，让开发人员可以使用 Truffle 提供的 API 快速实现特定语言的解释器从而实现对上图中各种编程语言所写的程序都能进行编译运行的效果，从而成为一个多语言运行时平台。GraalVM 实现静态编译能力的编译器就是 GraalVM JIT Compiler。静态编译框架和运行时由 Substrate VM 子项目实现，兼容 OpenJDK 运行时实现，提供了原生镜像程序运行时的异常处理、同步调度、线程管理、内存管理等功能。<br>因此，GraalVM 不仅可以作为一个多语言运行时平台，而且由于其中提供的 GraalVM JIT Compiler 静态编译器，其可用来对 Java 程序进行静态编译。</p>
+</blockquote>
+<p>基于静态编译的 Java 程序相比于目前应用广泛的 JVM 运行时编译 Java 程序，整个从代码编写到编译执行的区别如下：<br><img src="/2024/03/18/backend/language/java/JIT_AOT/nativeImage.png"></p>
+<p>相比于 JVM 运行时方式，静态编译在运行之前会先对程序解析编译，然后生成一个跟运行时环境强相关的 <strong>native image 可执行文件</strong>，最后直接执行该文件即可启动程序进行执行。</p>
+<h3 id="静态编译过程"><a href="#静态编译过程" class="headerlink" title="静态编译过程"></a>静态编译过程</h3><blockquote>
+<p>静态编译过程到底会对 Java 程序做哪些解析操作？静态编译后的可执行程序垃圾回收问题怎么解决？</p>
+</blockquote>
+<p>GraalVM 静态编译实现示意图：<br><img src="/2024/03/18/backend/language/java/JIT_AOT/%E9%9D%99%E6%80%81%E7%BC%96%E8%AF%91.png"></p>
+<p>图中左侧前三个输入内容 Applicaton，Libraries 和 JDK 是一个 Java 程序编译运行必备的三部分，不必多说。而 <strong>Substrate VM</strong> 就是 GraalVM 中实现静态编译的核心部分，在整个静态编译过程中扮演了重要作用。<br>在静态分析过程中Substrate VM 通过<strong>上下文不敏感的指向分析（Points-to Analysis）</strong>来对应用程序做<strong>静态分析</strong>，其可以在不需要运行程序的情况下，基于源程序分析给出所有可能的可达函数列表然后作为后续编译阶段的输入对程序<strong>进行静态编译</strong>。<br>在静态分析完成后，基于静态分析结果的可达函数列表，会调用介绍的 GraalVM 中的 GraalVM JIT Compiler 编译器将应用程序编译为与目标平台强相关的本地代码以完成编译过程。<br>编译完成后，就会进入到上图中右侧 Native 可执行文件生成阶段。在该过程中，Substrate VM 会将静态编译阶段确定和初始化的内容以及跟 Substrate VM 运行时以及 JDK 库中的数据一起保存到最终可执行文件的 Image Heap 中。其中 <strong>Substrate VM 运行时</strong>就为最终可执行文件提供了运行过程中所需的垃圾回收、异常处理等能力。</p>
+<h4 id="静态分析局限性"><a href="#静态分析局限性" class="headerlink" title="静态分析局限性"></a>静态分析局限性</h4><p>在Substrate VM的静态分析过程中，由于静态分析无法覆盖 Java 中的反射、动态代理、JNI 调用等动态特性。这也造成了很多的 Java 框架由于在实现过程中使用了大量的上述特性，因此，都难以直接基于 Substrate VM 完成对自身所有代码的静态分析，需要通过<strong>额外的外部配置</strong>来解决静态分析本身的不足。</p>
+<blockquote>
+<p>一个java项目，该如何进行静态编译适配呢？其最核心要解决的本质问题，就是将开源框架中的 GraalVM 无法识别和处理的动态内容转换为其可识别的内容即可。</p>
+<p>Spring 社区为了应对Spring项目中反射和动态代理等特性在静态编译环境下的挑战，开发了<strong>AOT Engine</strong>工具。AOT Engine专注于在构建阶段对Spring应用中的特定内容进行静态分析与转换处理，这些内容包括但不限于使用@Configuration注解声明的配置类及其初始化逻辑。<br>通过AOT Engine，能够识别并预先处理那些原本只能在运行时动态生成的类结构，如基于Java的动态代理类。这样，在静态编译阶段就能够有效生成这些原本动态创建的对象，确保它们能被Substrate VM或类似支持提前编译的技术识别和兼容。<br>因此，AOT Engine有效地解决了Spring应用在静态编译场景下可能遇到的问题，使得Spring应用能够适应静态编译并实现性能优化，同时保持框架的灵活性和功能完整性。</p>
+<p>对于非 Spring 体系项目或者自身使用了一些 JDK 中原生的反射或者其他 Java 动态特性，针对自身代码中的 Java 动态用法需要在项目中提供对应的静态配置文件才能在静态编译过程中让编译器识别其中的动态特性，对其进行编译构建才能实现项目的顺利编译与执行。<br>针对这种情况，GraalVM 提供了一个名叫 <strong>native-image-agent</strong> 的 Tracing Agent 来帮助大家更方便地收集元数据并准备配置文件。该 Agent 会在常规 Java VM 上的应用程序运行过程中自动收集其中的动态特性使用情况并将其转换为 GraalVM 可以识别的配置文件。最后，将通过 Agent 生成的框架自身的动态配置文件存放在项目的：META-INF&#x2F;native-image&#x2F;&lt;group.id&gt;&#x2F;&lt;artifact.id&gt; 目录下，就可以在静态编译过程中根据这些配置内容，识别项目包中的动态特性。</p>
+</blockquote>
+<h2 id="基于静态编译构建微服务"><a href="#基于静态编译构建微服务" class="headerlink" title="基于静态编译构建微服务"></a>基于静态编译构建微服务</h2><blockquote>
+<p>Spring Cloud Alibaba 2022.0.0.0 版本所包含的所有中间件客户端已完成了构建 GraalVM 原生应用的适配。为用户提供了开箱即用的静态编译能力。</p>
+</blockquote>
+<h3 id="环境准备"><a href="#环境准备" class="headerlink" title="环境准备"></a>环境准备</h3><ol>
+<li>安装 GraalVM 发行版。（windows安装可参考：<a href="https://medium.com/graalvm/using-graalvm-and-native-image-on-windows-10-9954dc071311">Using GraalVM and Native Image on Windows 10</a>）</li>
+<li>检查 java -version 的输出来验证是否配置了正确的版本。</li>
+</ol>
+<blockquote>
+<p>建议不要使用Windows。</p>
+</blockquote>
+<h3 id="应用构建"><a href="#应用构建" class="headerlink" title="应用构建"></a>应用构建</h3><ol>
+<li>要使用 GraalVM 静态编译能力构建微服务，首先确保项目的<code>Spring Boot</code>版本为<code>3.0.0</code>或以上<code>Spring Cloud</code>版本为<code>2022.0.0</code>或以上。然后在项目中引入<code>Spring Cloud Alibaba 2022.0.0.0</code>版本的所需模块依赖即可。</li>
+<li>通过maven命令生成应用中反射、序列化和动态代理所需的 Hints 配置文件：<code>mvn -Pnative spring-boot:run</code>（前提是应用中引入了<code>spring-boot-starter-parent</code>父模块）</li>
+<li>之后应用会启动，进行预执行，需要尽可能完整的测试一遍应用的所有功能，保证应用的大部分代码都被测试用例覆盖，该过程会基于 GraalVM 的 native-image-agent 收集程序中的动态特性，这样可以确保完整生成应用运行过程中的所有必须的动态属性。</li>
+<li>运行完所有测试用例后，我们发现<code>resource/META-INF/native-image</code>目录下会生成以下一些<code>hints</code>文件:<ul>
+<li>resource-config.json：应用中资源 hint 文件</li>
+<li>reflect-config.json：应用中反射定义 hint 文件</li>
+<li>serialization-config.json：应用中序列化内容 hint 文件</li>
+<li>proxy-config.json：应用中 Java 代理相关内容 hint 文件</li>
+<li>jni-config.json：应用中 Java Native Interface（JNI）内容 hint 文件</li>
+</ul>
+</li>
+</ol>
+<blockquote>
+<p>上述预执行过程主要为了扫描应用自身业务代码以及其他第三方包中的动态特性，以便后续静态编译过程能顺利进行，应用能正常启动。</p>
+<p>如果没有使用动态特性，可直接进行下一步。</p>
+</blockquote>
+<h3 id="静态编译"><a href="#静态编译" class="headerlink" title="静态编译"></a>静态编译</h3><p>通过maven命令来构建原生镜像：<code>mvn -Pnative native:compile</code><br>成功执行后，可在<code>/target</code>目录看到生成的可执行文件。</p>
+<h3 id="执行可执行文件"><a href="#执行可执行文件" class="headerlink" title="执行可执行文件"></a>执行可执行文件</h3><p>进入<code>/target</code>，命令行输入<code>./&lt;可执行文件名称&gt;</code>，即可发现项目被光速启动了。</p>
+<blockquote>
+<p>这是真TM快啊！</p>
+</blockquote>
+]]></content>
+      <categories>
+        <category>后端开发</category>
+        <category>语言</category>
+        <category>Java</category>
+      </categories>
+      <tags>
+        <tag>JAVA</tag>
+        <tag>JDK</tag>
+        <tag>AOT</tag>
+        <tag>JIT</tag>
+        <tag>GraalVM</tag>
+        <tag>运行时编译</tag>
+        <tag>及时编译</tag>
+        <tag>静态编译</tag>
+        <tag>静态分析</tag>
+        <tag>提前编译</tag>
+        <tag>字节码</tag>
+        <tag>冷启动问题</tag>
+        <tag>native image</tag>
+        <tag>Substrate VM</tag>
+        <tag>Substrate VM运行时</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>JVM各类图示</title>
+    <url>/2024/03/28/backend/language/java/JVM/</url>
+    <content><![CDATA[<p>JVM主要分为三大模块内容：<br><strong>类加载器</strong>、<strong>运行时数据区</strong>和<strong>执行引擎</strong>。</p>
+<p>示意图：<br><img src="/2024/03/28/backend/language/java/JVM/%E4%B8%89%E5%A4%A7%E6%A8%A1%E5%9D%97.png"></p>
+<h1 id="类加载"><a href="#类加载" class="headerlink" title="类加载"></a>类加载</h1><p>类加载过程：<br><img src="/2024/03/28/backend/language/java/JVM/%E7%B1%BB%E5%8A%A0%E8%BD%BD%E8%BF%87%E7%A8%8B.svg"></p>
+<p>类加载器：<br><img src="/2024/03/28/backend/language/java/JVM/%E7%B1%BB%E5%8A%A0%E8%BD%BD%E5%99%A8.svg"></p>
+<h1 id="运行时数据区"><a href="#运行时数据区" class="headerlink" title="运行时数据区"></a>运行时数据区</h1>]]></content>
+      <categories>
+        <category>后端开发</category>
+        <category>语言</category>
+        <category>Java</category>
+      </categories>
+      <tags>
+        <tag>Java</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Shell：基础篇</title>
+    <url>/2024/03/21/backend/language/shell/shell1/</url>
+    <content><![CDATA[<h1 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h1><p>Shell 是计算机操作系统中的一个重要组成部分，尤其在类Unix系统（如Linux、BSD等）以及早期的MS-DOS等系统中扮演着核心角色。</p>
+<p><strong>Shell 是一种命令行界面（CLI）程序，通常被称为命令解释器，它是用户与操作系统内核之间交互的接口或桥梁。</strong></p>
+<blockquote>
+<p>命令行界面（CLI）程序是一种软件应用程序，它专为通过字符界面与用户交互而设计，用户通过键盘输入特定的文本命令及其相关参数来进行操作。在CLI程序中，没有图形元素，如窗口、按钮或菜单，所有的交互完全依赖于文本命令和响应。</p>
+</blockquote>
+<p>具体而言，Shell 主要具有以下几个特点和功能：</p>
+<ul>
+<li><strong>命令解释器</strong>：Shell 接收用户通过键盘输入的命令，解析这些命令并将其转换成内核能理解的操作请求。</li>
+<li><strong>脚本语言</strong>：Shell 不仅允许用户输入单个命令，还支持编写包含一系列命令和控制结构的脚本文件（称为Shell脚本或Shell程序）。这些脚本可以实现自动化任务，简化重复性工作，或是构建复杂的系统管理流程。</li>
+<li>用户交互：Shell 提供了交互式的命令行环境，用户可以在提示符下实时输入和执行命令，获取即时反馈。</li>
+<li>环境配置：Shell 可以设置和管理用户的环境变量，影响程序的行为和系统环境配置。</li>
+<li>I&#x2F;O重定向与管道：Shell 允许用户将命令的标准输入、输出重定向至文件或其他命令，同时支持通过管道（|）连接多个命令，形成数据流式处理。</li>
+<li>命令扩展与别名：Shell 可以为命令添加额外的便利功能，比如命令补全、命令历史记录，以及定义命令别名等。</li>
+</ul>
+<p>流行的Shell有多种，例如<strong>Bash（Bourne-Again SHell）</strong>、sh（Bourne Shell）、csh（C Shell）、zsh（Z Shell）等。其中，bash在大多数Linux发行版中被用作默认的登录Shell。</p>
+<h1 id="运行"><a href="#运行" class="headerlink" title="运行"></a>运行</h1><p>运行 Shell 脚本有多种方法：</p>
+<ol>
+<li><strong>作为可执行程序运行</strong>：<strong>直接执行</strong>，需有执行权限，<ul>
+<li>确保脚本文件的第一行包含了正确的Shebang（#!），例如 #!&#x2F;bin&#x2F;bash 或 #!&#x2F;usr&#x2F;bin&#x2F;env bash，用于指定解释此脚本的Shell版本。</li>
+<li>给脚本添加执行权限：<code>chmod +x script.sh</code></li>
+<li>使用相对路径或绝对路径执行：相对路径<code>./script.sh</code>；绝对路径<code>/path/to/script.sh</code>。</li>
+</ul>
+</li>
+<li><strong>作为解释器参数</strong>：<ul>
+<li>如<code>bash script.sh</code></li>
+<li>即使脚本没有执行权限，也可以通过明确指定解释器来执行</li>
+</ul>
+</li>
+<li>source命令：当希望脚本中的环境变量更改、函数定义等对当前Shell会话生效时，可以使用source命令。<ul>
+<li>如<code>source script.sh</code></li>
+</ul>
+</li>
+</ol>
+<h1 id="语法"><a href="#语法" class="headerlink" title="语法"></a>语法</h1><h2 id="变量"><a href="#变量" class="headerlink" title="变量"></a>变量</h2><p>在Shell中定义变量非常直观且简单，无需事先声明变量类型，<strong>只需给变量分配一个值即可完成定义</strong>。<br>如<code>name=&quot;chilun&quot;</code>，即定义了一个变量name为字符串“chilun”。</p>
+<h3 id="变量命名规则"><a href="#变量命名规则" class="headerlink" title="变量命名规则"></a>变量命名规则</h3><ul>
+<li><strong>只包含字母、数字和下划线</strong>： 变量名可以包含字母（大小写敏感）、数字和下划线 _，不能包含其他特殊字符。</li>
+<li><strong>不能以数字开头</strong>： 变量名不能以数字开头，但可以包含数字。</li>
+<li><strong>避免使用 Shell 关键字</strong>： 不要使用Shell的关键字（例如 if、then、else、fi、for、while 等）作为变量名，以免引起混淆。</li>
+<li>使用大写字母表示常量： 习惯上，常量的变量名通常使用大写字母，例如 PI&#x3D;3.14。</li>
+</ul>
+<h3 id="定义变量"><a href="#定义变量" class="headerlink" title="定义变量"></a>定义变量</h3><ol>
+<li><strong>直接赋值</strong>：通过等号（&#x3D;）来给变量赋值，注意变量名和等号之间不能有空格。<ul>
+<li><code>name=&quot;chilun&quot;</code>：将“chilun”字符串赋给变量 name。</li>
+</ul>
+</li>
+<li><strong>语句赋值</strong>：可使用for循环等语句对变量进行赋值。<ul>
+<li><code>for file in $(ls /etc) </code>：将 &#x2F;etc 目录下的所有文件和目录名逐个赋值给变量 file。</li>
+</ul>
+</li>
+<li><strong>命令赋值</strong>：可使用标准输入读取命令等对变量进行赋值。<ul>
+<li><code>read -p &quot;请输入你的名字: &quot; name</code>：用户输入的名字会被赋值给变量 name。</li>
+</ul>
+</li>
+<li><strong>定义变量</strong>：使用<code>declare</code>或<code>typeset</code>命令定义变量时可以指定变量的类型（如整型、数组等）。<ul>
+<li><code>declare -i age=30</code>：定义一个整数类型的变量age并赋值为30。</li>
+</ul>
+</li>
+<li><strong>计算变量</strong>：使用<code>let</code>命令执行简单的算术运算并赋值给变量。<ul>
+<li><code>let b=a+1</code>：将b赋值为a+1后的整数；如果直接<code>b=a+1</code>，b会被赋值为“a+1”的字符串。</li>
+</ul>
+</li>
+<li><strong>定义环境变量</strong>：使用<code>export</code>命令可以定义环境变量，在子shell进程中变量也能被访问。<ul>
+<li><code>export PATH=$PATH:/usr/local/bin</code>：将新的路径添加到已存在的PATH环境变量中。</li>
+</ul>
+</li>
+<li><strong>删除变量</strong>：使用<code>unset</code>命令删除已定义的变量。<ul>
+<li><code>unset name</code>：删除变量name。</li>
+</ul>
+</li>
+<li><strong>只读变量</strong>：使用<code>readonly</code>命令可以将变量定义为只读变量，只读变量的值不能被改变，不能被删除。<ul>
+<li><code>readonly name</code>：之后再修改就会报错：<code>name: readonly variable</code>。</li>
+</ul>
+</li>
+</ol>
+<h3 id="使用变量"><a href="#使用变量" class="headerlink" title="使用变量"></a>使用变量</h3><p>使用一个定义过的变量，只要在变量名前面加美元符号即可。<br>变量名外面的花括号是可选的，加不加都行，加花括号是为了帮助解释器识别变量的边界（推荐给所有变量加上花括号）。</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><code class="hljs shell">name=&quot;chilun&quot;<br>echo $name<br>echo $&#123;name&#125;<br></code></pre></td></tr></table></figure>
+<p>输出为：</p>
+<blockquote>
+<p>chilun<br>chilun</p>
+</blockquote>
+<h3 id="变量类型"><a href="#变量类型" class="headerlink" title="变量类型"></a>变量类型</h3><p>Shell 支持不同类型的变量。</p>
+<h4 id="字符串变量"><a href="#字符串变量" class="headerlink" title="字符串变量"></a>字符串变量</h4><p>在 Shell中，变量通常被视为字符串。<br>在Bash中，所有变量值本质上都是字符串。即使一个变量可用于数值计算，其在内部依旧是以字符串的形式存储的，只是在进行算术运算时进行了相应的转换和处理。<br>可使用单引号或双引号来定义字符串，比如：<code>a=&#39;Hello, World!&#39;</code>或者<code>b=&quot;Hello, World!&quot;</code>。</p>
+<p>当直接赋值一个不包含变量扩展、算术扩展或其他形式扩展的纯文本给一个变量时，Bash也会将这个值当作字符串来处理，如<code>c=hello,World!</code>。<br>（当设置一个变量时，其值默认被视为一个整体，直到遇到第一个未经转义的特殊字符为止。如果<code>c=hello, World!</code>就会报错，因为存在空格，空格是Bash解析命令行参数时的分隔符，会导致Bash会尝试将<code>hello,</code>、<code>World!</code>视为不同的参数。）</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><code class="hljs shell"><span class="hljs-meta prompt_">#</span><span class="language-bash">!/bin/bash</span><br>a=&#x27;Hello, World!&#x27;<br>b=&quot;Hello, World!&quot;<br>c=hello,World!<br>echo $&#123;a&#125; $&#123;b&#125; $&#123;c&#125; <br></code></pre></td></tr></table></figure>
+
+<p>输出结果为：</p>
+<blockquote>
+<p>Hello, World! Hello, World! hello,World!</p>
+</blockquote>
+<h4 id="整数变量"><a href="#整数变量" class="headerlink" title="整数变量"></a>整数变量</h4><p>可以使用 declare 或 typeset 命令来声明整数变量。<br>这样的变量只包含整数值，例如：<code>declare -i a=42</code>。<br>这样的声明告诉Shell将a视为整数，如果尝试将非整数值赋给它，Shell会尝试将其转换为整数。</p>
+<p>示例：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><code class="hljs shell"><span class="hljs-meta prompt_">#</span><span class="language-bash">!/bin/bash</span><br>a=42<br>declare -i b=a+1<br>echo $&#123;b&#125;<br></code></pre></td></tr></table></figure>
+<p>输出为：</p>
+<blockquote>
+<p>43</p>
+</blockquote>
+<p>（如果不声明为整数，b就会被看做是“a+1”的字符串。）</p>
+<h4 id="数组变量"><a href="#数组变量" class="headerlink" title="数组变量"></a>数组变量</h4><p>Shell 支持数组，允许在一个变量中存储多个值。括号用来表示数组，数组元素用”空格”符号分割开。<br>数组可以是<strong>整数索引数组</strong>或<strong>关联数组</strong>：</p>
+<ul>
+<li>整数索引数组：<code>array1=(1 2 3 4 5)</code></li>
+<li>关联数组：<figure class="highlight shell"><table><tr><td class="code"><pre><code class="hljs shell">declare -A array2<br>array2[&#x27;he&#x27;]=&quot;wor&quot;<br>array2[&#x27;llo,&#x27;]=&quot;ld!&quot;<br></code></pre></td></tr></table></figure></li>
+</ul>
+<p>示例：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><code class="hljs shell">array1=(1 2 3 4 5)<br>echo $&#123;array1[0]&#125; $&#123;array1[1]&#125; $&#123;array1[2]&#125; $&#123;array1[3]&#125; $&#123;array1[4]&#125;<br>declare -A array2<br>array2[&#x27;he&#x27;]=&quot;wor&quot;<br>array2[&#x27;llo,&#x27;]=&quot;ld!&quot;<br>echo $&#123;array2[&#x27;he&#x27;]&#125;$&#123;array2[&#x27;llo,&#x27;]&#125;<br></code></pre></td></tr></table></figure>
+<p>输出为：</p>
+<blockquote>
+<p>1 2 3 4 5<br>world!</p>
+</blockquote>
+<blockquote>
+<p>未完待续……</p>
+</blockquote>
+<h2 id="字符串"><a href="#字符串" class="headerlink" title="字符串"></a>字符串</h2><p>字符串可以用单引号，也可以用双引号，也可以不用引号。</p>
+<h3 id="单引号"><a href="#单引号" class="headerlink" title="单引号"></a>单引号</h3><p>单引号里的任何字符都会原样输出，单引号字符串中的变量是无效的。</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><code class="hljs shell"><span class="hljs-meta prompt_">#</span><span class="language-bash">!/bin/bash</span><br>a=chilun<br>echo &#x27;$&#123;a&#125;&#x27;<br></code></pre></td></tr></table></figure>
+<p>输出为：</p>
+<blockquote>
+<p>${a}</p>
+</blockquote>
+<p>由于单引号里的任何字符都会原样输出，所以单引号字符串中无法输出单引号（不支持转义），但可成对出现，作为字符串拼接使用。</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><code class="hljs shell"><span class="hljs-meta prompt_">#</span><span class="language-bash">!/bin/bash</span><br>a=chilun<br>echo &#x27;$&#123;a&#125;&#x27;&#x27;$&#123;a&#125;&#x27;<br></code></pre></td></tr></table></figure>
+<p>输出为：</p>
+<blockquote>
+<p>${a}${a}</p>
+</blockquote>
+<h3 id="双引号"><a href="#双引号" class="headerlink" title="双引号"></a>双引号</h3><p>双引号字符串支持变量展开和转义字符。</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><code class="hljs shell"><span class="hljs-meta prompt_">#</span><span class="language-bash">!/bin/bash</span><br>a=chilun<br>echo &quot;$&#123;a&#125;&quot;&quot;\$&#123;a&#125;&quot;<br></code></pre></td></tr></table></figure>
+<p>输出为：</p>
+<blockquote>
+<p>chilun${a}</p>
+</blockquote>
+<h3 id="字符串操作"><a href="#字符串操作" class="headerlink" title="字符串操作"></a>字符串操作</h3><h4 id="获得长度"><a href="#获得长度" class="headerlink" title="获得长度"></a>获得长度</h4><p>使用&#96;$</p>
+]]></content>
+      <categories>
+        <category>后端开发</category>
+        <category>语言</category>
+        <category>shell</category>
+      </categories>
+      <tags>
+        <tag>Linux</tag>
+        <tag>Shell</tag>
+        <tag>CLI</tag>
+        <tag>Bash</tag>
+        <tag>Bourne-Again SHell</tag>
+        <tag>变量</tag>
+        <tag>字符串</tag>
+        <tag>数组</tag>
       </tags>
   </entry>
   <entry>
@@ -1134,635 +1800,6 @@ newProxyInstance方法的三个参数：</li>
         <tag>Spring</tag>
         <tag>IOC</tag>
         <tag>AOP</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>MySQL：索引</title>
-    <url>/2024/03/20/backend/database/mysql/mysql_index/</url>
-    <content><![CDATA[<blockquote>
-<p>本文将初步介绍MySQL数据库索引的数据结构与用处。</p>
-</blockquote>
-<p>索引是一种用来<strong>快速查询</strong>和<strong>检索数据</strong>的数据结构。许多查询往往只涉及到数据库的一部分，比如查询出某个ID为xxx的学生，系统如果需要读取每个学生来遍历获得该条记录，那么这种操作方式无疑是低效的。在理想情况下，系统应该能直接定位这些记录。</p>
-<p>索引底层数据结构存在很多种类型，常见的索引结构有: B 树， B+树 和 Hash、红黑树。</p>
-<blockquote>
-<p>在 MySQL 中，无论是 Innodb 还是 MyIsam，都使用了 <strong>B+树</strong>作为索引结构。</p>
-</blockquote>
-<h1 id="索引底层数据结构"><a href="#索引底层数据结构" class="headerlink" title="索引底层数据结构"></a>索引底层数据结构</h1><h2 id="二叉查找树（BST）"><a href="#二叉查找树（BST）" class="headerlink" title="二叉查找树（BST）"></a>二叉查找树（BST）</h2><p>当二叉查找树是平衡的时候，也就是树的每个节点的左右子树深度相差不超过 1 的时候，查询的时间复杂度为 O(log2(N))，具有比较高的效率。然而，当二叉查找树不平衡时，例如在最坏情况下（有序插入节点），树会退化成线性链表（也被称为斜树），导致查询效率急剧下降，时间复杂退化为 O（N）。</p>
-<p>由于二叉查找树的性能非常依赖于它的平衡程度，这就导致其不适合作为 MySQL 底层索引的数据结构。为了解决这个问题，并提高查询效率，人们发明了多种在二叉查找树基础上的改进型数据结构，如平衡二叉树、B-Tree、B+Tree 等。</p>
-<h2 id="自平衡二叉查找树（AVL）"><a href="#自平衡二叉查找树（AVL）" class="headerlink" title="自平衡二叉查找树（AVL）"></a>自平衡二叉查找树（AVL）</h2><p>AVL 树的特点是保证任何节点的左右子树高度之差不超过 1，因此也被称为高度平衡二叉树，它的查找、插入和删除在平均和最坏情况下的时间复杂度都是 O(logn)。</p>
-<p>由于 AVL 树需要频繁地进行旋转操作来保持平衡，因此会有较大的计算开销进而降低了查询性能。并且， 在使用 AVL 树时，每个树节点仅存储一个数据，而每次进行磁盘 IO 时只能读取一个节点的数据，如果需要查询的数据分布在多个节点上，那么就需要进行多次磁盘 IO。所以在实际应用中，AVL 树使用的并不多。</p>
-<h2 id="红黑树"><a href="#红黑树" class="headerlink" title="红黑树"></a>红黑树</h2><p>红黑树是一种自平衡二叉查找树，通过在插入和删除节点时进行颜色变换和旋转操作，使得树始终保持平衡状态。</p>
-<p>虽然红黑树在插入和删除节点时只需进行 O(1) 次数的旋转和变色操作，即可保持基本平衡状态，但是红黑树并不追求严格的平衡，而是大致的平衡。正因如此，红黑树的查询效率稍有下降，因为红黑树的平衡性相对较弱，可能会导致树的高度较高，这可能会导致一些数据需要进行多次磁盘 IO 操作才能查询到，这也是 MySQL 没有选择红黑树的主要原因。</p>
-<h2 id="B树-B-树"><a href="#B树-B-树" class="headerlink" title="B树&amp;B+树"></a>B树&amp;B+树</h2><p>B 树也称 B-树,全称为<strong>多路平衡查找树</strong>。</p>
-<blockquote>
-<p>目前大部分数据库系统及文件系统都采用 B-Tree 或其变种 B+Tree 作为索引结构。</p>
-</blockquote>
-<h3 id="B-树叶节点"><a href="#B-树叶节点" class="headerlink" title="B+树叶节点"></a>B+树叶节点</h3><p>典型的B+树叶节点会包含n-1个搜索码值（即字段值）和n个指针（指向记录或下一节点）。<br>示意图：（n&#x3D;4）<br><img src="/2024/03/20/backend/database/mysql/mysql_index/B+%E5%8F%B6%E8%8A%82%E7%82%B9.svg"></p>
-<p>一个叶节点必须容纳$\lceil (n-1)&#x2F;2 \rceil 到 n-1$个值。</p>
-<h3 id="B-树非叶节点"><a href="#B-树非叶节点" class="headerlink" title="B+树非叶节点"></a>B+树非叶节点</h3><p>B+树的非叶节点是叶节点之上的一个多级（稀疏）索引，其结构和叶节点相同，但是其指针均指向非叶节点。<br>一个非叶节点必须容纳$\lceil n&#x2F;2 \rceil 到 n$个指针。一个节点中的指针树被称为<strong>扇出（fanout）</strong>。非叶节点也被称为<strong>内部节点（internal node）</strong>。（根节点的指针数可少于$\lceil n&#x2F;2 \rceil$）</p>
-<p>对于一个内部节点来说，其指针$P_i$指向的子树中，子树的最大值必须小于等于该指针后的搜索码值，子树的最小值必须大于等于该指针前的搜索码值。<br>示意图：（n&#x3D;4）<br><img src="/2024/03/20/backend/database/mysql/mysql_index/B+root.svg"></p>
-<p>B+树是一定平衡的，即根到叶节点的每个条路径长度都一致。</p>
-<blockquote>
-<p>注意：上述是最好要求搜索码值是唯一的。如果不唯一，数据库会将搜索码从一个值变成一个二元组，比如nameA&#x3D;nameB，那么当name字段变成搜索码时，nameA在节点中的搜索码值可能变成(nameA,0)，nameB变成(nameA,1)，以保证搜索码值唯一。如果不使用二元组替换，这将导致B+树的节点会变成一个链表，或者需要更改整个B+树的存储逻辑，过于繁琐。</p>
-</blockquote>
-<h3 id="B-树查询"><a href="#B-树查询" class="headerlink" title="B+树查询"></a>B+树查询</h3><blockquote>
-<p>目前不考虑搜索码值可重复的情况。</p>
-</blockquote>
-<p>查询过程：</p>
-<ol>
-<li>查询起始：<ul>
-<li>查询从根节点开始，根节点始终位于内存中。</li>
-<li>根据要查找的键值，在根节点中执行二分查找或按照索引顺序查找合适的指针。</li>
-</ul>
-</li>
-<li>节点间导航：<ul>
-<li>找到与目标键值最接近的键，对应的指针会指向下一个层级的节点。</li>
-<li>依据指针继续访问下一层级的节点，这个过程同样进行二分查找或顺序查找，不断缩小查找范围。</li>
-</ul>
-</li>
-<li>递归查找：<ul>
-<li>重复上述步骤，沿着B+树的层级结构自顶向下移动，每次都会根据中间节点中的键值指引到更低层级的节点。</li>
-</ul>
-</li>
-<li>抵达叶子节点：<ul>
-<li>当查询到达叶子节点时，该节点包含了实际的数据记录或者如果是辅助索引，则存储了主键值。</li>
-<li>对于精确匹配的查询，直接在叶子节点中找到键值相等的记录即可。</li>
-<li>对于范围查询，可以通过叶子节点之间的链表进行高效的顺序扫描。</li>
-</ul>
-</li>
-</ol>
-<p>在应用场景下，一个B+树节点通常可以容纳几百至上千个键值对（计算方式为：$(磁盘页大小-元数据)&#x2F;(键值大小 + 指针大小)$，磁盘IO一次读出一页，即一个节点），所需磁盘IO次数为$log_{100}(X)$相比平衡二叉树中一个节点仅两个子节点的搜索效率$log_2(X)$要高非常多。</p>
-<h3 id="B-树更新"><a href="#B-树更新" class="headerlink" title="B+树更新"></a>B+树更新</h3><h4 id="插入"><a href="#插入" class="headerlink" title="插入"></a>插入</h4><p>插入：先使用查询，找到将搜索码值将出现的叶节点。然后在该叶节点的对应位置进行插入操作。<br>当叶子节点的值的数量在插入后大于n-1时，需要进行拆分操作，将该叶子节点拆成两个叶子节点，前一个有$\lceil n&#x2F;2 \rceil$个节点，后一个有剩余的节点，然后将拆分的叶子节点添加到父节点中。如果父节点在添加了一个节点后也放不下了需要进行拆分，则继续进行拆分，在父父节点添加父节点拆成两个节点的节点，以此不断循环，如果根节点也放不下了，那么将根节点也拆分，并重新添加一个新的根节点。</p>
-<p>示意图：<br><img src="/2024/03/20/backend/database/mysql/mysql_index/B+insert1.svg"></p>
-<p>如果此时再插入一个id&#x3D;7.5的记录，就会将5-7的叶子节点拆分，然后第一个内部节点需要多一个指针，就会导致第一个内部节点再次拆分，进而多出一个内部节点。（画图略）</p>
-<h4 id="删除"><a href="#删除" class="headerlink" title="删除"></a>删除</h4><p>删除即是插入的逆操作，边界条件下需要将叶子节点进行合并，进而导致内部节点的合并，以致最后的减深度。（自己类推即可，不做描述）</p>
-<blockquote>
-<p>待完善……</p>
-</blockquote>
-<h3 id="B树与B-树的异同"><a href="#B树与B-树的异同" class="headerlink" title="B树与B+树的异同"></a>B树与B+树的异同</h3><ul>
-<li>B 树的所有节点既存放键(key) 也存放数据(data)，而<strong>B+树只有叶子节点存放 key 和 data</strong>，其他内节点只存放 key。</li>
-<li>B 树的叶子节点都是独立的；B+树的叶子节点有一条<strong>引用链</strong>指向与它相邻的叶子节点。</li>
-<li>在 B 树中进行范围查询时，首先找到要查找的下限，然后对 B 树进行中序遍历，直到找到查找的上限；而 B+树的范围查询，只需要对链表进行遍历即可。</li>
-</ul>
-<p>综上，B+树与 B 树相比，具备更少的 IO 次数、更稳定的查询效率和更适于范围查询这些优势。</p>
-<h2 id="Hash表"><a href="#Hash表" class="headerlink" title="Hash表"></a>Hash表</h2><p>哈希表可以做到快速检索数据（接近O(1)）。<br>MySQL 的 InnoDB 存储引擎不直接支持常规的哈希索引，但是，InnoDB 存储引擎中存在一种特殊的哈希表：<strong>自适应哈希索引（Adaptive Hash Index）</strong>。自适应哈希索引并不是传统意义上的纯哈希索引，而是结合了 B+Tree 和哈希索引的特点，以便更好地适应实际应用中的数据访问模式和性能需求。自适应哈希索引的每个哈希桶实际上是一个小型的 B+Tree 结构。这个 B+Tree 结构可以存储多个键值对，而不仅仅是一个键。这有助于减少哈希冲突链的长度，提高了索引的效率。</p>
-<p>在MySQL运行的过程中，如果InnoDB发现，有很多寻路很长（比如B+树层数太多、回表次数多等情况）的SQL，并且有很多SQL会命中相同的页面（Page）的话，InnoDB会在自己的内存缓冲区（Buffer Pool）里，开辟一块区域，建立自适应哈希索引（Adaptive Hash Index，AHI）：一个动态创建和维护的哈希索引机制，主要目的是为了提高某些工作负载下的数据检索速度。</p>
-<p>聚簇索引访问记录过程：<br><img src="/2024/03/20/backend/database/mysql/mysql_index/B+tree.png"><br>普通索引访问记录过程：<br><img src="/2024/03/20/backend/database/mysql/mysql_index/B+tree2.png"></p>
-<p>通过普通索引查询记录时，分为两步：</p>
-<ol>
-<li>查询会先访问普通索引，定位到主键值9；</li>
-<li>再通过步骤1得到的主键值，回表到聚集索引上经过二次遍历定位到具体的完整记录。</li>
-</ol>
-<p>从上面的流程图可以看出，不管是聚集索引还是普通索引，记录定位的寻路路径（Search Path）都很长。回到Adaptive Hash Index的概念上：在MySQL运行的过程中，如果InnoDB发现：有很多寻路很长（比如B+树层数太多、回表次数多等情况）的SQL；有很多SQL会命中相同的页面（Page），就会建立自适应哈希索引（Adaptive Hash Index，AHI），以加速查询。</p>
-<p>MySQL建立Adaptive Hash Index的过程：</p>
-<ol>
-<li><strong>监控与识别热点</strong>：<ul>
-<li>InnoDB存储引擎会持续监控缓冲池（Buffer Pool）中的页面访问模式。</li>
-<li>当发现某个索引频繁被访问时，特别是对于点查询（即通过主键或唯一二级索引查找行记录的操作），InnoDB会判断是否适合构建哈希索引以加速这类查询。</li>
-</ul>
-</li>
-<li><strong>自动创建哈希索引</strong>：<ul>
-<li>如果InnoDB确定建立哈希索引可以带来性能提升，它将在内存中为那些经常访问的索引页上的键值构建一个哈希索引结构。</li>
-<li>这个哈希索引是在缓冲池内部创建的，并且仅针对已经加载到内存中的索引部分。</li>
-</ul>
-</li>
-<li><strong>插入与更新操作</strong>：<ul>
-<li>随着DML操作（INSERT、UPDATE、DELETE）的发生，InnoDB会对相应的哈希索引进行同步更新，以确保哈希索引的正确性。</li>
-</ul>
-</li>
-<li><strong>自适应调整</strong>：<ul>
-<li>AHI具有自适应性，意味着它可以动态地创建、删除或者调整哈希索引，完全无需数据库管理员手动干预。</li>
-<li>如果原先认为热点的索引不再频繁访问，或者由于内存压力导致缓冲池中的其他数据更需要空间，InnoDB会自动移除不再高效的哈希索引。</li>
-</ul>
-</li>
-</ol>
-<p>在Adaptive Hash Index中，Key就是经常访问到的索引键值，Value就是该索引键值匹配的完整记录所在页面（Page）的位置。因为是MySQL InnoDB自己维护创建的，所以称之为“自适应”哈希索引。</p>
-<p><img src="/2024/03/20/backend/database/mysql/mysql_index/%E8%87%AA%E9%80%82%E5%BA%94Hash%E8%A1%A8.png"></p>
-<blockquote>
-<p>在一般的哈希索引中，如果出现哈希冲突（即两个不同的键经过哈希函数计算后映射到同一个槽位），通常采用链表或其他方法链接冲突的键值对。但在InnoDB的AHI中，为了避免长链表带来的性能下降，特别是在内存有限且热点数据冲突较多的情况下，选择将哈希冲突的键值对组织成B+树结构。这样做的好处是：</p>
-<ul>
-<li>尽管AHI仍然是哈希索引的形式，但是B+树的特性使得即使在哈希冲突的情况下也能保持相对稳定的时间复杂度（O(log n)）来查找数据，相比于单纯的链表查询效率更高。</li>
-<li>B+树天然支持范围查找，尽管AHI主要用于点查优化，但如果因为哈希冲突导致的键值分布在一个桶内，那么在这个小规模的B+树上进行局部范围查找也是可行的，这比纯哈希索引更有优势。</li>
-</ul>
-</blockquote>
-<h1 id="索引类型"><a href="#索引类型" class="headerlink" title="索引类型"></a>索引类型</h1><blockquote>
-<p>评价一个索引的因素：</p>
-<ul>
-<li><strong>访问类型</strong>：能有效支持的访问类型，如找到某个值、找到某个范围内的值。</li>
-<li><strong>访问时间</strong>：使用该索引找到一个值或一个值的集合所需要的时间。</li>
-<li><strong>插入时间</strong>：通过该索引，插入一个数据项的时间+插入后更新索引的时间。</li>
-<li><strong>删除时间</strong>：通过该索引，找到该数据项并删除的时间+删除后更新索引的时间。</li>
-<li><strong>空间花销</strong>：索引结构所需空间。</li>
-</ul>
-</blockquote>
-<p><strong>搜索码</strong>：用于在文件中查找记录的属性或属性集被称为搜索码（search key）。如果一个文件有多个索引，则它就有多个搜索码。<br><strong>索引项（index entry）</strong>：又称<strong>索引记录（index record）</strong>，由一个<code>搜索码值</code>和<code>指针</code>构成。<code>指针</code>会指向该搜索码值对应的一条或多条记录。</p>
-<h2 id="顺序索引"><a href="#顺序索引" class="headerlink" title="顺序索引"></a>顺序索引</h2><p><strong>顺序索引（ordered index）</strong>：基于值的顺序排序。</p>
-<blockquote>
-<p><strong>散列索引（hash index）</strong>：基于将值平均分布到若干桶中。值对应的桶由散列函数决定。 </p>
-</blockquote>
-<p>顺序索引有两类：</p>
-<ul>
-<li><strong>稠密索引（dense index）</strong>：每个搜索码值（即字段值）都被一个索引项所指向。具有相同搜索码值的其余记录会顺序地排序在第一条记录后。</li>
-<li><strong>稀疏索引（sparse index）</strong>：只为某些搜索码值建立索引。只有聚集索引才能使用稀疏索引。当定位记录时，从最大搜索码值小于或等于所搜索的记录的搜索码值的索引项开始遍历，直到找到为止。</li>
-</ul>
-<p>稠密索引示意图：<br><img src="/2024/03/20/backend/database/mysql/mysql_index/%E7%A8%A0%E5%AF%86%E7%B4%A2%E5%BC%95.svg"><br>稀疏索引示意图：<br><img src="/2024/03/20/backend/database/mysql/mysql_index/%E7%A8%80%E7%96%8F%E7%B4%A2%E5%BC%95.svg"></p>
-<h2 id="聚集索引"><a href="#聚集索引" class="headerlink" title="聚集索引"></a>聚集索引</h2><p><strong>聚集索引（clustering index）</strong>：又称<strong>主索引（primary index）</strong>，搜索码定义了文件的次序。<br><strong>非聚集索引（nonclustering index）</strong>：又称<strong>辅助索引（secondary index）</strong>，搜索码的次序与文件的排序次序不同。</p>
-<h2 id="多级索引"><a href="#多级索引" class="headerlink" title="多级索引"></a>多级索引</h2><blockquote>
-<p>注意：多级索引同时适用于索引顺序文件和B+树，只不过索引顺序文件中是外层索引块，B+树中是非叶节点。</p>
-</blockquote>
-<p>如果索引很小，就可以放在主存中，这样查找一个索引项的速度就会很快。但是如果索引很大，就会导致需要将其放在磁盘中，进而导致当使用索引进行搜索时，需要进行多次磁盘IO（尤其是使用二分法搜索索引时，可能导致$log_2(n)$次的磁盘IO）。多级索引就是为了解决这个问题。<br>假设有1000000条记录，一个索引块可保存100条索引项，那么就会存在10000个索引块。（一个块可能是4KB）<br>当进行查找时，二分法需要14次磁盘的随机读才能找到对应的索引块，这可能需要0.1s的时间。</p>
-<p>为此，我们需要加快找到索引块的方式，多级索引就是一种方案。<br>索引项总是顺序排序的，我们将索引文件也看做是顺序文件，并对索引块再次建立一层稀疏索引：<br>示意图：<br><img src="/2024/03/20/backend/database/mysql/mysql_index/%E5%A4%9A%E5%B1%82%E7%B4%A2%E5%BC%95.svg"></p>
-<p>好了，假设一样是10000个索引块，现在通过外层索引（将原先的索引称为内层索引），我们只需要100个外层索引块即可建立指向10000索引项的的外层索引项，并且在读取某一个记录时，只需要查找外层索引→内层索引→数据块即可，仅一次内存访问和两次磁盘IO操作。<br>如果有更多的记录，我们同样可以继续建立更外层的索引。</p>
-<h2 id="覆盖索引"><a href="#覆盖索引" class="headerlink" title="覆盖索引"></a>覆盖索引</h2><p>如果一个索引包含（或者说覆盖）所有需要查询的字段的值，我们就称之为<strong>覆盖索引（Covering Index）</strong>。<br>我们知道在 InnoDB 存储引擎中，如果不是主键索引，叶子节点存储的是主键+列值。最终是要执行“回表”操作的，也就是要通过主键再查找一次。<br>而覆盖索引即需要查询的字段正好是索引的字段，那么直接根据该索引，就可以查到数据了，而无需回表查询。</p>
-<h2 id="联合索引"><a href="#联合索引" class="headerlink" title="联合索引"></a>联合索引</h2><p>使用表中的多个字段创建索引，就是<strong>联合索引</strong>，也叫<strong>组合索引</strong>或<strong>复合索引</strong>。</p>
-<p>如果有这样一个索引定义在table (col1, col2, col3)上，那么索引记录将是按照col1升序排列，对于col1相等的记录，则按照col2升序排列，以此类推。</p>
-<h3 id="最左前缀匹配原则"><a href="#最左前缀匹配原则" class="headerlink" title="最左前缀匹配原则"></a>最左前缀匹配原则</h3><ul>
-<li>最左前缀匹配原则意味着只要查询条件中包含了索引的最左侧列（这里是A），就可以利用索引来优化查询。也就是说，不只是查询条件只包括A列时能使用索引，当查询条件包含A和B（即A&#x3D;? AND B&#x3D;?），或者A、B和C（即A&#x3D;? AND B&#x3D;? AND C&#x3D;?）时，都可以利用这个联合索引来加快查询速度。</li>
-<li>但是如果查询条件只包含B或C（即B&#x3D;? 或B&#x3D;? AND C&#x3D;?），因为(a, b, c) 是联合索引，是先按 a 排序，在 a 相同的情况再按 b 排序，在 b 相同的情况再按 c 排序。所以，b 和 c 是全局无序，局部相对有序的，这样在没有遵循最左匹配原则的情况下，是无法利用到索引的。</li>
-</ul>
-<p><strong>最左匹配原则会一直向右匹配直到遇到范围查询(&gt;、&lt;、between、like) 就会停止匹配。</strong></p>
-<ul>
-<li>向右匹配的概念是，一旦满足最左列的条件后，数据库会继续检查下一个索引列（即从左到右），只要查询条件允许。</li>
-<li>停止匹配原则在于，如果查询条件中出现了一个范围查询（如A &gt; ?、A &lt; ?、B BETWEEN ? AND ?等），那么在遇到这个范围查询的列之后的索引列将不再用于索引查找。例如，对于上述索引，若查询条件为A &#x3D; ? AND B &gt; ? AND C &#x3D; ?，虽然A列和B列都能利用索引，但由于B列进行了范围查询，因此C列将不会使用索引来优化查询，数据库系统可能需要进行额外的全表扫描或其他操作来获取满足C列条件的记录。</li>
-</ul>
-<blockquote>
-<p>注意，如果范围查询中，存在确定情况下的记录（即&gt;&#x3D;、&lt;&#x3D;、Between…and…、like导致的$[a,b)$区间），则在刚好&#x3D;的情况下，范围查询索引右侧的索引仍旧可以起效，但是如果是不确定的情况（即&gt;、&lt;、like中去除了a后的$(a,b)$），则会停止匹配。<br>比如条件为a&gt;&#x3D;1 and b&#x3D;1，针对a&#x3D;1的记录，判定b时仍然可使用联合索引；但是对于a&gt;1的记录，则只能使用联合索引中a的部分。<br>相关来源：<a href="https://mp.weixin.qq.com/s/8qemhRg5MgXs1So5YCv0fQ">小林coding</a></p>
-</blockquote>
-<h1 id="索引失效场景"><a href="#索引失效场景" class="headerlink" title="索引失效场景"></a>索引失效场景</h1><ol>
-<li><strong>联合索引失效</strong><ul>
-<li>未符合联合索引要求的最左前缀匹配原则（即不包含联合索引最左侧的字段）。<ul>
-<li>注意：MySQL8新增索引跳跃扫描的功能，即第一列索引的唯一值较少时，即使 where 条件没有第一列索引，查询的时候也可以用到联合索引。</li>
-</ul>
-</li>
-<li>向右匹配时遇到范围查询。</li>
-</ul>
-</li>
-<li><strong>where范围过大</strong><ul>
-<li>where查询范围过大，可能导致MySQL最优选择全表扫描，进而导致索引失效。</li>
-</ul>
-</li>
-<li><strong>where条件中包含函数或计算</strong><ul>
-<li>由于索引保存的是索引字段的原始值，而不是经过函数&#x2F;计算后的值，自然就没办法走索引了。<ul>
-<li>注意：MySQL 8.0 开始，索引特性增加了函数索引，可以针对函数计算后的值建立一个索引。</li>
-</ul>
-</li>
-</ul>
-</li>
-<li><strong>like %…</strong><ul>
-<li>范围过大造成索引没有意义从而失效的情况。</li>
-</ul>
-</li>
-<li><strong>条件包含or导致失效</strong><ul>
-<li>如果在OR前的条件列是索引列，而在OR后的条件列不是索引列，那么索引会失效，因为验证后一个条件是需要遍历全表的。<ul>
-<li>在Or的条件中两边都加上索引，即可避免全表扫描。</li>
-</ul>
-</li>
-</ul>
-</li>
-<li><strong>(not) in …</strong><ul>
-<li>当IN的取值范围较大时会导致索引失效，走全表扫描，与like %…类似。</li>
-</ul>
-</li>
-<li><strong>order By</strong><ul>
-<li>在需要排序的场景下，存在两种策略：<ul>
-<li>索引+回表：走索引，索引是排好序的，但是需要回表。</li>
-<li>全表扫描：直接全表扫描排序，不用回表。</li>
-</ul>
-</li>
-<li>MySQL认为后一种效率更高，因此orderBy情况下索引会失效。</li>
-</ul>
-</li>
-</ol>
-]]></content>
-      <categories>
-        <category>后端开发</category>
-        <category>数据库</category>
-        <category>MySQL</category>
-      </categories>
-      <tags>
-        <tag>数据库</tag>
-        <tag>MySQL</tag>
-        <tag>B+树</tag>
-        <tag>自适应哈希索引</tag>
-        <tag>Adaptive Hash Index</tag>
-        <tag>二叉查找树</tag>
-        <tag>BST</tag>
-        <tag>自平衡二叉查找树</tag>
-        <tag>AVL</tag>
-        <tag>多路平衡查找树</tag>
-        <tag>顺序索引</tag>
-        <tag>散列索引</tag>
-        <tag>聚集索引</tag>
-        <tag>主索引</tag>
-        <tag>搜索码</tag>
-        <tag>非聚集索引</tag>
-        <tag>辅助索引</tag>
-        <tag>覆盖索引</tag>
-        <tag>联合索引</tag>
-        <tag>最左前缀匹配原则</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>MySQL：日志</title>
-    <url>/2024/03/21/backend/database/mysql/mysql_log/</url>
-    <content><![CDATA[<p>MySQL 日志 主要包括错误日志、查询日志、慢查询日志、事务日志、二进制日志几大类。本文将讲解其中比较重要的<strong>二进制日志binlog（归档日志）</strong>、<strong>事务日志redo log（重做日志）</strong>和<strong>undo log（回滚日志）</strong>。</p>
-<h1 id="binlog"><a href="#binlog" class="headerlink" title="binlog"></a>binlog</h1><p>MySQL<strong>二制进日志（binlog）</strong>，也叫做<strong>变更日志（update log）</strong>。<br>二进制日志中记录了<strong>对MySQL数据库执行更改的所有操作</strong>，并且记录了语句发生时间、执行时长、操作数据等其它额外信息。</p>
-<p>二进制日志主要用于<strong>数据库恢复</strong>和<strong>主从复制</strong>，以及审计操作，它包含了所有能够重现数据库状态变更所必需的信息。。如果 MySQL 数据库意外停止，可以通过二进制日志文件来查看用户执行了哪些操作，对数据库服务器文件做了哪些修改，然后根据二进制日志文件中的记录来恢复数据库服务器。</p>
-<h2 id="内容"><a href="#内容" class="headerlink" title="内容"></a>内容</h2><p>二进制日志（binlog）中记录了对MySQL数据库执行更改的所有操作，并且记录了语句发生时间、执行时长、操作数据等其它额外信息：<br>主要包含以下内容：</p>
-<ul>
-<li><strong>逻辑操作</strong>：对数据库执行的原始SQL语句或其等价物。具体内容与格式有关：<ul>
-<li><strong>Statement格式</strong>：记录执行的SQL语句本身，例如INSERT INTO table VALUES(…)、UPDATE table SET column&#x3D;… WHERE condition等。</li>
-<li><strong>Row格式</strong>：记录每个受影响行的实际变化，而不是整个SQL语句。它会详细说明哪个表的哪一行如何被修改。</li>
-<li><strong>Mixed格式</strong>：混合使用Statement和Row格式，MySQL根据SQL语句的特点自动选择最佳方式。</li>
-</ul>
-</li>
-<li><strong>事务边界</strong>：<ul>
-<li>Binlog以事务为单位记录变更，确保了事务的原子性和一致性。每个事务的所有操作作为一个整体被记录，且事务开始和结束都有相应的标志。</li>
-</ul>
-</li>
-<li><strong>GTID（Global Transaction Identifier）</strong>：在支持GTID的MySQL版本中，binlog还会包含全局事务ID，用于主从复制时精确地跟踪和同步事务。</li>
-<li><strong>DDL操作</strong>：对于数据定义语言（如CREATE TABLE、ALTER TABLE、DROP TABLE等）也会记录在binlog中。</li>
-<li>其他元数据：事件头信息，如事务ID、时间戳、服务器ID等，用于数据恢复和复制过程中的校验和同步。</li>
-</ul>
-<h2 id="写入机制"><a href="#写入机制" class="headerlink" title="写入机制"></a>写入机制</h2><p>事务执行过程中，会先把日志写到binlog cache，事务提交的时候，再把binlog cache写到binlog文件中。<br>系统会给每个线程分配一个块内存作为binlog cache，以确保一个事务的binlog的一次性写入的。</p>
-<p>示意图：<br><img src="/2024/03/21/backend/database/mysql/mysql_log/writeBinlog.png"></p>
-<p>注意，如果<code>write</code>操作不会将binlog文件写入磁盘（仅仅是存入缓存），<code>fsync</code>才是将binlog文件写入磁盘的真正动作。如果机器宕机，Buffer Pool里面的 binlog 就会丢失。</p>
-<blockquote>
-<p><strong>sync_binlog参数</strong>可用于控制write和fsync的时机。</p>
-<ul>
-<li>0：sync_binlog为0时，每次提交事务都进行write，执行fsync时机由操作系统决定。</li>
-<li>1：每次提交事务都会执行fsync。</li>
-<li>N(N&gt;1)：表示每次提交事务都write，但累积N个事务后才fsync。</li>
-</ul>
-</blockquote>
-<h2 id="作用"><a href="#作用" class="headerlink" title="作用"></a>作用</h2><ol>
-<li><strong>基于时间点的恢复</strong>：在备份文件恢复的基础上，通过binlog日志，可以将数据库恢复到某一时间点；</li>
-<li><strong>主从复制</strong>：在主从复制模式下，必须在主服务器上开启binlog日志；</li>
-<li><strong>操作审计</strong>：对所有更改数据的操作进行审计。</li>
-</ol>
-<blockquote>
-<p>操作审计：</p>
-<ul>
-<li>数据追踪与回溯：通过分析binlog，可以追溯数据库中的任何数据变更历史，这对于数据安全性、合规性要求高的场景尤其重要，比如金融、医疗等行业，需要记录详细的交易历史以供审计或法律调查。</li>
-<li>审计复核：binlog可用于数据完整性验证，通过重新播放binlog中的事件，可以检查数据库是否按照预期进行了操作，从而帮助发现潜在的误操作或恶意篡改行为。</li>
-<li>安全审计：安全审计时，binlog可以帮助识别未经授权的访问尝试、非法数据修改等安全事件，因为它记录了所有的数据修改语句。</li>
-</ul>
-<p>注意：MySQL本身的审计功能并非直接依赖binlog，而是通过专门的审计插件（如MySQL Enterprise Audit Plugin）或其他审计工具来实现更全面和规范的审计需求，这些工具可以提供更多定制化的审计过滤、报告生成等功能。不过，binlog确实是进行事后审计和数据一致性检查的重要数据源之一。</p>
-</blockquote>
-<h1 id="undo-log"><a href="#undo-log" class="headerlink" title="undo log"></a>undo log</h1><p><strong>undo log</strong>是一种用于<strong>撤销回退</strong>的日志。<br>在事务没提交之前，MySQL会先<strong>记录更新前的数据到 undo log日志文件里面</strong>，当事务回滚时或者数据库崩溃时，可以利用 undo log来进行回退。</p>
-<h2 id="作用-1"><a href="#作用-1" class="headerlink" title="作用"></a>作用</h2><ol>
-<li><strong>提供回滚操作</strong>：在进行数据更新操作的时候，会记录undo log。如果因为某些原因导致事务回滚，那么这个时候MySQL就要执行回滚（rollback）操作，利用undo log将数据恢复到事务开始之前的状态。<ol>
-<li>比如我们执行下面一条update语句：<code>update user set name = &quot;李四&quot; where id = 1;   ---修改之前name=张三</code></li>
-<li>此时undo log会记录update之前的状态（id&#x3D;1,name&#x3D;‘张三’）；如果这个修改出现异常，就可以使用undo log日志中的操作来实现回滚操作，如：<code>update user set name = &quot;张三&quot; where id = 1;</code>，以保证事务的一致性。</li>
-</ol>
-</li>
-<li><strong>实现多版本并发控制（MVCC）</strong>。</li>
-</ol>
-<p><strong>MVCC</strong>，即<strong>多版本控制</strong>。在MySQL数据库InnoDB存储引擎中，用undo Log来实现多版本并发控制(MVCC)。当读取的某一行被其他事务锁定时，它可以从undo log中分析出该行记录以前的数据版本是怎样的，从而让用户能够<strong>快照读</strong>读取到当前事务操作之前的数据。</p>
-<blockquote>
-<p><strong>快照读</strong>：SQL读取的数据是快照版本，也就是历史版本，不用加锁，普通的SELECT就是快照读。<br><strong>当前读</strong>：SQL读取的数据是最新版本。通过锁机制来保证读取的数据无法被其他事务进行修改。UPDATE、DELETE、INSERT、SELECT … LOCK IN SHARE MODE、SELECT … FOR UPDATE都是当前读。</p>
-</blockquote>
-<h2 id="存储机制"><a href="#存储机制" class="headerlink" title="存储机制"></a>存储机制</h2><p>undo log的存储由<code>InnoDB存储引擎</code>实现，其采用<strong>分段(segment)<strong>的方式进行存储的。<br><strong>rollback segment</strong>称为</strong>回滚段</strong>，每个回滚段中有1024个<code>undo log segment</code>。在MySQL5.5之后，可以支持128个rollback segment，每一个回滚段，内部由1024个undo segment 组成，即总共可以记录128 * 1024个undo操作。</p>
-<p>存储结构示意图：<br><img src="/2024/03/21/backend/database/mysql/mysql_log/undolog1.svg"></p>
-<p>回滚指针第一次如果是insert语句的话，回滚指针为NULL，第二次update之后的undo log的回滚指针就会指向刚刚那一条undo log日志，依次类推，就会形成一条undo log的回滚链，方便找到该条记录的历史版本。</p>
-<p>多个事务并行操作某一行数据时，不同事务对该行数据的修改会产生多个版本，然后通过回滚指针（roll_pointer），连成一个链表，这个链表就称为版本链。</p>
-<h2 id="工作原理"><a href="#工作原理" class="headerlink" title="工作原理"></a>工作原理</h2><p>在更新数据之前，MySQL会提前生成undo log日志，当事务提交的时候，并不会立即删除undo log，因为后面可能需要进行回滚操作。<br>要执行回滚（rollback）操作时，从缓存中读取数据。undo log日志的删除是通过通过后台<strong>purge线程</strong>进行回收处理的。</p>
-<p>示意图：<br><img src="/2024/03/21/backend/database/mysql/mysql_log/undolog2.svg"></p>
-<p>举例：</p>
-<ol>
-<li>事务A执行update操作，此时事务还没提交，会将数据进行备份到对应的undo buffer，然后由undo buffer持久化到磁盘中的undo log文件中，<strong>此时undo log保存了未提交之前的操作日志</strong>，接着将操作的数据，也就是Teacher表的数据持久保存到InnoDB的数据文件IBD。</li>
-<li>此时事务B进行查询操作，直接<strong>从undo buffer缓存中进行读取</strong>，这时事务A还没提交事务，如果要<strong>回滚（rollback）事务，就直接从undo buffer缓存读取。</strong></li>
-</ol>
-<h2 id="流程"><a href="#流程" class="headerlink" title="流程"></a>流程</h2><p>使用undo log实现<strong>原子性</strong>和<strong>持久化</strong>的事务的流程：</p>
-<ol>
-<li>事务开始</li>
-<li>第一次更改：<ol>
-<li>将name&#x3D;A记录至undo log</li>
-<li>更改Buffer Pool中的name&#x3D;B（原name&#x3D;A）</li>
-</ol>
-</li>
-<li>第二次更改：<ol>
-<li>将name&#x3D;B记录至undo log</li>
-<li>更改Buffer Pool中的name&#x3D;C</li>
-</ol>
-</li>
-<li>持久化undo log（Undo Log在事务执行过程中就已经逐步地持久化到了磁盘中）</li>
-<li>提交事务，此时事务才真正完成，同时持久化Buffer Pool中的改动至磁盘。对于MySQL复制环境，在提交事务后，Binlog也会被持久化到磁盘。</li>
-</ol>
-<p><strong>注意：在更新数据前会提前记录undo log。</strong></p>
-<p>执行该流程的优点：</p>
-<ol>
-<li><strong>成功情况</strong>：事务提交将与数据一起写入磁盘。</li>
-<li><strong>异常情况</strong>：<ol>
-<li>持久化undo log后发生异常：undo log是完整的，可以用来回滚。</li>
-<li>持久化undo log前或时发生异常：磁盘上的数据保持在事务开始前。</li>
-</ol>
-</li>
-</ol>
-<blockquote>
-<p>感觉思路有点像磁盘的RAID1级或缓存的差异失效时间，提供了两个备份，因此任何时间点发生崩溃都可以保证数据不丢失。</p>
-</blockquote>
-<h1 id="redo-log"><a href="#redo-log" class="headerlink" title="redo log"></a>redo log</h1><p><strong>redo log（重做日志）</strong>，也叫重放日志。和undo log回滚日志一样，都是在数据库发生意外时用来进行数据恢复的，之前已经介绍了undo log，我们都知道undo log记录的是数据更新前的样子，主要保证事务的原子性；而redo log则记录的是<strong>事务执行过程中的修改情况</strong>，redo log主要保证事务的持久性。</p>
-<p>Redo Log 并不是直接用于保存事务提交后的“脏页”本身，而是用于<strong>保存那些在事务执行过程中对数据页所做的修改操作的日志记录</strong>。当一个事务在InnoDB存储引擎中执行时，它首先修改内存中的数据页（这些数据页位于Buffer Pool中），这些被修改过的数据页被称为“脏页”。</p>
-<p>Redo Log 记录了足以重新执行（redo）这些修改操作所需的信息，即使在系统发生故障（如宕机）的情况下，也能确保当数据库重启时，能够<strong>通过重做(redo)这些日志记录来恢复未持久化到磁盘的事务影响</strong>。<br><strong>在事务提交时，Redo Log 会被刷新到磁盘上的 redo log 文件中，这个过程通常早于对应数据页被刷回磁盘（即脏页flush到磁盘数据文件）。</strong>这种机制使得MySQL能够满足ACID中的持久性要求，即一旦事务提交，其对数据库的影响即使在系统崩溃后也能保持不变。</p>
-<h2 id="作用-2"><a href="#作用-2" class="headerlink" title="作用"></a>作用</h2><ol>
-<li><strong>保证事务的持久性</strong>：如果buffer pool缓冲池中的<strong>脏数据还没有进行刷盘</strong>的时候，此时数据库发生崩溃，重启服务后，我们可以通过redo log日志找到需要重放到磁盘文件的那些数据记录。</li>
-<li><strong>提高事务提交的速度</strong>：buffer pool缓冲池中的数据直接刷新到磁盘，是一个随机IO，效率较差，而把buffer pool中的数据记录到redo log，是一个顺序IO，可以提高事务提交的速度。可将redo log持久化作为事务完成的标志（崩溃了也能通过redo log恢复），所以速度更快。</li>
-</ol>
-<h2 id="工作原理-1"><a href="#工作原理-1" class="headerlink" title="工作原理"></a>工作原理</h2><p>redo log由两部分组成：</p>
-<ul>
-<li>redo log buffer：重做日志缓存，存在于内存中，容易发生丢失。</li>
-<li>redo log file：重做日志文件，存在于磁盘中，不容易发生丢失。</li>
-</ul>
-<p>为了确保每次日志都能写入到事务日志文件中，在每次将log buffer中的日志写入日志文件的过程中都会调用一次操作系统的<strong>fsync操作（即fsync()系统调用）</strong>。因为MySQL是工作在用户空间的，log buffer处于用户空间的内存中。要写入到磁盘上的log file中，中间还要经过操作系统内核空间的os buffer，调用fsync()的作用就是将OS buffer中的日志刷到磁盘上的log file中。</p>
-<p>redo log的工作原理示意图：（包括binlog、undo log、redo log）<br><img src="/2024/03/21/backend/database/mysql/mysql_log/log_all.svg"></p>
-<h2 id="流程-1"><a href="#流程-1" class="headerlink" title="流程"></a>流程</h2><p>之前的undo log中的事务执行流程并不完整，现在提供补充redo log后的完整流程：<br>数据需要在事务提交前写到磁盘，<strong>只要事务成功提交，数据必然已经持久化到磁盘。</strong></p>
-<ol>
-<li>事务开始</li>
-<li>每次数据更改步骤：<ol>
-<li>对于第一次更改（如将name从A改为B）：<ol>
-<li>创建一个Undo Log条目，记录原始值A以及变更前的数据状态。</li>
-<li>更新内存中的Buffer Pool（即Page Cache），将name字段改为B。</li>
-</ol>
-</li>
-<li>对于第二次更改（如将name从B改为C）：<ol>
-<li>再创建一个新的Undo Log条目，记录原始值B及变更前的状态。</li>
-<li>更新内存中的Buffer Pool，将name字段改为C。</li>
-</ol>
-</li>
-</ol>
-</li>
-<li><strong>Undo Log在事务执行过程中按照checkpoint机制或者达到一定条件时会被刷入磁盘，以保证事务的持久性</strong>。</li>
-<li>在事务准备提交阶段，<strong>Redo Log会被先于事务提交持久化到磁盘</strong>，通常通过fsync()系统调用确保其内容已经稳定存储。</li>
-<li>提交事务，此时事务才真正完成，同时持久化Buffer Pool中的改动至磁盘（通过Redo Log恢复）。对于MySQL复制环境，在提交事务后，Binlog也会被持久化到磁盘。</li>
-</ol>
-<p>异常情况说明：</p>
-<ul>
-<li>成功情况：一旦事务成功提交，意味着Redo Log已持久化，通过Redo Log可以重播事务的所有更改，即使系统崩溃重启也能恢复数据到最新状态。<strong>只要事务成功提交，数据必然已经持久化到磁盘。</strong></li>
-<li>异常情况：<ul>
-<li>如果在持久化Undo Log之后发生异常，由于Undo Log和Redo Log都已经持久化，可以根据Redo Log进行前滚恢复，若需要回滚事务，则可以使用Undo Log来还原数据。</li>
-<li>如果在持久化Undo Log之前或过程中发生异常，由于InnoDB遵循“Write-Ahead Logging”原则（即修改数据前先写日志），因此磁盘上的数据仍然是事务开始前的状态，不会出现数据不一致的情况。在系统恢复时，未完成的事务可以通过检查Undo Log来决定是否需要回滚。</li>
-</ul>
-</li>
-</ul>
-<h1 id="日志一致"><a href="#日志一致" class="headerlink" title="日志一致"></a>日志一致</h1><p>由于binlog和redo log的写入并不是一个原子性操作，所以可能发生写完redo log日志后，binlog日志写期间发生了异常的情况。<br>对此，InnoDB使用了<strong>两阶段提交</strong>的方案。</p>
-<p>将redo log的写入拆成了两个步骤prepare和commit，这就是两阶段提交。示意图：<br><img src="/2024/03/21/backend/database/mysql/mysql_log/%E4%B8%A4%E9%98%B6%E6%AE%B5%E6%8F%90%E4%BA%A4.png"></p>
-<p>使用两阶段提交后，写入binlog时发生异常也不会有影响，因为MySQL根据redo log日志恢复数据时，发现redo log还处于prepare阶段，并且没有对应的binlog日志，就会回滚该事务。</p>
-]]></content>
-      <categories>
-        <category>后端开发</category>
-        <category>数据库</category>
-        <category>MySQL</category>
-      </categories>
-      <tags>
-        <tag>数据库</tag>
-        <tag>MySQL</tag>
-        <tag>MVCC</tag>
-        <tag>多版本并发控制</tag>
-        <tag>undo log</tag>
-        <tag>日志</tag>
-        <tag>binlog</tag>
-        <tag>Statement格式</tag>
-        <tag>Row格式</tag>
-        <tag>Mixed格式</tag>
-        <tag>sync_binlog</tag>
-        <tag>Buffer Pool</tag>
-        <tag>rollback segment</tag>
-        <tag>回滚段</tag>
-        <tag>redo log</tag>
-        <tag>两阶段提交</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>JAVA：AOT入门</title>
-    <url>/2024/03/18/backend/language/java/JIT_AOT/</url>
-    <content><![CDATA[<p>本文将介绍使用AOT相比使用JVM运行java程序的优点，以及如何使用AOT生成可执行文件。</p>
-<blockquote>
-<p>资料来源：<br><a href="https://www.graalvm.org/">GraalVM官网</a><br><a href="https://mp.weixin.qq.com/s/4haTyXUmh8m-dBQaEzwDJw">阿里巴巴微信公众号</a></p>
-</blockquote>
-<h1 id="JIT"><a href="#JIT" class="headerlink" title="JIT"></a>JIT</h1><p>传统的一个 Java 应用从代码编写到启动运行大致可以分为如下步骤：</p>
-<ol>
-<li>首先，编写<code>.java</code>源代码程序。</li>
-<li>然后，借助<strong>javac</strong>工具将<code>.java</code>文件翻译为<code>.class</code>的<strong>字节码</strong>。字节码是 Java 中非常重要的内容之一，正是因为它的出现，Java 才实现对底层环境的屏蔽，达到 Write once, run anywhere 的效果。</li>
-<li>基于步骤2的<code>.class</code>文件会被打包成 <strong>jar</strong> 包或者 <strong>war</strong> 包进行部署执行，部署过程中通过Java虚拟机加载应用程序然后<strong>解释字节码</strong>运行业务逻辑。<ul>
-<li>我们需要格外注意的是，<code>.class-&gt;机器码</code>的过程中，JVM类加载器首先加载字节码文件，然后通过解释器逐行解释执行，这种方式的执行速度会相对比较慢。而且，有些方法和代码块是经常需要被调用的(也就是所谓的热点代码)，所以后面引进了<strong>JIT（Just in Time Compilation）</strong>编译器，而 JIT 属于运行时编译。当 JIT 编译器完成第一次编译后，其会将字节码对应的机器码保存下来，下次可以直接使用。而我们知道，机器码的运行效率肯定是高于 Java 解释器的。这也解释了我们为什么经常会说Java 是<strong>编译与解释共存</strong>的语言。</li>
-</ul>
-</li>
-</ol>
-<p>示意图：<br><img src="/2024/03/18/backend/language/java/JIT_AOT/java_jdk.svg"></p>
-<p><img src="/2024/03/18/backend/language/java/JIT_AOT/java2.svg"></p>
-<h1 id="AOT"><a href="#AOT" class="headerlink" title="AOT"></a>AOT</h1><h2 id="传统方案的缺陷"><a href="#传统方案的缺陷" class="headerlink" title="传统方案的缺陷"></a>传统方案的缺陷</h2><p><img src="/2024/03/18/backend/language/java/JIT_AOT/JVM_invoke.png"><br>Java 程序启动运行详细过程如上图所示。</p>
-<p>具体过程：</p>
-<ol>
-<li>一个 Java 应用启动过程首先需要<strong>加载</strong>该应用程序对应的<strong>JVM 虚拟机软件程序到内存中</strong>，如上图<span style="color: #fe4006;">红色</span>部分描述所示。</li>
-<li>然后 JVM 虚拟机再<strong>加载对应的应用程序到内存中</strong>，该过程对应上图中的<span style="color: #ccfefe;">浅蓝色</span>类加载（Class Load，CL）部分。</li>
-<li>在类加载过程中，<strong>应用程序</strong>就会开始<strong>被解释执行</strong>，对应上图中<span style="color: #adce00;">浅绿色</span>部分。</li>
-<li>解释执行过程 JVM 对垃圾对象进行回收，对应上图中的<span style="color: #fed220;">黄色</span>部分。</li>
-<li>随着程序的运行的深入，JVM 会采用<strong>及时编译（Just In Time，JIT）技术</strong>对执行频率较高的代码进行编译优化，以便提升应用程序运行速度。JIT 过程对应上图中的<span style="color: #fefefe;">白色</span>部分。</li>
-<li>经过 JIT 编译优化后的代码对应图中<span style="color: #00ad00;">深绿色</span>部分。</li>
-</ol>
-<p>经过上述分析，不难看出，一个 Java 程序从启动到达到被JIT动态编译优化会经过<strong>VM init</strong>，<strong>App init</strong>和<strong>App active</strong>几个阶段，相比于其他一些编译型语言，其<strong>冷启动问题</strong>比较严重。</p>
-<p>除了冷启动问题，在一个 Java 程序运行过程中，什么都不做首先就需要加载一个 JVM 虚拟机，该操作一般占用一定内存。另外，由于 Java 程序是先解释执行字节码，然后再做 JIT 编译优化。由于相比于一些编译型语言其将编译优化的动作后置到运行时，因此非常容易出现实际加载的代码比实际需要运行的代码多很多的情况，造成了一些无效内存占用情况。综上所述就是为什么很多人常诟病 Java 程序<strong>运行内存占用高</strong>的几点主要原因。</p>
-<h2 id="解决方案：AOT"><a href="#解决方案：AOT" class="headerlink" title="解决方案：AOT"></a>解决方案：AOT</h2><p><strong>提前编译（Ahead-of-Time Compilation，AOT Compilation）</strong>或者叫<strong>静态编译</strong>在 Java 领域很早就被提了出来。其核心思想就是让 Java 程序也跟其他程序语言，比如 C&#x2F;C++ 一样，先编译后执行解决上述问题，将 Java 程序的编译阶段提前到程序启动前，然后在编译阶段进行代码编译优化，让程序启动既巅峰，消除冷启动，降低运行时内存开销。</p>
-<p>Java 领域静态编译的实现技术有很多，其中最具代表性的还属 Oracle 推出的 <strong>GraalVM</strong> 开源高性能多语言运行时平台。</p>
-<blockquote>
-<p><img src="/2024/03/18/backend/language/java/JIT_AOT/GraalVM.png"><br>GraalVM 中通过提供 Truffle 解释器实现框架，让开发人员可以使用 Truffle 提供的 API 快速实现特定语言的解释器从而实现对上图中各种编程语言所写的程序都能进行编译运行的效果，从而成为一个多语言运行时平台。GraalVM 实现静态编译能力的编译器就是 GraalVM JIT Compiler。静态编译框架和运行时由 Substrate VM 子项目实现，兼容 OpenJDK 运行时实现，提供了原生镜像程序运行时的异常处理、同步调度、线程管理、内存管理等功能。<br>因此，GraalVM 不仅可以作为一个多语言运行时平台，而且由于其中提供的 GraalVM JIT Compiler 静态编译器，其可用来对 Java 程序进行静态编译。</p>
-</blockquote>
-<p>基于静态编译的 Java 程序相比于目前应用广泛的 JVM 运行时编译 Java 程序，整个从代码编写到编译执行的区别如下：<br><img src="/2024/03/18/backend/language/java/JIT_AOT/nativeImage.png"></p>
-<p>相比于 JVM 运行时方式，静态编译在运行之前会先对程序解析编译，然后生成一个跟运行时环境强相关的 <strong>native image 可执行文件</strong>，最后直接执行该文件即可启动程序进行执行。</p>
-<h3 id="静态编译过程"><a href="#静态编译过程" class="headerlink" title="静态编译过程"></a>静态编译过程</h3><blockquote>
-<p>静态编译过程到底会对 Java 程序做哪些解析操作？静态编译后的可执行程序垃圾回收问题怎么解决？</p>
-</blockquote>
-<p>GraalVM 静态编译实现示意图：<br><img src="/2024/03/18/backend/language/java/JIT_AOT/%E9%9D%99%E6%80%81%E7%BC%96%E8%AF%91.png"></p>
-<p>图中左侧前三个输入内容 Applicaton，Libraries 和 JDK 是一个 Java 程序编译运行必备的三部分，不必多说。而 <strong>Substrate VM</strong> 就是 GraalVM 中实现静态编译的核心部分，在整个静态编译过程中扮演了重要作用。<br>在静态分析过程中Substrate VM 通过<strong>上下文不敏感的指向分析（Points-to Analysis）</strong>来对应用程序做<strong>静态分析</strong>，其可以在不需要运行程序的情况下，基于源程序分析给出所有可能的可达函数列表然后作为后续编译阶段的输入对程序<strong>进行静态编译</strong>。<br>在静态分析完成后，基于静态分析结果的可达函数列表，会调用介绍的 GraalVM 中的 GraalVM JIT Compiler 编译器将应用程序编译为与目标平台强相关的本地代码以完成编译过程。<br>编译完成后，就会进入到上图中右侧 Native 可执行文件生成阶段。在该过程中，Substrate VM 会将静态编译阶段确定和初始化的内容以及跟 Substrate VM 运行时以及 JDK 库中的数据一起保存到最终可执行文件的 Image Heap 中。其中 <strong>Substrate VM 运行时</strong>就为最终可执行文件提供了运行过程中所需的垃圾回收、异常处理等能力。</p>
-<h4 id="静态分析局限性"><a href="#静态分析局限性" class="headerlink" title="静态分析局限性"></a>静态分析局限性</h4><p>在Substrate VM的静态分析过程中，由于静态分析无法覆盖 Java 中的反射、动态代理、JNI 调用等动态特性。这也造成了很多的 Java 框架由于在实现过程中使用了大量的上述特性，因此，都难以直接基于 Substrate VM 完成对自身所有代码的静态分析，需要通过<strong>额外的外部配置</strong>来解决静态分析本身的不足。</p>
-<blockquote>
-<p>一个java项目，该如何进行静态编译适配呢？其最核心要解决的本质问题，就是将开源框架中的 GraalVM 无法识别和处理的动态内容转换为其可识别的内容即可。</p>
-<p>Spring 社区为了应对Spring项目中反射和动态代理等特性在静态编译环境下的挑战，开发了<strong>AOT Engine</strong>工具。AOT Engine专注于在构建阶段对Spring应用中的特定内容进行静态分析与转换处理，这些内容包括但不限于使用@Configuration注解声明的配置类及其初始化逻辑。<br>通过AOT Engine，能够识别并预先处理那些原本只能在运行时动态生成的类结构，如基于Java的动态代理类。这样，在静态编译阶段就能够有效生成这些原本动态创建的对象，确保它们能被Substrate VM或类似支持提前编译的技术识别和兼容。<br>因此，AOT Engine有效地解决了Spring应用在静态编译场景下可能遇到的问题，使得Spring应用能够适应静态编译并实现性能优化，同时保持框架的灵活性和功能完整性。</p>
-<p>对于非 Spring 体系项目或者自身使用了一些 JDK 中原生的反射或者其他 Java 动态特性，针对自身代码中的 Java 动态用法需要在项目中提供对应的静态配置文件才能在静态编译过程中让编译器识别其中的动态特性，对其进行编译构建才能实现项目的顺利编译与执行。<br>针对这种情况，GraalVM 提供了一个名叫 <strong>native-image-agent</strong> 的 Tracing Agent 来帮助大家更方便地收集元数据并准备配置文件。该 Agent 会在常规 Java VM 上的应用程序运行过程中自动收集其中的动态特性使用情况并将其转换为 GraalVM 可以识别的配置文件。最后，将通过 Agent 生成的框架自身的动态配置文件存放在项目的：META-INF&#x2F;native-image&#x2F;&lt;group.id&gt;&#x2F;&lt;artifact.id&gt; 目录下，就可以在静态编译过程中根据这些配置内容，识别项目包中的动态特性。</p>
-</blockquote>
-<h2 id="基于静态编译构建微服务"><a href="#基于静态编译构建微服务" class="headerlink" title="基于静态编译构建微服务"></a>基于静态编译构建微服务</h2><blockquote>
-<p>Spring Cloud Alibaba 2022.0.0.0 版本所包含的所有中间件客户端已完成了构建 GraalVM 原生应用的适配。为用户提供了开箱即用的静态编译能力。</p>
-</blockquote>
-<h3 id="环境准备"><a href="#环境准备" class="headerlink" title="环境准备"></a>环境准备</h3><ol>
-<li>安装 GraalVM 发行版。（windows安装可参考：<a href="https://medium.com/graalvm/using-graalvm-and-native-image-on-windows-10-9954dc071311">Using GraalVM and Native Image on Windows 10</a>）</li>
-<li>检查 java -version 的输出来验证是否配置了正确的版本。</li>
-</ol>
-<blockquote>
-<p>建议不要使用Windows。</p>
-</blockquote>
-<h3 id="应用构建"><a href="#应用构建" class="headerlink" title="应用构建"></a>应用构建</h3><ol>
-<li>要使用 GraalVM 静态编译能力构建微服务，首先确保项目的<code>Spring Boot</code>版本为<code>3.0.0</code>或以上<code>Spring Cloud</code>版本为<code>2022.0.0</code>或以上。然后在项目中引入<code>Spring Cloud Alibaba 2022.0.0.0</code>版本的所需模块依赖即可。</li>
-<li>通过maven命令生成应用中反射、序列化和动态代理所需的 Hints 配置文件：<code>mvn -Pnative spring-boot:run</code>（前提是应用中引入了<code>spring-boot-starter-parent</code>父模块）</li>
-<li>之后应用会启动，进行预执行，需要尽可能完整的测试一遍应用的所有功能，保证应用的大部分代码都被测试用例覆盖，该过程会基于 GraalVM 的 native-image-agent 收集程序中的动态特性，这样可以确保完整生成应用运行过程中的所有必须的动态属性。</li>
-<li>运行完所有测试用例后，我们发现<code>resource/META-INF/native-image</code>目录下会生成以下一些<code>hints</code>文件:<ul>
-<li>resource-config.json：应用中资源 hint 文件</li>
-<li>reflect-config.json：应用中反射定义 hint 文件</li>
-<li>serialization-config.json：应用中序列化内容 hint 文件</li>
-<li>proxy-config.json：应用中 Java 代理相关内容 hint 文件</li>
-<li>jni-config.json：应用中 Java Native Interface（JNI）内容 hint 文件</li>
-</ul>
-</li>
-</ol>
-<blockquote>
-<p>上述预执行过程主要为了扫描应用自身业务代码以及其他第三方包中的动态特性，以便后续静态编译过程能顺利进行，应用能正常启动。</p>
-<p>如果没有使用动态特性，可直接进行下一步。</p>
-</blockquote>
-<h3 id="静态编译"><a href="#静态编译" class="headerlink" title="静态编译"></a>静态编译</h3><p>通过maven命令来构建原生镜像：<code>mvn -Pnative native:compile</code><br>成功执行后，可在<code>/target</code>目录看到生成的可执行文件。</p>
-<h3 id="执行可执行文件"><a href="#执行可执行文件" class="headerlink" title="执行可执行文件"></a>执行可执行文件</h3><p>进入<code>/target</code>，命令行输入<code>./&lt;可执行文件名称&gt;</code>，即可发现项目被光速启动了。</p>
-<blockquote>
-<p>这是真TM快啊！</p>
-</blockquote>
-]]></content>
-      <categories>
-        <category>后端开发</category>
-        <category>语言</category>
-        <category>Java</category>
-      </categories>
-      <tags>
-        <tag>JAVA</tag>
-        <tag>JDK</tag>
-        <tag>AOT</tag>
-        <tag>JIT</tag>
-        <tag>GraalVM</tag>
-        <tag>运行时编译</tag>
-        <tag>及时编译</tag>
-        <tag>静态编译</tag>
-        <tag>静态分析</tag>
-        <tag>提前编译</tag>
-        <tag>字节码</tag>
-        <tag>冷启动问题</tag>
-        <tag>native image</tag>
-        <tag>Substrate VM</tag>
-        <tag>Substrate VM运行时</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>Shell：基础篇</title>
-    <url>/2024/03/21/backend/language/shell/shell1/</url>
-    <content><![CDATA[<h1 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h1><p>Shell 是计算机操作系统中的一个重要组成部分，尤其在类Unix系统（如Linux、BSD等）以及早期的MS-DOS等系统中扮演着核心角色。</p>
-<p><strong>Shell 是一种命令行界面（CLI）程序，通常被称为命令解释器，它是用户与操作系统内核之间交互的接口或桥梁。</strong></p>
-<blockquote>
-<p>命令行界面（CLI）程序是一种软件应用程序，它专为通过字符界面与用户交互而设计，用户通过键盘输入特定的文本命令及其相关参数来进行操作。在CLI程序中，没有图形元素，如窗口、按钮或菜单，所有的交互完全依赖于文本命令和响应。</p>
-</blockquote>
-<p>具体而言，Shell 主要具有以下几个特点和功能：</p>
-<ul>
-<li><strong>命令解释器</strong>：Shell 接收用户通过键盘输入的命令，解析这些命令并将其转换成内核能理解的操作请求。</li>
-<li><strong>脚本语言</strong>：Shell 不仅允许用户输入单个命令，还支持编写包含一系列命令和控制结构的脚本文件（称为Shell脚本或Shell程序）。这些脚本可以实现自动化任务，简化重复性工作，或是构建复杂的系统管理流程。</li>
-<li>用户交互：Shell 提供了交互式的命令行环境，用户可以在提示符下实时输入和执行命令，获取即时反馈。</li>
-<li>环境配置：Shell 可以设置和管理用户的环境变量，影响程序的行为和系统环境配置。</li>
-<li>I&#x2F;O重定向与管道：Shell 允许用户将命令的标准输入、输出重定向至文件或其他命令，同时支持通过管道（|）连接多个命令，形成数据流式处理。</li>
-<li>命令扩展与别名：Shell 可以为命令添加额外的便利功能，比如命令补全、命令历史记录，以及定义命令别名等。</li>
-</ul>
-<p>流行的Shell有多种，例如<strong>Bash（Bourne-Again SHell）</strong>、sh（Bourne Shell）、csh（C Shell）、zsh（Z Shell）等。其中，bash在大多数Linux发行版中被用作默认的登录Shell。</p>
-<h1 id="运行"><a href="#运行" class="headerlink" title="运行"></a>运行</h1><p>运行 Shell 脚本有多种方法：</p>
-<ol>
-<li><strong>作为可执行程序运行</strong>：<strong>直接执行</strong>，需有执行权限，<ul>
-<li>确保脚本文件的第一行包含了正确的Shebang（#!），例如 #!&#x2F;bin&#x2F;bash 或 #!&#x2F;usr&#x2F;bin&#x2F;env bash，用于指定解释此脚本的Shell版本。</li>
-<li>给脚本添加执行权限：<code>chmod +x script.sh</code></li>
-<li>使用相对路径或绝对路径执行：相对路径<code>./script.sh</code>；绝对路径<code>/path/to/script.sh</code>。</li>
-</ul>
-</li>
-<li><strong>作为解释器参数</strong>：<ul>
-<li>如<code>bash script.sh</code></li>
-<li>即使脚本没有执行权限，也可以通过明确指定解释器来执行</li>
-</ul>
-</li>
-<li>source命令：当希望脚本中的环境变量更改、函数定义等对当前Shell会话生效时，可以使用source命令。<ul>
-<li>如<code>source script.sh</code></li>
-</ul>
-</li>
-</ol>
-<h1 id="语法"><a href="#语法" class="headerlink" title="语法"></a>语法</h1><h2 id="变量"><a href="#变量" class="headerlink" title="变量"></a>变量</h2><p>在Shell中定义变量非常直观且简单，无需事先声明变量类型，<strong>只需给变量分配一个值即可完成定义</strong>。<br>如<code>name=&quot;chilun&quot;</code>，即定义了一个变量name为字符串“chilun”。</p>
-<h3 id="变量命名规则"><a href="#变量命名规则" class="headerlink" title="变量命名规则"></a>变量命名规则</h3><ul>
-<li><strong>只包含字母、数字和下划线</strong>： 变量名可以包含字母（大小写敏感）、数字和下划线 _，不能包含其他特殊字符。</li>
-<li><strong>不能以数字开头</strong>： 变量名不能以数字开头，但可以包含数字。</li>
-<li><strong>避免使用 Shell 关键字</strong>： 不要使用Shell的关键字（例如 if、then、else、fi、for、while 等）作为变量名，以免引起混淆。</li>
-<li>使用大写字母表示常量： 习惯上，常量的变量名通常使用大写字母，例如 PI&#x3D;3.14。</li>
-</ul>
-<h3 id="定义变量"><a href="#定义变量" class="headerlink" title="定义变量"></a>定义变量</h3><ol>
-<li><strong>直接赋值</strong>：通过等号（&#x3D;）来给变量赋值，注意变量名和等号之间不能有空格。<ul>
-<li><code>name=&quot;chilun&quot;</code>：将“chilun”字符串赋给变量 name。</li>
-</ul>
-</li>
-<li><strong>语句赋值</strong>：可使用for循环等语句对变量进行赋值。<ul>
-<li><code>for file in $(ls /etc) </code>：将 &#x2F;etc 目录下的所有文件和目录名逐个赋值给变量 file。</li>
-</ul>
-</li>
-<li><strong>命令赋值</strong>：可使用标准输入读取命令等对变量进行赋值。<ul>
-<li><code>read -p &quot;请输入你的名字: &quot; name</code>：用户输入的名字会被赋值给变量 name。</li>
-</ul>
-</li>
-<li><strong>定义变量</strong>：使用<code>declare</code>或<code>typeset</code>命令定义变量时可以指定变量的类型（如整型、数组等）。<ul>
-<li><code>declare -i age=30</code>：定义一个整数类型的变量age并赋值为30。</li>
-</ul>
-</li>
-<li><strong>计算变量</strong>：使用<code>let</code>命令执行简单的算术运算并赋值给变量。<ul>
-<li><code>let b=a+1</code>：将b赋值为a+1后的整数；如果直接<code>b=a+1</code>，b会被赋值为“a+1”的字符串。</li>
-</ul>
-</li>
-<li><strong>定义环境变量</strong>：使用<code>export</code>命令可以定义环境变量，在子shell进程中变量也能被访问。<ul>
-<li><code>export PATH=$PATH:/usr/local/bin</code>：将新的路径添加到已存在的PATH环境变量中。</li>
-</ul>
-</li>
-<li><strong>删除变量</strong>：使用<code>unset</code>命令删除已定义的变量。<ul>
-<li><code>unset name</code>：删除变量name。</li>
-</ul>
-</li>
-<li><strong>只读变量</strong>：使用<code>readonly</code>命令可以将变量定义为只读变量，只读变量的值不能被改变，不能被删除。<ul>
-<li><code>readonly name</code>：之后再修改就会报错：<code>name: readonly variable</code>。</li>
-</ul>
-</li>
-</ol>
-<h3 id="使用变量"><a href="#使用变量" class="headerlink" title="使用变量"></a>使用变量</h3><p>使用一个定义过的变量，只要在变量名前面加美元符号即可。<br>变量名外面的花括号是可选的，加不加都行，加花括号是为了帮助解释器识别变量的边界（推荐给所有变量加上花括号）。</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><code class="hljs shell">name=&quot;chilun&quot;<br>echo $name<br>echo $&#123;name&#125;<br></code></pre></td></tr></table></figure>
-<p>输出为：</p>
-<blockquote>
-<p>chilun<br>chilun</p>
-</blockquote>
-<h3 id="变量类型"><a href="#变量类型" class="headerlink" title="变量类型"></a>变量类型</h3><p>Shell 支持不同类型的变量。</p>
-<h4 id="字符串变量"><a href="#字符串变量" class="headerlink" title="字符串变量"></a>字符串变量</h4><p>在 Shell中，变量通常被视为字符串。<br>在Bash中，所有变量值本质上都是字符串。即使一个变量可用于数值计算，其在内部依旧是以字符串的形式存储的，只是在进行算术运算时进行了相应的转换和处理。<br>可使用单引号或双引号来定义字符串，比如：<code>a=&#39;Hello, World!&#39;</code>或者<code>b=&quot;Hello, World!&quot;</code>。</p>
-<p>当直接赋值一个不包含变量扩展、算术扩展或其他形式扩展的纯文本给一个变量时，Bash也会将这个值当作字符串来处理，如<code>c=hello,World!</code>。<br>（当设置一个变量时，其值默认被视为一个整体，直到遇到第一个未经转义的特殊字符为止。如果<code>c=hello, World!</code>就会报错，因为存在空格，空格是Bash解析命令行参数时的分隔符，会导致Bash会尝试将<code>hello,</code>、<code>World!</code>视为不同的参数。）</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><code class="hljs shell"><span class="hljs-meta prompt_">#</span><span class="language-bash">!/bin/bash</span><br>a=&#x27;Hello, World!&#x27;<br>b=&quot;Hello, World!&quot;<br>c=hello,World!<br>echo $&#123;a&#125; $&#123;b&#125; $&#123;c&#125; <br></code></pre></td></tr></table></figure>
-
-<p>输出结果为：</p>
-<blockquote>
-<p>Hello, World! Hello, World! hello,World!</p>
-</blockquote>
-<h4 id="整数变量"><a href="#整数变量" class="headerlink" title="整数变量"></a>整数变量</h4><p>可以使用 declare 或 typeset 命令来声明整数变量。<br>这样的变量只包含整数值，例如：<code>declare -i a=42</code>。<br>这样的声明告诉Shell将a视为整数，如果尝试将非整数值赋给它，Shell会尝试将其转换为整数。</p>
-<p>示例：</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><code class="hljs shell"><span class="hljs-meta prompt_">#</span><span class="language-bash">!/bin/bash</span><br>a=42<br>declare -i b=a+1<br>echo $&#123;b&#125;<br></code></pre></td></tr></table></figure>
-<p>输出为：</p>
-<blockquote>
-<p>43</p>
-</blockquote>
-<p>（如果不声明为整数，b就会被看做是“a+1”的字符串。）</p>
-<h4 id="数组变量"><a href="#数组变量" class="headerlink" title="数组变量"></a>数组变量</h4><p>Shell 支持数组，允许在一个变量中存储多个值。括号用来表示数组，数组元素用”空格”符号分割开。<br>数组可以是<strong>整数索引数组</strong>或<strong>关联数组</strong>：</p>
-<ul>
-<li>整数索引数组：<code>array1=(1 2 3 4 5)</code></li>
-<li>关联数组：<figure class="highlight shell"><table><tr><td class="code"><pre><code class="hljs shell">declare -A array2<br>array2[&#x27;he&#x27;]=&quot;wor&quot;<br>array2[&#x27;llo,&#x27;]=&quot;ld!&quot;<br></code></pre></td></tr></table></figure></li>
-</ul>
-<p>示例：</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><code class="hljs shell">array1=(1 2 3 4 5)<br>echo $&#123;array1[0]&#125; $&#123;array1[1]&#125; $&#123;array1[2]&#125; $&#123;array1[3]&#125; $&#123;array1[4]&#125;<br>declare -A array2<br>array2[&#x27;he&#x27;]=&quot;wor&quot;<br>array2[&#x27;llo,&#x27;]=&quot;ld!&quot;<br>echo $&#123;array2[&#x27;he&#x27;]&#125;$&#123;array2[&#x27;llo,&#x27;]&#125;<br></code></pre></td></tr></table></figure>
-<p>输出为：</p>
-<blockquote>
-<p>1 2 3 4 5<br>world!</p>
-</blockquote>
-<blockquote>
-<p>未完待续……</p>
-</blockquote>
-<h1 id="应用案例"><a href="#应用案例" class="headerlink" title="应用案例"></a>应用案例</h1>]]></content>
-      <categories>
-        <category>后端开发</category>
-        <category>语言</category>
-        <category>shell</category>
-      </categories>
-      <tags>
-        <tag>Linux</tag>
-        <tag>Shell</tag>
-        <tag>CLI</tag>
-        <tag>Bash</tag>
-        <tag>Bourne-Again SHell</tag>
       </tags>
   </entry>
   <entry>

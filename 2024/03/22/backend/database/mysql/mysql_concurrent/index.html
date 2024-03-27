@@ -33,7 +33,7 @@
 <meta property="og:image" content="http://shoumingchilun.github.io/2024/03/22/backend/database/mysql/mysql_concurrent/RR%E6%99%AE%E9%80%9A.png">
 <meta property="og:image" content="http://shoumingchilun.github.io/2024/03/22/backend/database/mysql/mysql_concurrent/RR%E6%97%A0.png">
 <meta property="article:published_time" content="2024-03-21T16:01:03.000Z">
-<meta property="article:modified_time" content="2024-03-22T17:10:58.612Z">
+<meta property="article:modified_time" content="2024-03-27T17:23:37.663Z">
 <meta property="article:author" content="寿命齿轮">
 <meta property="article:tag" content="数据库">
 <meta property="article:tag" content="MySQL">
@@ -351,7 +351,7 @@
               <p id="updated-time" class="note note-info" style="display: none">
                 
                   
-                    本文最后更新于 2024-03-23T01:10:58+08:00
+                    本文最后更新于 2024-03-28T01:23:37+08:00
                   
                   
 
@@ -689,9 +689,6 @@
 <p>示意图：<br><img src="/2024/03/22/backend/database/mysql/mysql_concurrent/RR%E6%97%A0.png" srcset="/img/loading.gif" lazyload></p>
 <p>如果查询条件列没有索引，主键索引的所有记录，都将加上X锁，每条记录间也都加上间隙Gap锁。大家可以想象一下，任何加锁并发的SQL，都是不能执行的，全表都是锁死的状态。如果表的数据量大，那效率就更低。</p>
 <h4 id="Serializable串行化"><a href="#Serializable串行化" class="headerlink" title="Serializable串行化"></a>Serializable串行化</h4><p>在Serializable串行化的隔离级别下，对于写的语句，比如update account set balance&#x3D; balance-10 where name&#x3D;‘Jay’;，跟RC和RR隔离级别是一样的。不一样的地方是，在查询语句，如select balance from account where name &#x3D; ‘Jay’;，在RC和RR是不会加锁的（仅MVCC），但是在Serializable串行化的隔离级别，即会加锁。</p>
-<h3 id="RR隔离级别-加锁规则详解"><a href="#RR隔离级别-加锁规则详解" class="headerlink" title="RR隔离级别-加锁规则详解"></a>RR隔离级别-加锁规则详解</h3><blockquote>
-<p>未完待续……</p>
-</blockquote>
 
                 
               </div>
@@ -936,7 +933,7 @@
         aria-expanded="true"
       >
         后端开发
-        <span class="list-group-count">(6)</span>
+        <span class="list-group-count">(7)</span>
         <i class="iconfont icon-arrowright"></i>
       </a>
       
@@ -1117,7 +1114,7 @@
         aria-expanded="false"
       >
         语言
-        <span class="list-group-count">(2)</span>
+        <span class="list-group-count">(3)</span>
         <i class="iconfont icon-arrowright"></i>
       </a>
       
@@ -1144,7 +1141,7 @@
         aria-expanded="false"
       >
         Java
-        <span class="list-group-count">(1)</span>
+        <span class="list-group-count">(2)</span>
         <i class="iconfont icon-arrowright"></i>
       </a>
       
@@ -1162,6 +1159,15 @@
            class="list-group-item list-group-item-action
            ">
           <span class="category-post">JAVA：AOT入门</span>
+        </a>
+      
+    
+      
+      
+        <a href="/2024/03/28/backend/language/java/JVM/" title="JVM各类图示"
+           class="list-group-item list-group-item-action
+           ">
+          <span class="category-post">JVM各类图示</span>
         </a>
       
     
