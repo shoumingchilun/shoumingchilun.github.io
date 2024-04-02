@@ -8,7 +8,7 @@
     <link href="/2024/03/28/backend/language/java/JVM/"/>
     <url>/2024/03/28/backend/language/java/JVM/</url>
     
-    <content type="html"><![CDATA[<p>JVM主要分为三大模块内容：<br><strong>类加载器</strong>、<strong>运行时数据区</strong>和<strong>执行引擎</strong>。</p><p>示意图：<br><img src="/2024/03/28/backend/language/java/JVM/%E4%B8%89%E5%A4%A7%E6%A8%A1%E5%9D%97.png"></p><h1 id="类加载"><a href="#类加载" class="headerlink" title="类加载"></a>类加载</h1><p>类加载过程：<br><img src="/2024/03/28/backend/language/java/JVM/%E7%B1%BB%E5%8A%A0%E8%BD%BD%E8%BF%87%E7%A8%8B.svg"></p><p>类加载器：<br><img src="/2024/03/28/backend/language/java/JVM/%E7%B1%BB%E5%8A%A0%E8%BD%BD%E5%99%A8.svg"></p><h1 id="运行时数据区"><a href="#运行时数据区" class="headerlink" title="运行时数据区"></a>运行时数据区</h1>]]></content>
+    <content type="html"><![CDATA[<p>JVM主要分为三大模块内容：<br><strong>类加载器</strong>、<strong>运行时数据区</strong>和<strong>执行引擎</strong>。</p><p>示意图：<br><img src="/2024/03/28/backend/language/java/JVM/%E4%B8%89%E5%A4%A7%E6%A8%A1%E5%9D%97.png"></p><h1 id="类加载"><a href="#类加载" class="headerlink" title="类加载"></a>类加载</h1><p>类加载过程：<br><img src="/2024/03/28/backend/language/java/JVM/%E7%B1%BB%E5%8A%A0%E8%BD%BD%E8%BF%87%E7%A8%8B.svg"></p><p>类加载器：<br><img src="/2024/03/28/backend/language/java/JVM/%E7%B1%BB%E5%8A%A0%E8%BD%BD%E5%99%A8.svg"></p><h1 id="运行时数据区"><a href="#运行时数据区" class="headerlink" title="运行时数据区"></a>运行时数据区</h1><p>栈帧：<br><img src="/2024/03/28/backend/language/java/JVM/%E6%A0%88%E5%B8%A7.svg"></p>]]></content>
     
     
     <categories>
@@ -993,7 +993,7 @@
   
   
   <entry>
-    <title>分类</title>
+    <title>about</title>
     <link href="/"/>
     <url>/</url>
     
@@ -1004,7 +1004,7 @@
   
   
   <entry>
-    <title>about</title>
+    <title>分类</title>
     <link href="/"/>
     <url>/</url>
     
