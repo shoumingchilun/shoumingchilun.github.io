@@ -4,6 +4,47 @@
   
   
   <entry>
+    <title>分布式：全局事务&amp;分布式事务</title>
+    <link href="/2024/04/19/backend/architecture/distributed_transaction/"/>
+    <url>/2024/04/19/backend/architecture/distributed_transaction/</url>
+    
+    <content type="html"><![CDATA[<p>事务几乎存在于每一个信息系统中，其保证了<strong>系统中所有的数据都是符合期望的，且相互关联的数据之间不会产生矛盾（一致性）</strong>。</p><p>按照数据库的经典理论，要达成这个目标，需要三方面共同努力来保障：<br><strong>原子性（Atomic）</strong>：在同一项业务处理过程中，事务保证了对多个数据的修改，要么同时成功，要么同时被撤销。<br><strong>隔离性（Isolation）</strong>：在不同的业务处理过程中，事务保证了各自业务正在读、写的数据互相独立，不会彼此影响。<br><strong>持久性（Durability）</strong>：事务应当保证所有成功被提交的数据修改都能够正确地被持久化，不丢失数据。</p><p>如今，事务的概念已不再局限于数据库本身，所有需要保证数据一致性的应用场景，包括但不限于数据库、事务内存 (opens new window)、缓存、消息队列、分布式存储，等等，都有可能会用到事务。</p><ul><li>当一个服务<strong>只使用一个数据源</strong>时，通过 A、I、D 来获得一致性是最经典的做法，也是相对容易的。此时，多个并发事务所读写的数据能够被数据源感知是否存在冲突，<strong>并发事务的读写在时间线上的最终顺序是由数据源来确定的</strong>，这种事务间一致性被称为 <strong>“内部一致性”</strong>。</li><li>当一个服务<strong>使用到多个不同的数据源</strong>，甚至多个不同服务同时涉及多个不同的数据源时，问题就变得相对困难了许多。此时，并发执行甚至是先后执行的多个事务，在时间线上的顺序并不由任何一个数据源来决定，这种涉及多个数据源的事务间一致性被称为 <strong>“外部一致性”</strong>。</li></ul><p>外部一致性问题通常很难再使用 A、I、D 来解决，因为这样需要付出很大乃至不切实际的代价；但是外部一致性又是分布式系统中必然会遇到且必须要解决的问题，为此我们要转变观念，将一致性从“是或否”的二元属性转变为可以按不同强度分开讨论的多元属性，在确保代价可承受的前提下获得强度尽可能高的一致性保障，也正因如此，事务处理才从一个具体操作上的“编程问题”上升成一个需要全局权衡的“架构问题”。</p><h1 id="本地事务"><a href="#本地事务" class="headerlink" title="本地事务"></a>本地事务</h1><p><strong>本地事务</strong>是最基础的一种事务解决方案，只适用于<strong>单个服务使用单个数据源</strong>的场景。从应用角度看，它是直接依赖于数据源本身提供的事务能力来工作的，在程序代码层面，最多只能对事务接口做一层标准化的包装（如JDBC接口），并不能深入参与到事务的运作过程当中，事务的开启、终止、提交、回滚、嵌套、设置隔离级别，乃至与应用代码贴近的事务传播方式，全部都要依赖底层数据源的支持才能工作。</p><blockquote><p>本文不会介绍相关的内容，刚兴趣的可自行去了解相关的文章，如<a href="/2024/03/21/backend/database/mysql/mysql_log/" title="MySQL：日志">MySQL：日志</a>、<a href="/2024/03/22/backend/database/mysql/mysql_concurrent/" title="MySQL：并发">MySQL：并发</a>、<a href="https://jingyecn.top:18080/architect-perspective/general-architecture/transaction/local.html">凤凰架构-本地事务</a>等。</p></blockquote><h1 id="全局事务"><a href="#全局事务" class="headerlink" title="全局事务"></a>全局事务</h1><p><strong>全局事务（Global Transaction）</strong>是一种在分布式环境中仍追求强一致性的事务处理方案。</p><p>全局事务涉及两个核心概念：</p><ul><li><strong>事务管理器（Transaction Manager）</strong>：全局存在，用于协调全局事务。</li><li><strong>资源管理器（Resource Manager）</strong>：局部存在，用于驱动本地事务。</li></ul><p>一个事务管理器和多个资源管理器之间可以形成通信桥梁，通过协调多个数据源的一致动作，实现全局事务的统一提交或者统一回滚。</p><blockquote><p>Java中的JTA，即JSR 907 Java Transaction API，实际上也是使用该思路实现的全局事务，其涉及到两个接口：</p><ul><li>事务管理器的接口：javax.transaction.TransactionManager。这套接口是给 Java EE 服务器提供容器事务（由容器自动负责事务管理）使用的，还提供了另外一套javax.transaction.UserTransaction接口，用于通过程序代码手动开启、提交和回滚事务。</li><li>满足 XA 规范的资源定义接口：javax.transaction.xa.XAResource，任何资源（JDBC、JMS 等等）如果想要支持 JTA，只要实现 XAResource 接口中的方法即可。</li></ul><p>（XA事务处理框架由X&#x2F;Open组织提出，其定义了事务管理器和资源管理器之间的通信接口。）</p></blockquote><h2 id="场景说明"><a href="#场景说明" class="headerlink" title="场景说明"></a>场景说明</h2><p>我们将假设一个场景，用于让事务处理从本地事务向全局事务过渡。<br>现在存在用户余额、商品库存、物流系统三个相关数据源，购物的流程是：</p><ol><li>用户购买货物，减去余额。</li><li>仓库取出货物，减去库存。</li><li>物流系统发送货物，创建相关信息。</li></ol><p>使用伪代码描述如果是本地事务时的全过程：</p><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">buyOneThing</span><span class="hljs-params">(PaymentBill bill)</span> &#123;<br>    <span class="hljs-comment">//1. 开启事务</span><br>    transaction.begin();<br><span class="hljs-keyword">try</span> &#123;<br>        <span class="hljs-comment">//2. 执行业务逻辑</span><br>        userService.subtractBalance(bill.getUserID(),bill.getMoney());<br>        warehouseService.minusInventory(bill.getItems());<br>        logisticsService.deliverGoods(bill.getItems(),bill.getBuyerInfo());<br>        <span class="hljs-comment">//3.1 提交事务</span><br>        transaction.commit();<br>&#125; <span class="hljs-keyword">catch</span>(Exception e) &#123;<br>        <span class="hljs-comment">//3.2 回滚事务</span><br>        transaction.rollback();<br>&#125;<br>&#125;<br></code></pre></td></tr></table></figure><p>如果购物、取货、发货的过程都是成功的，那么提交事务即可；如果发生异常，那么回滚即可。</p><p>但是如果存在多个数据源，则该代码结构会存在问题：</p><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">buyOneThing</span><span class="hljs-params">(PaymentBill bill)</span> &#123;<br>    <span class="hljs-comment">//1. 开启事务</span><br>    userTransaction.begin();<br>    warehouseTransaction.begin();<br>    logisticsTransaction.begin();<br><span class="hljs-keyword">try</span> &#123;<br>        <span class="hljs-comment">//2. 执行业务逻辑</span><br>        userService.subtractBalance(bill.getUserID(),bill.getMoney());<br>        warehouseService.minusInventory(bill.getItems());<br>        logisticsService.deliverGoods(bill.getItems(),bill.getBuyerInfo());<br>        <span class="hljs-comment">//3.1 提交事务</span><br>        userTransaction.commit();<br>        warehouseTransaction.commit();<br>        logisticsTransaction.commit();<br>&#125; <span class="hljs-keyword">catch</span>(Exception e) &#123;<br>        <span class="hljs-comment">//3.2 回滚事务</span><br>        userTransaction.rollback();<br>        warehouseTransaction.rollback();<br>        logisticsTransaction.rollback();<br>&#125;<br>&#125;<br></code></pre></td></tr></table></figure><p>看上去没有问题，但是如果在提交事务时抛出异常，比如执行<code>logisticsTransaction.commit();</code>出现异常，进行回滚时由于<code>userTransaction</code>和<code>userTransaction</code>已经<code>commit</code>了，会导致回滚无效。</p><h2 id="两段式提交"><a href="#两段式提交" class="headerlink" title="两段式提交"></a>两段式提交</h2><p>为了解决提交期间可能出现的异常，XA将事务提交拆分成为两阶段过程：</p><ul><li><strong>准备阶段</strong>：又称投票阶段。在这一阶段，事务管理器询问事务的所有资源管理器是否准备好提交，资源管理器如果已经准备好提交则回复<code>Prepared</code>，否则回复 <code>Non-Prepared</code>。对于数据库来说，<strong>准备操作是在重做日志中记录全部事务提交操作所要做的内容</strong>，它与本地事务中真正提交的区别只是暂不写入最后一条Commit Record而已。</li><li><strong>提交阶段</strong>：又称执行阶段，事务管理器如果在上一阶段收到所有事务资源管理器回复的<code>Prepared</code>消息，则先自己在本地持久化事务状态为<code>Commit</code>，在此操作完成后向所有资源管理器发送<code>Commit</code>指令，所有资源管理器立即执行提交操作；否则，任意一个资源管理器回复了<code>Non-Prepared</code>消息，或任意一个资源管理器超时未回复，事务管理器将自己的事务状态持久化为<code>Abort</code>之后，向所有资源管理器发送<code>Abort</code>指令，资源管理器立即执行回滚操作。对于数据库来说，这个阶段的提交操作应是很轻量的，仅仅是持久化一条<code>Commit Record</code>而已，通常能够快速完成，只有收到<code>Abort</code>指令时，才需要根据回滚日志清理已提交的数据，这可能是相对重负载的操作。<br>示意图：<br><img src="/2024/04/19/backend/architecture/distributed_transaction/%E4%BA%8C%E9%98%B6%E6%AE%B5%E6%8F%90%E4%BA%A4.svg"><br>以上这两个过程被称为<strong>两段式提交（2 Phase Commit，2PC）</strong>协议。该协议要求：</li></ul><ol><li><strong>网络在提交阶段的短时间内是可靠的，即提交阶段不会丢失消息。（或可以丢失消息，但不会传递错误的消息）</strong>两段式提交中投票阶段失败了可以补救（回滚），而提交阶段失败了无法补救（不再改变提交或回滚的结果，只能等崩溃的节点重新恢复），因而此阶段耗时应尽可能短，这也是为了尽量控制网络风险的考虑。</li><li><strong>因为网络分区、机器崩溃或者其他原因而导致失联的节点最终能够恢复，不会永久性地处于失联状态。</strong>由于在准备阶段已经写入了完整的重做日志，所以当失联机器一旦恢复，就能够从日志中找出已准备妥当但并未提交的事务数据，并向事务管理器查询该事务的状态，确定下一步应该进行提交还是回滚操作。</li></ol><p>二阶段提交的缺点：</p><ul><li><strong>单点问题</strong>：资源管理器宕机，可以一段时间后从事务管理器中获得事务的执行情况进行回滚或提交，不会影响整体执行情况；但是事务管理器宕机，会导致所有事务无法执行，所有资源管理器必须等待事务管理器恢复。</li><li><strong>性能问题</strong>：两段提交过程中，涉及两次远程服务调用，三次数据持久化（准备阶段写重做日志，事务管理器做状态持久化，提交阶段在日志写入 Commit Record），整个过程将持续到资源管理器集群中最慢的那一个处理操作结束为止。</li><li><strong>一致性风险</strong>：提交阶段，如果事务管理器刚刚记录Commit阶段，这时候网络忽然被断开（或者事务管理器宕机），无法向所有资源管理器发出<code>Commit</code>指令，会导致部分数据（事务管理器的）已提交，但部分数据（资源管理器的）既未提交，也没有办法回滚，产生了数据不一致的问题。<ul><li>存在一段强一致性无法达成的时间，并且会根据资源管理器处理超时的不同策略导致不同程度的数据不一致风险：如果此时未收到指令的资源管理器进入等待状态，维持事务的锁定或预备状态，并等待事务管理器恢复或者新的事务管理器接管，可最大程度减少数据不一致风险；如果直接进行回滚操作，就会导致数据的不一致。</li></ul></li></ul><blockquote><p>FLP不可能原理：如果宕机最后不能恢复，那就不存在任何一种分布式协议可以正确地达成一致性结果。</p></blockquote><h2 id="三段式提交"><a href="#三段式提交" class="headerlink" title="三段式提交"></a>三段式提交</h2><p>为了缓解两段式提交协议的一部分缺陷，后续又发展出了 <strong>“三段式提交”（3 Phase Commit，3PC）协议</strong>。</p><p>三段式提交把原本的两段式提交的准备阶段再细分为两个阶段，分别称为<code>CanCommit</code>、<code>PreCommit</code>，把提交阶段改称为<code>DoCommit</code>阶段。<br><strong>CanCommit</strong>：事务管理器让每个参与的数据库根据自身状态，评估该事务是否有可能顺利完成。</p><p>将准备阶段一分为二的理由是这个阶段是重负载的操作，一旦事务管理器发出开始准备的消息，每个资源管理器都将马上开始写重做日志，它们所涉及的数据资源即被锁住，如果此时某一个资源管理器宣告无法完成提交，相当于大家都白做了一轮无用功。所以，增加一轮询问阶段，如果都得到了正面的响应，那事务能够成功提交的把握就比较大了，这也意味着因某个资源管理器提交时发生崩溃而导致大家全部回滚的风险相对变小。因此，在事务需要回滚的场景中，三段式的性能通常是要比两段式好很多的，但在事务能够正常提交的场景中，两者的性能都依然很差，甚至三段式因为多了一次询问，还要稍微更差一些。</p><p>示意图：<br><img src="/2024/04/19/backend/architecture/distributed_transaction/%E4%B8%89%E9%98%B6%E6%AE%B5%E6%8F%90%E4%BA%A4.svg"></p><p>三段式提交对单点问题和回滚时的性能问题有所改善，但是它对一致性风险问题并未有任何改进，在这方面它面临的风险甚至反而是略有增加了的。譬如，进入 PreCommit 阶段之后，事务管理器发出的指令不是Commit而是Abort，而此时因网络问题，有部分资源管理器直至超时都未能收到事务管理器的Abort指令的话，这些资源管理器将会错误地提交事务，这就产生了不同资源管理器之间数据不一致的问题（当然，如果超时后还是会锁定资源并等待重新连接，一样可以尽可能地保证数据一致性）。</p><h1 id="分布式事务"><a href="#分布式事务" class="headerlink" title="分布式事务"></a>分布式事务</h1><blockquote><p>未完待续……</p></blockquote>]]></content>
+    
+    
+    <categories>
+      
+      <category>分布式</category>
+      
+      <category>架构</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>事务处理</tag>
+      
+      <tag>一致性</tag>
+      
+      <tag>原子性</tag>
+      
+      <tag>隔离性</tag>
+      
+      <tag>持久性</tag>
+      
+      <tag>全局事务</tag>
+      
+      <tag>二段式提交</tag>
+      
+      <tag>三段式提交</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
     <title>JVM各类图示</title>
     <link href="/2024/03/28/backend/language/java/JVM/"/>
     <url>/2024/03/28/backend/language/java/JVM/</url>
@@ -866,11 +907,11 @@
       
       <tag>canal</tag>
       
-      <tag>双写一致性</tag>
-      
       <tag>Dump</tag>
       
       <tag>Binary log</tag>
+      
+      <tag>双写一致性</tag>
       
       <tag>mysql slave</tag>
       
