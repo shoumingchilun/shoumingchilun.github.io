@@ -20,15 +20,16 @@
   
     <meta name="description" content="事务几乎存在于每一个信息系统中，其保证了系统中所有的数据都是符合期望的，且相互关联的数据之间不会产生矛盾（一致性）。 按照数据库的经典理论，要达成这个目标，需要三方面共同努力来保障：原子性（Atomic）：在同一项业务处理过程中，事务保证了对多个数据的修改，要么同时成功，要么同时被撤销。隔离性（Isolation）：在不同的业务处理过程中，事务保证了各自业务正在读、写的数据互相独立，不会彼此影响。">
 <meta property="og:type" content="article">
-<meta property="og:title" content="分布式：全局事务&amp;分布式事务">
+<meta property="og:title" content="分布式架构：事务">
 <meta property="og:url" content="http://shoumingchilun.github.io/2024/04/19/backend/architecture/distributed_transaction/">
 <meta property="og:site_name" content="Chilun&#39;s Blogs">
 <meta property="og:description" content="事务几乎存在于每一个信息系统中，其保证了系统中所有的数据都是符合期望的，且相互关联的数据之间不会产生矛盾（一致性）。 按照数据库的经典理论，要达成这个目标，需要三方面共同努力来保障：原子性（Atomic）：在同一项业务处理过程中，事务保证了对多个数据的修改，要么同时成功，要么同时被撤销。隔离性（Isolation）：在不同的业务处理过程中，事务保证了各自业务正在读、写的数据互相独立，不会彼此影响。">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="http://shoumingchilun.github.io/2024/04/19/backend/architecture/distributed_transaction/%E4%BA%8C%E9%98%B6%E6%AE%B5%E6%8F%90%E4%BA%A4.svg">
 <meta property="og:image" content="http://shoumingchilun.github.io/2024/04/19/backend/architecture/distributed_transaction/%E4%B8%89%E9%98%B6%E6%AE%B5%E6%8F%90%E4%BA%A4.svg">
+<meta property="og:image" content="http://shoumingchilun.github.io/2024/04/19/backend/architecture/distributed_transaction/TCC.svg">
 <meta property="article:published_time" content="2024-04-19T07:41:31.000Z">
-<meta property="article:modified_time" content="2024-05-03T16:48:46.667Z">
+<meta property="article:modified_time" content="2024-05-04T17:59:00.877Z">
 <meta property="article:author" content="寿命齿轮">
 <meta property="article:tag" content="事务处理">
 <meta property="article:tag" content="一致性">
@@ -38,12 +39,21 @@
 <meta property="article:tag" content="全局事务">
 <meta property="article:tag" content="二段式提交">
 <meta property="article:tag" content="三段式提交">
+<meta property="article:tag" content="CAP">
+<meta property="article:tag" content="强一致性">
+<meta property="article:tag" content="最终一致性">
+<meta property="article:tag" content="最大努力交付">
+<meta property="article:tag" content="可靠事件队列">
+<meta property="article:tag" content="TCC事务">
+<meta property="article:tag" content="SAGA事务">
+<meta property="article:tag" content="正向恢复">
+<meta property="article:tag" content="反向恢复">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:image" content="http://shoumingchilun.github.io/2024/04/19/backend/architecture/distributed_transaction/%E4%BA%8C%E9%98%B6%E6%AE%B5%E6%8F%90%E4%BA%A4.svg">
   
   
   
-  <title>分布式：全局事务&amp;分布式事务 - Chilun&#39;s Blogs</title>
+  <title>分布式架构：事务 - Chilun&#39;s Blogs</title>
 
   <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
 
@@ -213,7 +223,7 @@
       <div class="banner-text text-center fade-in-up">
         <div class="h2">
           
-            <span id="subtitle">分布式：全局事务&分布式事务</span>
+            <span id="subtitle">分布式架构：事务</span>
           
         </div>
 
@@ -236,7 +246,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          3.3k 字
+          8.8k 字
         
       </span>
     
@@ -247,7 +257,7 @@
         
         
         
-          28 分钟
+          74 分钟
         
       </span>
     
@@ -297,12 +307,12 @@
       <div class="container nopadding-x-md" id="board-ctn">
         <div id="board">
           <article class="post-content mx-auto">
-            <h1 id="seo-header">分布式：全局事务&amp;分布式事务</h1>
+            <h1 id="seo-header">分布式架构：事务</h1>
             
               <p id="updated-time" class="note note-info" style="display: none">
                 
                   
-                    本文最后更新于 2024-05-04T00:48:46+08:00
+                    本文最后更新于 2024-05-05T01:59:00+08:00
                   
                   
 
@@ -314,7 +324,7 @@
                 
                 <p>事务几乎存在于每一个信息系统中，其保证了<strong>系统中所有的数据都是符合期望的，且相互关联的数据之间不会产生矛盾（一致性）</strong>。</p>
 <p>按照数据库的经典理论，要达成这个目标，需要三方面共同努力来保障：<br><strong>原子性（Atomic）</strong>：在同一项业务处理过程中，事务保证了对多个数据的修改，要么同时成功，要么同时被撤销。<br><strong>隔离性（Isolation）</strong>：在不同的业务处理过程中，事务保证了各自业务正在读、写的数据互相独立，不会彼此影响。<br><strong>持久性（Durability）</strong>：事务应当保证所有成功被提交的数据修改都能够正确地被持久化，不丢失数据。</p>
-<p>如今，事务的概念已不再局限于数据库本身，所有需要保证数据一致性的应用场景，包括但不限于数据库、事务内存 (opens new window)、缓存、消息队列、分布式存储，等等，都有可能会用到事务。</p>
+<p>如今，事务的概念已不再局限于数据库本身，所有需要保证数据一致性的应用场景，包括但不限于数据库、事务内存、缓存、消息队列、分布式存储，等等，都有可能会用到事务。</p>
 <ul>
 <li>当一个服务<strong>只使用一个数据源</strong>时，通过 A、I、D 来获得一致性是最经典的做法，也是相对容易的。此时，多个并发事务所读写的数据能够被数据源感知是否存在冲突，<strong>并发事务的读写在时间线上的最终顺序是由数据源来确定的</strong>，这种事务间一致性被称为 <strong>“内部一致性”</strong>。</li>
 <li>当一个服务<strong>使用到多个不同的数据源</strong>，甚至多个不同服务同时涉及多个不同的数据源时，问题就变得相对困难了许多。此时，并发执行甚至是先后执行的多个事务，在时间线上的顺序并不由任何一个数据源来决定，这种涉及多个数据源的事务间一致性被称为 <strong>“外部一致性”</strong>。</li>
@@ -378,8 +388,157 @@
 <p>将准备阶段一分为二的理由是这个阶段是重负载的操作，一旦事务管理器发出开始准备的消息，每个资源管理器都将马上开始写重做日志，它们所涉及的数据资源即被锁住，如果此时某一个资源管理器宣告无法完成提交，相当于大家都白做了一轮无用功。所以，增加一轮询问阶段，如果都得到了正面的响应，那事务能够成功提交的把握就比较大了，这也意味着因某个资源管理器提交时发生崩溃而导致大家全部回滚的风险相对变小。因此，在事务需要回滚的场景中，三段式的性能通常是要比两段式好很多的，但在事务能够正常提交的场景中，两者的性能都依然很差，甚至三段式因为多了一次询问，还要稍微更差一些。</p>
 <p>示意图：<br><img src="/2024/04/19/backend/architecture/distributed_transaction/%E4%B8%89%E9%98%B6%E6%AE%B5%E6%8F%90%E4%BA%A4.svg" srcset="/img/loading.gif" lazyload></p>
 <p>三段式提交对单点问题和回滚时的性能问题有所改善，但是它对一致性风险问题并未有任何改进，在这方面它面临的风险甚至反而是略有增加了的。譬如，进入 PreCommit 阶段之后，事务管理器发出的指令不是Commit而是Abort，而此时因网络问题，有部分资源管理器直至超时都未能收到事务管理器的Abort指令的话，这些资源管理器将会错误地提交事务，这就产生了不同资源管理器之间数据不一致的问题（当然，如果超时后还是会锁定资源并等待重新连接，一样可以尽可能地保证数据一致性）。</p>
-<h1 id="分布式事务"><a href="#分布式事务" class="headerlink" title="分布式事务"></a>分布式事务</h1><blockquote>
-<p>未完待续……</p>
+<h2 id="代码示范"><a href="#代码示范" class="headerlink" title="代码示范"></a>代码示范</h2><p>在全局事务处理中，存在这样一个层次结构：</p>
+<ul>
+<li><strong>全局事务管理器</strong>：它负责协调跨越多个服务或数据源的整个事务过程。全局事务管理器并不直接与各个数据源交互，而是通过与每个服务的本地事务管理器沟通来间接控制这些数据源上的操作。它主要执行的任务包括发起Prepare请求到所有参与者，并根据所有参与者的反馈决定最终是提交还是回滚全局事务。</li>
+<li><strong>本地事务管理器</strong>：每个服务（如UserService、WarehouseService、LogisticsService）内部都有一个本地事务管理器，它直接管理该服务所依赖的数据源（资源管理器）。本地事务管理器负责响应全局事务管理器的Prepare和Commit&#x2F;Rollback命令，对本服务内的数据库或其他资源执行相应的事务操作。</li>
+<li><strong>资源管理器</strong>：这是最底层，直接管理数据库或其他数据存储的地方，如MySQL数据库、缓存服务等。它们根据本地事务管理器的指令执行实际的读写操作。</li>
+</ul>
+<h3 id="全局事务管理器"><a href="#全局事务管理器" class="headerlink" title="全局事务管理器"></a>全局事务管理器</h3><p>首先定义一个全局事务管理器接口和实现，它将负责协调各个服务的本地事务：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">interface</span> <span class="hljs-title class_">GlobalTransactionManager</span> &#123;<br>    <span class="hljs-keyword">void</span> <span class="hljs-title function_">startTransaction</span><span class="hljs-params">()</span>;<br>    <span class="hljs-keyword">void</span> <span class="hljs-title function_">prepare</span><span class="hljs-params">(TransactionParticipant... participants)</span>;<br>    <span class="hljs-keyword">void</span> <span class="hljs-title function_">commit</span><span class="hljs-params">()</span>;<br>    <span class="hljs-keyword">void</span> <span class="hljs-title function_">rollback</span><span class="hljs-params">()</span>;<br>&#125;<br><br><span class="hljs-keyword">class</span> <span class="hljs-title class_">SimpleGlobalTransactionManager</span> <span class="hljs-keyword">implements</span> <span class="hljs-title class_">GlobalTransactionManager</span> &#123;<br>    <span class="hljs-keyword">private</span> List&lt;TransactionParticipant&gt; preparedParticipants = <span class="hljs-keyword">new</span> <span class="hljs-title class_">ArrayList</span>&lt;&gt;();<br>    <span class="hljs-keyword">private</span> <span class="hljs-type">boolean</span> <span class="hljs-variable">isTransactionActive</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;<br><br>    <span class="hljs-meta">@Override</span><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">startTransaction</span><span class="hljs-params">()</span> &#123;<br>        <span class="hljs-keyword">if</span> (!isTransactionActive) &#123;<br>            isTransactionActive = <span class="hljs-literal">true</span>;<br>            System.out.println(<span class="hljs-string">&quot;Global Transaction Started.&quot;</span>);<br>        &#125;<br>    &#125;<br><br>    <span class="hljs-meta">@Override</span><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">prepare</span><span class="hljs-params">(TransactionParticipant... participants)</span> &#123;<br>        <span class="hljs-keyword">for</span> (TransactionParticipant participant : participants) &#123;<br>            <span class="hljs-keyword">if</span> (participant.prepare()) &#123;<br>                preparedParticipants.add(participant);<br>            &#125; <span class="hljs-keyword">else</span> &#123;<br>                rollback();<br>                <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">RuntimeException</span>(<span class="hljs-string">&quot;Prepare failed for participant: &quot;</span> + participant);<br>            &#125;<br>        &#125;<br>        System.out.println(<span class="hljs-string">&quot;All participants prepared.&quot;</span>);<br>    &#125;<br><br>    <span class="hljs-meta">@Override</span><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">commit</span><span class="hljs-params">()</span> &#123;<br>        <span class="hljs-keyword">if</span> (!preparedParticipants.isEmpty()) &#123;<br>            <span class="hljs-keyword">for</span> (TransactionParticipant participant : preparedParticipants) &#123;<br>                participant.commit();<br>            &#125;<br>            preparedParticipants.clear();<br>            isTransactionActive = <span class="hljs-literal">false</span>;<br>            System.out.println(<span class="hljs-string">&quot;Global Transaction Committed.&quot;</span>);<br>        &#125;<br>    &#125;<br><br>    <span class="hljs-meta">@Override</span><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">rollback</span><span class="hljs-params">()</span> &#123;<br>        <span class="hljs-keyword">if</span> (!preparedParticipants.isEmpty()) &#123;<br>            <span class="hljs-keyword">for</span> (TransactionParticipant participant : preparedParticipants) &#123;<br>                participant.rollback();<br>            &#125;<br>            preparedParticipants.clear();<br>            isTransactionActive = <span class="hljs-literal">false</span>;<br>            System.out.println(<span class="hljs-string">&quot;Global Transaction Rolled Back.&quot;</span>);<br>        &#125;<br>    &#125;<br>&#125;<br><br><span class="hljs-keyword">interface</span> <span class="hljs-title class_">TransactionParticipant</span> &#123;<br>    <span class="hljs-type">boolean</span> <span class="hljs-title function_">prepare</span><span class="hljs-params">()</span>;<br>    <span class="hljs-keyword">void</span> <span class="hljs-title function_">commit</span><span class="hljs-params">()</span>;<br>    <span class="hljs-keyword">void</span> <span class="hljs-title function_">rollback</span><span class="hljs-params">()</span>;<br>&#125;<br></code></pre></td></tr></table></figure>
+<h3 id="本地事务管理器"><a href="#本地事务管理器" class="headerlink" title="本地事务管理器"></a>本地事务管理器</h3><p>接下来，模拟三个服务的本地事务管理器，它们实现了TransactionParticipant接口：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">class</span> <span class="hljs-title class_">UserService</span> <span class="hljs-keyword">implements</span> <span class="hljs-title class_">TransactionParticipant</span> &#123;<br>    <span class="hljs-meta">@Override</span><br>    <span class="hljs-keyword">public</span> <span class="hljs-type">boolean</span> <span class="hljs-title function_">prepare</span><span class="hljs-params">()</span> &#123;<br>        System.out.println(<span class="hljs-string">&quot;User Service: Balance preparation successful.&quot;</span>);<br>        <span class="hljs-keyword">return</span> <span class="hljs-literal">true</span>; <span class="hljs-comment">// 假设操作成功</span><br>    &#125;<br><br>    <span class="hljs-meta">@Override</span><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">commit</span><span class="hljs-params">()</span> &#123;<br>        System.out.println(<span class="hljs-string">&quot;User Service: Balance committed.&quot;</span>);<br>    &#125;<br><br>    <span class="hljs-meta">@Override</span><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">rollback</span><span class="hljs-params">()</span> &#123;<br>        System.out.println(<span class="hljs-string">&quot;User Service: Balance rollback.&quot;</span>);<br>    &#125;<br>&#125;<br><br><span class="hljs-keyword">class</span> <span class="hljs-title class_">WarehouseService</span> <span class="hljs-keyword">implements</span> <span class="hljs-title class_">TransactionParticipant</span> &#123;<br>    <span class="hljs-meta">@Override</span><br>    <span class="hljs-keyword">public</span> <span class="hljs-type">boolean</span> <span class="hljs-title function_">prepare</span><span class="hljs-params">()</span> &#123;<br>        System.out.println(<span class="hljs-string">&quot;Warehouse Service: Inventory preparation successful.&quot;</span>);<br>        <span class="hljs-keyword">return</span> <span class="hljs-literal">true</span>; <span class="hljs-comment">// 假设操作成功</span><br>    &#125;<br><br>    <span class="hljs-meta">@Override</span><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">commit</span><span class="hljs-params">()</span> &#123;<br>        System.out.println(<span class="hljs-string">&quot;Warehouse Service: Inventory committed.&quot;</span>);<br>    &#125;<br><br>    <span class="hljs-meta">@Override</span><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">rollback</span><span class="hljs-params">()</span> &#123;<br>        System.out.println(<span class="hljs-string">&quot;Warehouse Service: Inventory rollback.&quot;</span>);<br>    &#125;<br>&#125;<br><br><span class="hljs-keyword">class</span> <span class="hljs-title class_">LogisticsService</span> <span class="hljs-keyword">implements</span> <span class="hljs-title class_">TransactionParticipant</span> &#123;<br>    <span class="hljs-meta">@Override</span><br>    <span class="hljs-keyword">public</span> <span class="hljs-type">boolean</span> <span class="hljs-title function_">prepare</span><span class="hljs-params">()</span> &#123;<br>        System.out.println(<span class="hljs-string">&quot;Logistics Service: Delivery preparation successful.&quot;</span>);<br>        <span class="hljs-keyword">return</span> <span class="hljs-literal">true</span>; <span class="hljs-comment">// 假设操作成功</span><br>    &#125;<br><br>    <span class="hljs-meta">@Override</span><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">commit</span><span class="hljs-params">()</span> &#123;<br>        System.out.println(<span class="hljs-string">&quot;Logistics Service: Delivery committed.&quot;</span>);<br>    &#125;<br><br>    <span class="hljs-meta">@Override</span><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">rollback</span><span class="hljs-params">()</span> &#123;<br>        System.out.println(<span class="hljs-string">&quot;Logistics Service: Delivery rollback.&quot;</span>);<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+<h3 id="使用全局事务管理器执行购物操作"><a href="#使用全局事务管理器执行购物操作" class="headerlink" title="使用全局事务管理器执行购物操作"></a>使用全局事务管理器执行购物操作</h3><p>最后使用全局事务管理器来协调一个模拟的购物事务：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">TwoPhaseCommitDemo</span> &#123;<br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">main</span><span class="hljs-params">(String[] args)</span> &#123;<br>        <span class="hljs-type">GlobalTransactionManager</span> <span class="hljs-variable">txManager</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">SimpleGlobalTransactionManager</span>();<br><br>        <span class="hljs-keyword">try</span> &#123;<br>            txManager.startTransaction();<br>            txManager.prepare(<span class="hljs-keyword">new</span> <span class="hljs-title class_">UserService</span>(), <span class="hljs-keyword">new</span> <span class="hljs-title class_">WarehouseService</span>(), <span class="hljs-keyword">new</span> <span class="hljs-title class_">LogisticsService</span>());<br>            txManager.commit();<br>        &#125; <span class="hljs-keyword">catch</span> (Exception e) &#123;<br>            txManager.rollback();<br>        &#125;<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p>注意：这个示例极度简化，实际应用中的二阶段提交会涉及到复杂的网络通信、超时处理、异常恢复以及可能的分布式锁机制等，而且通常会使用成熟的分布式事务框架（如XA、Seata等）来实现，而不是手动编码。</p>
+</blockquote>
+<h1 id="分布式事务"><a href="#分布式事务" class="headerlink" title="分布式事务"></a>分布式事务</h1><p>基于CAP理论，XA的事务机制无法在分布式环境中良好地应用。</p>
+<h2 id="CAP"><a href="#CAP" class="headerlink" title="CAP"></a>CAP</h2><p><strong>CAP 定理（Consistency、Availability、Partition Tolerance Theorem）</strong>表示，在一个分布式的系统中，涉及共享数据问题时，以下三个特性最多只能同时满足其中两个：</p>
+<ul>
+<li><strong>一致性（Consistency）</strong>：代表数据在任何时刻、任何分布式节点中所看到的都是符合预期的。</li>
+<li><strong>可用性（Availability）</strong>：代表系统不间断地提供服务的能力。<ul>
+<li>理解可用性要先理解与其密切相关两个指标：可靠性（Reliability）和可维护性（Serviceability）。可靠性使用平均无故障时间（Mean Time Between Failure，MTBF）来度量；可维护性使用平均可修复时间（Mean Time To Repair，MTTR）来度量。可用性衡量系统可以正常使用的时间与总时间之比，其表征为：A&#x3D;MTBF&#x2F;（MTBF+MTTR），即可用性是由可靠性和可维护性计算得出的比例值，譬如 99.9999%可用，即代表平均年故障修复时间为 32 秒。</li>
+</ul>
+</li>
+<li><strong>分区容忍性（Partition Tolerance）</strong>：代表分布式环境中部分节点因网络原因而彼此失联后，即与其他节点形成“网络分区”时，系统仍能正确地提供服务的能力。</li>
+</ul>
+<h3 id="场景举例"><a href="#场景举例" class="headerlink" title="场景举例"></a>场景举例</h3><p>依旧使用上述的那个购物流程来说明案例。</p>
+<ul>
+<li>从单个服务角度出发：（比如减去用户余额，用户的余额数据存储在多个节点中，并存在冗余）<ul>
+<li>一致性：每个节点都需要得知该余额的减少，不能存在某个节点不知道；如果无法达成一致性，就可能导致两次购物使用了两个不同的节点，而导致双重支付的可能。</li>
+<li>可用性：如果要避免上述一致性问题，就需要先暂停对该用户的余额服务，等到达成一致后再提供服务，期间是无法提供服务的，这就会导致可用性问题。</li>
+<li>分区容忍性：如果余额服务中的一部分节点出现问题，整个集群能否继续提供正常的服务。</li>
+</ul>
+</li>
+<li>从整个购物服务出发：<ul>
+<li>一致性：一个用户账户扣款之后，全局的库存节点中的库存都要减去。</li>
+<li>可用性：某个商品的交易正在进行，可能导致购买用户、该商品的交易服务都需要临时锁定。</li>
+<li>分区容忍性：如果任意或多个服务中的一部分节点出现问题，整个集群能否继续提供正常的服务。</li>
+</ul>
+</li>
+</ul>
+<h3 id="舍弃C、A、P时所带来的不同影响"><a href="#舍弃C、A、P时所带来的不同影响" class="headerlink" title="舍弃C、A、P时所带来的不同影响"></a>舍弃C、A、P时所带来的不同影响</h3><blockquote>
+<p>证明CAP理论需自行了解，本文不做介绍。</p>
+</blockquote>
+<p>舍弃 C、A、P 时所带来的不同影响：</p>
+<ol>
+<li><p><strong>放弃分区容忍性（CA without P）</strong>：要在保证一致性的同时保证可用性，则要求节点之间通信永远是可靠的，但这难以实现。因此当舍弃分区容忍性时，通常会导致一个分布式系统会严重受限于对网络分区的敏感性，进而演变成单体系统以避免由网络不稳定导致分区问题。在实际应用中，很少有系统会选择完全放弃分区容忍性，因为网络通信的不可靠性是分布式计算的基本假设之一。</p>
+<blockquote>
+<p>常见的CA系统有Oracle的RAC集群。Oracle RAC的工作原理是通过多个节点共享相同的数据库存储（通常是通过高速SAN或集群文件系统实现），每个节点运行一个数据库实例，这些实例共同访问同一份数据库数据。如果集群中的某个节点（实例）发生故障，其他节点可以继续提供服务，因为所有节点都能访问共享的存储，从而保证数据库服务不间断。这种机制有效地消除了单点故障，因为即使单个服务器或实例出现问题，数据库仍然可以继续运行。此外，由于使用的是共享的相同数据库存储，同时可以保证一致性。但是RAC集群在设计上提前假设了所有节点都能够访问共享存储，这就隐含了对网络连通性的高度依赖。如果网络出现分区，即某些节点无法访问共享存储，这将违反了RAC的基本运作前提，可能导致数据不一致或服务中断。因此，RAC在设计上并未追求在面对网络分区时仍能维持服务，而是通过硬件冗余（如多路径存储访问）、网络冗余和快速故障检测转移机制来减少分区发生的可能性，并确保在单一数据中心内的高可用性。</p>
+</blockquote>
+</li>
+<li><p><strong>放弃可用性（CP without A）</strong>：这意味着一旦网络发生分区，节点之间的信息同步时间可以无限制地延长，近似于之前全局事务中的2PC&#x2F;3PC的情况。在现实中，选择放弃可用性的 CP 系统情况一般用于对数据质量要求很高的场合中。</p>
+</li>
+<li><p><strong>放弃一致性（AP without C）</strong>：这意味着一旦网络发生分区，节点之间所提供的数据可能不一致。选择放弃一致性的AP系统目前是设计分布式系统的主流选择，因为P是分布式网络的天然属性，无法丢弃；而A通常是建设分布式的目的，如果可用性随着节点数量增加反而降低的话，很多分布式系统可能就失去了存在的价值，除非银行、证券这些涉及金钱交易的服务，宁可中断也不能出错，否则多数系统是不能容忍节点越多可用性反而越低的。目前大多数 NoSQL 库和支持分布式的缓存框架都是 AP 系统，以 Redis 集群为例，如果某个 Redis 节点出现网络分区，那仍不妨碍各个节点以自己本地存储的数据对外提供缓存服务，但这时有可能出现请求分配到不同节点时返回给客户端的是不一致的数据。</p>
+</li>
+</ol>
+<p>在分布式环境中，“一致性”通常不得不被放弃，但是终究还是要确保操作结果至少在最终交付的时候是正确的。因此人们又重新给一致性下了定义，在CAP、ACID中讨论的一致性称为<strong>强一致性（Strong Consistency）</strong>，而把牺牲了C的AP系统又要尽可能获得正确的结果的行为称为追求<strong>最终一致性（Eventual Consistency）</strong>。最终一致性是指：如果数据在一段时间之内没有被另外的操作所更改，那它最终将会达到与强一致性过程相同的结果，有时候面向最终一致性的算法也被称为“乐观复制算法”。</p>
+<h2 id="BASE"><a href="#BASE" class="headerlink" title="BASE"></a>BASE</h2><p><strong>BASE</strong>是一种独立于ACID获得的强一致性之外的达成一致性目的的途径。</p>
+<p>BASE理论的核心思想是：尽管在分布式系统中很难同时实现强一致性、高可用性和分区容忍性，但每个应用可以根据自身的业务需求，采用适当的方法来达到最终的一致性。BASE理论包含三个基本要素：</p>
+<ul>
+<li><strong>基本可用（Basically Available）</strong>：这意味着分布式系统在面对部分故障时，仍然能够提供一定程度的服务。尽管可能不是所有操作都能完成，但系统的核心功能应当能够持续可用。例如，在电商系统中，即使库存更新服务暂时不可用，用户浏览商品和加入购物车的功能仍然可以正常工作。</li>
+<li><strong>软状态（Soft State）</strong>：软状态指的是系统中的数据可以处于中间状态，而且这个中间状态对于用户来说是可以接受的，不会直接影响到系统的整体可用性。在数据同步过程中，不同节点间的数据副本可能存在不一致的情况，这种不一致性被视为暂时的、可以接受的状态。例如，用户下单后，订单状态可能在“待确认”和“已确认”之间短暂地处于不确定状态。</li>
+<li><strong>最终一致性（Eventually Consistent）</strong>：最终一致性保证系统中的所有数据副本，在经过一段时间之后，没有更多的更新操作发生时，最终能够达到一致的状态。这个时间的长短取决于系统的设计、网络延迟以及数据复制策略等因素。在分布式系统中，数据可能通过异步复制或事件驱动的方式在各个节点间传播，确保所有节点最终达成一致。</li>
+</ul>
+<p>接下来将介绍三种基于BASE理论指导的分布式事务处理方案。</p>
+<h2 id="可靠事件队列"><a href="#可靠事件队列" class="headerlink" title="可靠事件队列"></a>可靠事件队列</h2><p>我们继续以本文的场景事例来解释<strong>可靠事件队列</strong>是如何实现最终一致性的。<br>现在存在用户余额、商品库存、物流系统三个相关数据源，购物的流程是：</p>
+<ol>
+<li>用户购买货物，减去余额。</li>
+<li>仓库取出货物，减去库存。</li>
+<li>物流系统发送货物，创建相关信息。</li>
+</ol>
+<pre><code class=" mermaid">sequenceDiagram
+    participant 整体系统
+    participant 用户服务
+    participant 消息队列
+    participant 仓库服务
+    participant 发货服务
+    整体系统-&gt;&gt;用户服务: 启动事务
+    用户服务-&gt;&gt;用户服务: 扣除余额
+    用户服务-&gt;&gt;消息队列: 发送相关业务消息
+    loop 循环直至成功
+        消息队列-&gt;&gt;仓库服务: 处理业务消息，扣除库存
+        alt 扣减成功
+        仓库服务--&gt;&gt;消息队列: 成功
+        else 扣减失败
+        仓库服务--&gt;&gt;消息队列: 失败
+        end
+    end
+    loop 循环直至成功
+        消息队列-&gt;&gt;发货服务: 处理业务消息，发货
+        alt 发货成功
+        发货服务--&gt;&gt;消息队列: 成功
+        else 发货失败
+        发货服务--&gt;&gt;消息队列: 失败
+        end
+    end
+</code></pre>
+<p>过程说明：</p>
+<ol>
+<li>用户发出购物请求。</li>
+<li>用户服务进行扣款，扣款成功后发送送货消息和减库存消息到消息队列。（并在数据库中记录：xxx商品，已付款，未减库存，未发货）</li>
+<li>库存服务对消息进行消费。（并在数据库中记录：xxx商品，已付款，已减库存，未发货）</li>
+<li>发货服务对消息进行消费。（并在数据库中记录：xxx商品，已付款，已减库存，已发货）</li>
+</ol>
+<p>如果该过程中，任意一条消息发生消费失败，则重新进行消息消费，直至操作成功，或者被人工介入为止。（可靠事件队列只要第一步业务完成了，后续就没有失败回滚的概念，只许成功，不许失败。）</p>
+<p>以上是一种靠着<strong>持续重试</strong>来保证可靠性的解决方案，也叫<strong>最大努力交付（Best-Effort Delivery）</strong>。<br>上述的形式是可靠事件队列的一种更普通的形式，被称为<strong>最大努力一次提交（Best-Effort 1PC）</strong>，指的就是将最有可能出错的业务以本地事务的方式完成后，采用不断重试的方式（不限于消息系统）来促使同一个分布式事务中的其他关联业务全部完成。（当然也可以直接发送三条消息进行消费）</p>
+<h2 id="TCC事务"><a href="#TCC事务" class="headerlink" title="TCC事务"></a>TCC事务</h2><p><strong>TCC（Try-Confirm-Cancel）</strong>是另一种常见的分布式事务机制。</p>
+<p>之前讲的可靠消息队列虽然是一种分布式事务处理方案，但是存在一个缺陷——<strong>缺乏隔离性</strong>。<br>比如有多个用户购买同一个货物时，如果减库存消息的数量大于总库存，就会导致库存不足，如果是限量版的商品，就会引发很严重的问题…<br><strong>因此，如果业务需要隔离，就通常就应该重点考虑TCC方案，因为该方案天生适合用于需要强隔离性的分布式事务中。</strong></p>
+<p>在具体实现上，TCC 较为烦琐，它是一种业务侵入式较强的事务方案，要求业务处理过程必须拆分为<strong>预留业务资源</strong>和<strong>确认&#x2F;释放消费资源</strong>两个子过程。如同 TCC 的名字所示，它分为以下三个阶段。</p>
+<ul>
+<li><strong>Try</strong>：尝试执行阶段，完成所有业务可执行性的检查（保障一致性），并且预留好全部需用到的业务资源（保障隔离性）。</li>
+<li><strong>Confirm</strong>：确认执行阶段，不进行任何业务检查，直接使用 Try 阶段准备的资源来完成业务处理。Confirm 阶段可能会重复执行，因此本阶段所执行的操作需要具备幂等性。</li>
+<li><strong>Cancel</strong>：取消执行阶段，释放 Try 阶段预留的业务资源。Cancel 阶段可能会重复执行，也需要满足幂等性。</li>
+</ul>
+<p>我们继续以本文的场景事例来解释<strong>TCC事务</strong>是如何实现最终一致性的。<br><img src="/2024/04/19/backend/architecture/distributed_transaction/TCC.svg" srcset="/img/loading.gif" lazyload></p>
+<p>上述流程说明：</p>
+<ol>
+<li>用户发出购物请求。</li>
+<li>系统尝试预留资源。<ol>
+<li>冻结余额</li>
+<li>冻结库存</li>
+<li>创建物流信息</li>
+</ol>
+</li>
+<li>如果预留成功，执行Confirm业务逻辑，直至执行成功。</li>
+<li>如果预留失败，执行Cancel业务逻辑，直至执行成功。</li>
+</ol>
+<p>伪代码示范：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">buyOneThing</span><span class="hljs-params">(PaymentBill bill)</span> &#123;<br>    <span class="hljs-comment">// 1. 初始化事务协调器，用于管理TCC的Try、Confirm、Cancel操作</span><br>    <span class="hljs-type">TccTransactionCoordinator</span> <span class="hljs-variable">coordinator</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">TccTransactionCoordinator</span>();<br>    <br>    <span class="hljs-keyword">try</span> &#123;<br>        <span class="hljs-comment">// 2.1 Try阶段</span><br>        <span class="hljs-comment">// 预扣用户余额</span><br>        <span class="hljs-type">boolean</span> <span class="hljs-variable">balanceTryResult</span> <span class="hljs-operator">=</span> userService.trySubtractBalance(bill.getUserID(), bill.getMoney());<br>        <span class="hljs-keyword">if</span> (!balanceTryResult) <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">RuntimeException</span>(<span class="hljs-string">&quot;Try subtract balance failed.&quot;</span>);<br><br>        <span class="hljs-comment">// 预减仓库库存</span><br>        <span class="hljs-type">boolean</span> <span class="hljs-variable">inventoryTryResult</span> <span class="hljs-operator">=</span> warehouseService.tryMinusInventory(bill.getItems());<br>        <span class="hljs-keyword">if</span> (!inventoryTryResult) <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">RuntimeException</span>(<span class="hljs-string">&quot;Try minus inventory failed.&quot;</span>);<br>        <br>        <span class="hljs-comment">// 尝试创建物流信息</span><br>        <span class="hljs-type">boolean</span> <span class="hljs-variable">logisticsTryResult</span> <span class="hljs-operator">=</span> logisticsService.tryDeliverGoods(bill.getItems(), bill.getBuyerInfo());<br>        <span class="hljs-keyword">if</span> (!logisticsTryResult) <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">RuntimeException</span>(<span class="hljs-string">&quot;Try deliver goods failed.&quot;</span>);<br>        <br>        <span class="hljs-comment">// 3. 将所有Try操作加入到事务协调器</span><br>        coordinator.enlistTryOperations(<br>            () -&gt; userService.confirmSubtractBalance(bill.getUserID(), bill.getMoney()),<br>            () -&gt; warehouseService.confirmMinusInventory(bill.getItems()),<br>            () -&gt; logisticsService.confirmDeliverGoods(bill.getItems(), bill.getBuyerInfo())<br>        );<br>        <br>        <span class="hljs-comment">// 4. 注册Cancel操作，用于异常情况下的资源回滚</span><br>        coordinator.enlistCancelOperations(<br>            () -&gt; userService.cancelSubtractBalance(bill.getUserID(), bill.getMoney()),<br>            () -&gt; warehouseService.cancelMinusInventory(bill.getItems()),<br>            () -&gt; logisticsService.cancelDeliverGoods(bill.getItems(), bill.getBuyerInfo())<br>        );<br>        <br>        <span class="hljs-comment">// 5. 执行Confirm阶段，这里假设coordinator.commit会按需调用Confirm或Cancel</span><br>        coordinator.commit();<br>        <br>    &#125; <span class="hljs-keyword">catch</span> (Exception e) &#123;<br>        <span class="hljs-comment">// 6. 异常时，通过事务协调器自动或手动触发Cancel操作</span><br>        coordinator.rollback();<br>        <span class="hljs-keyword">throw</span> e; <span class="hljs-comment">// 可能需要重新抛出异常或者记录日志</span><br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>TCC位于用户代码层面，可以根据需要设计资源锁定的粒度，在业务执行时只操作预留资源，几乎不会涉及锁和资源的争用，具有很高的性能潜力；但是TCC有较高的开发成本和业务侵入性，因此通常不会裸编码实现，而是使用分布式事务中间件如Seata来实现。</p>
+<h2 id="SAGA事务"><a href="#SAGA事务" class="headerlink" title="SAGA事务"></a>SAGA事务</h2><p>TCC事务实现了较强的隔离性，但是由于其业务侵入性很强，如果Try阶段的所需相关资源是由第三方接口把控的，无法实现类似冻结、解冻操作，则需要引入新的事务处理方案。<br><strong>SAGA事务</strong>是另外一种柔性事务方案，大致思路是把一个大事务分解为可以交错运行的一系列子事务集合：</p>
+<ul>
+<li>大事务拆分若干个小事务，将整个分布式事务$T$分解为$n$个子事务，命名为$T_1$，$T_2$，$…$，$T_i$，$…$，$T_n$。每个子事务都应该是或者能被视为是原子行为。如果分布式事务能够正常提交，其对数据的影响（最终一致性）应与连续按顺序成功提交$T_i$等价。</li>
+<li>为每一个子事务设计对应的补偿动作，命名为$C_1$，$C_2$，$…$，$C_i$，$…$，$C_n$。$T_i$与$C_i$必须满足以下条件：<ul>
+<li>$T_i$与$C_i$都具备幂等性。</li>
+<li>$T_i$与$C_i$满足交换律（Commutative），即先执行$T_i$还是先执行$C_i$，其效果都是一样的。</li>
+<li>$C_i$必须能成功提交，即不考虑$C_i$本身提交失败被回滚的情形，如出现就必须持续重试直至成功，或者要人工介入。</li>
+</ul>
+</li>
+<li>如果$T_1$到$T_n$均成功提交，那事务顺利完成，否则，要采取以下两种恢复策略之一：<ul>
+<li><strong>正向恢复（Forward Recovery）</strong>：如果$T_i$事务提交失败，则一直对$T_i$进行重试，直至成功为止（最大努力交付）。（这种恢复方式不需要补偿，适用于事务最终都要成功的场景）</li>
+<li><strong>反向恢复（Backward Recovery）</strong>：如果$T_i$事务提交失败，则一直执行$C_i$对$T_i$进行补偿，直至成功为止（最大努力交付）。这里要求$C_i$必须（在持续重试后）执行成功。反向恢复的执行模式为：$T_1$，$T_2$，$…$，$T_i$（失败），$C_i$（补偿），$…$，$C_2$，$C_1$。</li>
+</ul>
+</li>
+</ul>
+<p>代码示例：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">//首先，为每个服务定义正向操作和相应的补偿操作：</span><br><span class="hljs-comment">//UserService: 扣除用户余额（正向），增加用户余额（补偿）</span><br><span class="hljs-comment">//WarehouseService: 减少库存（正向），增加库存（补偿）</span><br><span class="hljs-comment">//LogisticsService: 创建物流信息并发货（正向），取消物流订单（补偿）</span><br><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">buyOneThingSaga</span><span class="hljs-params">(PaymentBill bill)</span> &#123;<br>    <span class="hljs-type">SagaTransaction</span> <span class="hljs-variable">sagaTxn</span> <span class="hljs-operator">=</span> SagaTransaction.startNewTransaction(<span class="hljs-string">&quot;buyOneThing&quot;</span>);<br><br>    <span class="hljs-keyword">try</span> &#123;<br>        <span class="hljs-comment">// 1. 尝试扣款，作为Saga的一个步骤</span><br>        userService.subtractBalanceSaga(bill.getUserID(), bill.getMoney(), sagaTxn);<br>        <br>        <span class="hljs-comment">// 2. 尝试减库存，作为Saga的另一个步骤</span><br>        warehouseService.minusInventorySaga(bill.getItems(), sagaTxn);<br>        <br>        <span class="hljs-comment">// 3. 尝试创建物流信息，同样作为Saga的一个步骤</span><br>        logisticsService.deliverGoodsSaga(bill.getItems(), bill.getBuyerInfo(), sagaTxn);<br>        <br>        <span class="hljs-comment">// 4. 如果一切顺利，提交Saga事务</span><br>        sagaTxn.commit();<br>    &#125; <span class="hljs-keyword">catch</span> (Exception e) &#123;<br>        <span class="hljs-comment">// 5. 出现异常时，触发补偿操作</span><br>        sagaTxn.abort();<br>        handleAbort(sagaTxn); <span class="hljs-comment">// 处理事务中止，可能需要记录日志或通知等</span><br>        <span class="hljs-keyword">throw</span> e; <span class="hljs-comment">// 可能需要重新抛出异常或者记录日志</span><br>    &#125;<br>&#125;<br><br><span class="hljs-comment">// 补偿逻辑处理方法，根据Saga事务中的操作历史执行相应的补偿操作</span><br><span class="hljs-keyword">private</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">handleAbort</span><span class="hljs-params">(SagaTransaction sagaTxn)</span> &#123;<br>    List&lt;SagaStep&gt; stepsToCompensate = sagaTxn.getFailedSteps();<br>    <span class="hljs-keyword">for</span> (SagaStep step : stepsToCompensate) &#123;<br>        <span class="hljs-keyword">if</span> (step.getServiceName().equals(<span class="hljs-string">&quot;subtractBalance&quot;</span>)) &#123;<br>            userService.compensateSubtractBalance((PaymentBill) step.getPayload());<br>        &#125; <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (step.getServiceName().equals(<span class="hljs-string">&quot;minusInventory&quot;</span>)) &#123;<br>            warehouseService.compensateMinusInventory((List&lt;Item&gt;) step.getPayload());<br>        &#125; <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (step.getServiceName().equals(<span class="hljs-string">&quot;deliverGoods&quot;</span>)) &#123;<br>            logisticsService.compensateDeliverGoods((DeliveryInfo) step.getPayload());<br>        &#125;<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p>由于SAGA系统本身也有可能会崩溃，所以其必须设计成与数据库类似的日志机制（被称为SAGA Log）以保证系统恢复后可以追踪到子事务的执行情况。<br>另外，尽管补偿操作通常比冻结&#x2F;撤销容易实现，但保证正向、反向恢复过程的能严谨地进行也需要花费不少的工夫，譬如通过服务编排、可靠事件队列等方式完成，所以，SAGA事务通常也不会直接靠裸编码来实现，一般也是在事务中间件的基础上完成，前面提到的 Seata 就同样支持 SAGA 事务模式。</p>
 </blockquote>
 
                 
@@ -437,6 +596,24 @@
       
         <a href="/tags/%E4%B8%89%E6%AE%B5%E5%BC%8F%E6%8F%90%E4%BA%A4/" class="print-no-link">#三段式提交</a>
       
+        <a href="/tags/CAP/" class="print-no-link">#CAP</a>
+      
+        <a href="/tags/%E5%BC%BA%E4%B8%80%E8%87%B4%E6%80%A7/" class="print-no-link">#强一致性</a>
+      
+        <a href="/tags/%E6%9C%80%E7%BB%88%E4%B8%80%E8%87%B4%E6%80%A7/" class="print-no-link">#最终一致性</a>
+      
+        <a href="/tags/%E6%9C%80%E5%A4%A7%E5%8A%AA%E5%8A%9B%E4%BA%A4%E4%BB%98/" class="print-no-link">#最大努力交付</a>
+      
+        <a href="/tags/%E5%8F%AF%E9%9D%A0%E4%BA%8B%E4%BB%B6%E9%98%9F%E5%88%97/" class="print-no-link">#可靠事件队列</a>
+      
+        <a href="/tags/TCC%E4%BA%8B%E5%8A%A1/" class="print-no-link">#TCC事务</a>
+      
+        <a href="/tags/SAGA%E4%BA%8B%E5%8A%A1/" class="print-no-link">#SAGA事务</a>
+      
+        <a href="/tags/%E6%AD%A3%E5%90%91%E6%81%A2%E5%A4%8D/" class="print-no-link">#正向恢复</a>
+      
+        <a href="/tags/%E5%8F%8D%E5%90%91%E6%81%A2%E5%A4%8D/" class="print-no-link">#反向恢复</a>
+      
     </div>
   
 </div>
@@ -447,7 +624,7 @@
 
   <div class="license-box my-3">
     <div class="license-title">
-      <div>分布式：全局事务&amp;分布式事务</div>
+      <div>分布式架构：事务</div>
       <div>http://shoumingchilun.github.io/2024/04/19/backend/architecture/distributed_transaction/</div>
     </div>
     <div class="license-meta">
@@ -785,10 +962,10 @@
     
       
       
-        <a href="/2024/04/19/backend/architecture/distributed_transaction/" title="分布式：全局事务&amp;分布式事务"
+        <a href="/2024/04/19/backend/architecture/distributed_transaction/" title="分布式架构：事务"
            class="list-group-item list-group-item-action
            active">
-          <span class="category-post">分布式：全局事务&amp;分布式事务</span>
+          <span class="category-post">分布式架构：事务</span>
         </a>
       
     

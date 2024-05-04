@@ -71,6 +71,346 @@
       </tags>
   </entry>
   <entry>
+    <title>分布式架构：事务</title>
+    <url>/2024/04/19/backend/architecture/distributed_transaction/</url>
+    <content><![CDATA[<p>事务几乎存在于每一个信息系统中，其保证了<strong>系统中所有的数据都是符合期望的，且相互关联的数据之间不会产生矛盾（一致性）</strong>。</p>
+<p>按照数据库的经典理论，要达成这个目标，需要三方面共同努力来保障：<br><strong>原子性（Atomic）</strong>：在同一项业务处理过程中，事务保证了对多个数据的修改，要么同时成功，要么同时被撤销。<br><strong>隔离性（Isolation）</strong>：在不同的业务处理过程中，事务保证了各自业务正在读、写的数据互相独立，不会彼此影响。<br><strong>持久性（Durability）</strong>：事务应当保证所有成功被提交的数据修改都能够正确地被持久化，不丢失数据。</p>
+<p>如今，事务的概念已不再局限于数据库本身，所有需要保证数据一致性的应用场景，包括但不限于数据库、事务内存、缓存、消息队列、分布式存储，等等，都有可能会用到事务。</p>
+<ul>
+<li>当一个服务<strong>只使用一个数据源</strong>时，通过 A、I、D 来获得一致性是最经典的做法，也是相对容易的。此时，多个并发事务所读写的数据能够被数据源感知是否存在冲突，<strong>并发事务的读写在时间线上的最终顺序是由数据源来确定的</strong>，这种事务间一致性被称为 <strong>“内部一致性”</strong>。</li>
+<li>当一个服务<strong>使用到多个不同的数据源</strong>，甚至多个不同服务同时涉及多个不同的数据源时，问题就变得相对困难了许多。此时，并发执行甚至是先后执行的多个事务，在时间线上的顺序并不由任何一个数据源来决定，这种涉及多个数据源的事务间一致性被称为 <strong>“外部一致性”</strong>。</li>
+</ul>
+<p>外部一致性问题通常很难再使用 A、I、D 来解决，因为这样需要付出很大乃至不切实际的代价；但是外部一致性又是分布式系统中必然会遇到且必须要解决的问题，为此我们要转变观念，将一致性从“是或否”的二元属性转变为可以按不同强度分开讨论的多元属性，在确保代价可承受的前提下获得强度尽可能高的一致性保障，也正因如此，事务处理才从一个具体操作上的“编程问题”上升成一个需要全局权衡的“架构问题”。</p>
+<h1 id="本地事务"><a href="#本地事务" class="headerlink" title="本地事务"></a>本地事务</h1><p><strong>本地事务</strong>是最基础的一种事务解决方案，只适用于<strong>单个服务使用单个数据源</strong>的场景。从应用角度看，它是直接依赖于数据源本身提供的事务能力来工作的，在程序代码层面，最多只能对事务接口做一层标准化的包装（如JDBC接口），并不能深入参与到事务的运作过程当中，事务的开启、终止、提交、回滚、嵌套、设置隔离级别，乃至与应用代码贴近的事务传播方式，全部都要依赖底层数据源的支持才能工作。</p>
+<blockquote>
+<p>本文不会介绍相关的内容，刚兴趣的可自行去了解相关的文章，如<a href="/2024/03/21/backend/database/mysql/mysql_log/" title="MySQL：日志">MySQL：日志</a>、<a href="/2024/03/22/backend/database/mysql/mysql_concurrent/" title="MySQL：并发">MySQL：并发</a>、<a href="https://jingyecn.top:18080/architect-perspective/general-architecture/transaction/local.html">凤凰架构-本地事务</a>等。</p>
+</blockquote>
+<h1 id="全局事务"><a href="#全局事务" class="headerlink" title="全局事务"></a>全局事务</h1><p><strong>全局事务（Global Transaction）</strong>是一种在分布式环境中仍追求强一致性的事务处理方案。</p>
+<p>全局事务涉及两个核心概念：</p>
+<ul>
+<li><strong>事务管理器（Transaction Manager）</strong>：全局存在，用于协调全局事务。</li>
+<li><strong>资源管理器（Resource Manager）</strong>：局部存在，用于驱动本地事务。</li>
+</ul>
+<p>一个事务管理器和多个资源管理器之间可以形成通信桥梁，通过协调多个数据源的一致动作，实现全局事务的统一提交或者统一回滚。</p>
+<blockquote>
+<p>Java中的JTA，即JSR 907 Java Transaction API，实际上也是使用该思路实现的全局事务，其涉及到两个接口：</p>
+<ul>
+<li>事务管理器的接口：javax.transaction.TransactionManager。这套接口是给 Java EE 服务器提供容器事务（由容器自动负责事务管理）使用的，还提供了另外一套javax.transaction.UserTransaction接口，用于通过程序代码手动开启、提交和回滚事务。</li>
+<li>满足 XA 规范的资源定义接口：javax.transaction.xa.XAResource，任何资源（JDBC、JMS 等等）如果想要支持 JTA，只要实现 XAResource 接口中的方法即可。</li>
+</ul>
+<p>（XA事务处理框架由X&#x2F;Open组织提出，其定义了事务管理器和资源管理器之间的通信接口。）</p>
+</blockquote>
+<h2 id="场景说明"><a href="#场景说明" class="headerlink" title="场景说明"></a>场景说明</h2><p>我们将假设一个场景，用于让事务处理从本地事务向全局事务过渡。<br>现在存在用户余额、商品库存、物流系统三个相关数据源，购物的流程是：</p>
+<ol>
+<li>用户购买货物，减去余额。</li>
+<li>仓库取出货物，减去库存。</li>
+<li>物流系统发送货物，创建相关信息。</li>
+</ol>
+<p>使用伪代码描述如果是本地事务时的全过程：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">buyOneThing</span><span class="hljs-params">(PaymentBill bill)</span> &#123;<br>    <span class="hljs-comment">//1. 开启事务</span><br>    transaction.begin();<br>	<span class="hljs-keyword">try</span> &#123;<br>        <span class="hljs-comment">//2. 执行业务逻辑</span><br>        userService.subtractBalance(bill.getUserID(),bill.getMoney());<br>        warehouseService.minusInventory(bill.getItems());<br>        logisticsService.deliverGoods(bill.getItems(),bill.getBuyerInfo());<br>        <span class="hljs-comment">//3.1 提交事务</span><br>        transaction.commit();<br>	&#125; <span class="hljs-keyword">catch</span>(Exception e) &#123;<br>        <span class="hljs-comment">//3.2 回滚事务</span><br>        transaction.rollback();<br>	&#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+<p>如果购物、取货、发货的过程都是成功的，那么提交事务即可；如果发生异常，那么回滚即可。</p>
+<p>但是如果存在多个数据源，则该代码结构会存在问题：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">buyOneThing</span><span class="hljs-params">(PaymentBill bill)</span> &#123;<br>    <span class="hljs-comment">//1. 开启事务</span><br>    userTransaction.begin();<br>    warehouseTransaction.begin();<br>    logisticsTransaction.begin();<br>	<span class="hljs-keyword">try</span> &#123;<br>        <span class="hljs-comment">//2. 执行业务逻辑</span><br>        userService.subtractBalance(bill.getUserID(),bill.getMoney());<br>        warehouseService.minusInventory(bill.getItems());<br>        logisticsService.deliverGoods(bill.getItems(),bill.getBuyerInfo());<br>        <span class="hljs-comment">//3.1 提交事务</span><br>        userTransaction.commit();<br>        warehouseTransaction.commit();<br>        logisticsTransaction.commit();<br>	&#125; <span class="hljs-keyword">catch</span>(Exception e) &#123;<br>        <span class="hljs-comment">//3.2 回滚事务</span><br>        userTransaction.rollback();<br>        warehouseTransaction.rollback();<br>        logisticsTransaction.rollback();<br>	&#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>看上去没有问题，但是如果在提交事务时抛出异常，比如执行<code>logisticsTransaction.commit();</code>出现异常，进行回滚时由于<code>userTransaction</code>和<code>userTransaction</code>已经<code>commit</code>了，会导致回滚无效。</p>
+<h2 id="两段式提交"><a href="#两段式提交" class="headerlink" title="两段式提交"></a>两段式提交</h2><p>为了解决提交期间可能出现的异常，XA将事务提交拆分成为两阶段过程：</p>
+<ul>
+<li><strong>准备阶段</strong>：又称投票阶段。在这一阶段，事务管理器询问事务的所有资源管理器是否准备好提交，资源管理器如果已经准备好提交则回复<code>Prepared</code>，否则回复 <code>Non-Prepared</code>。对于数据库来说，<strong>准备操作是在重做日志中记录全部事务提交操作所要做的内容</strong>，它与本地事务中真正提交的区别只是暂不写入最后一条Commit Record而已。</li>
+<li><strong>提交阶段</strong>：又称执行阶段，事务管理器如果在上一阶段收到所有事务资源管理器回复的<code>Prepared</code>消息，则先自己在本地持久化事务状态为<code>Commit</code>，在此操作完成后向所有资源管理器发送<code>Commit</code>指令，所有资源管理器立即执行提交操作；否则，任意一个资源管理器回复了<code>Non-Prepared</code>消息，或任意一个资源管理器超时未回复，事务管理器将自己的事务状态持久化为<code>Abort</code>之后，向所有资源管理器发送<code>Abort</code>指令，资源管理器立即执行回滚操作。对于数据库来说，这个阶段的提交操作应是很轻量的，仅仅是持久化一条<code>Commit Record</code>而已，通常能够快速完成，只有收到<code>Abort</code>指令时，才需要根据回滚日志清理已提交的数据，这可能是相对重负载的操作。<br>示意图：<br><img src="/2024/04/19/backend/architecture/distributed_transaction/%E4%BA%8C%E9%98%B6%E6%AE%B5%E6%8F%90%E4%BA%A4.svg"><br>以上这两个过程被称为<strong>两段式提交（2 Phase Commit，2PC）</strong>协议。该协议要求：</li>
+</ul>
+<ol>
+<li><strong>网络在提交阶段的短时间内是可靠的，即提交阶段不会丢失消息。（或可以丢失消息，但不会传递错误的消息）</strong>两段式提交中投票阶段失败了可以补救（回滚），而提交阶段失败了无法补救（不再改变提交或回滚的结果，只能等崩溃的节点重新恢复），因而此阶段耗时应尽可能短，这也是为了尽量控制网络风险的考虑。</li>
+<li><strong>因为网络分区、机器崩溃或者其他原因而导致失联的节点最终能够恢复，不会永久性地处于失联状态。</strong>由于在准备阶段已经写入了完整的重做日志，所以当失联机器一旦恢复，就能够从日志中找出已准备妥当但并未提交的事务数据，并向事务管理器查询该事务的状态，确定下一步应该进行提交还是回滚操作。</li>
+</ol>
+<p>二阶段提交的缺点：</p>
+<ul>
+<li><strong>单点问题</strong>：资源管理器宕机，可以一段时间后从事务管理器中获得事务的执行情况进行回滚或提交，不会影响整体执行情况；但是事务管理器宕机，会导致所有事务无法执行，所有资源管理器必须等待事务管理器恢复。</li>
+<li><strong>性能问题</strong>：两段提交过程中，涉及两次远程服务调用，三次数据持久化（准备阶段写重做日志，事务管理器做状态持久化，提交阶段在日志写入 Commit Record），整个过程将持续到资源管理器集群中最慢的那一个处理操作结束为止。</li>
+<li><strong>一致性风险</strong>：提交阶段，如果事务管理器刚刚记录Commit阶段，这时候网络忽然被断开（或者事务管理器宕机），无法向所有资源管理器发出<code>Commit</code>指令，会导致部分数据（事务管理器的）已提交，但部分数据（资源管理器的）既未提交，也没有办法回滚，产生了数据不一致的问题。<ul>
+<li>存在一段强一致性无法达成的时间，并且会根据资源管理器处理超时的不同策略导致不同程度的数据不一致风险：如果此时未收到指令的资源管理器进入等待状态，维持事务的锁定或预备状态，并等待事务管理器恢复或者新的事务管理器接管，可最大程度减少数据不一致风险；如果直接进行回滚操作，就会导致数据的不一致。</li>
+</ul>
+</li>
+</ul>
+<blockquote>
+<p>FLP不可能原理：如果宕机最后不能恢复，那就不存在任何一种分布式协议可以正确地达成一致性结果。</p>
+</blockquote>
+<h2 id="三段式提交"><a href="#三段式提交" class="headerlink" title="三段式提交"></a>三段式提交</h2><p>为了缓解两段式提交协议的一部分缺陷，后续又发展出了 <strong>“三段式提交”（3 Phase Commit，3PC）协议</strong>。</p>
+<p>三段式提交把原本的两段式提交的准备阶段再细分为两个阶段，分别称为<code>CanCommit</code>、<code>PreCommit</code>，把提交阶段改称为<code>DoCommit</code>阶段。<br><strong>CanCommit</strong>：事务管理器让每个参与的数据库根据自身状态，评估该事务是否有可能顺利完成。</p>
+<p>将准备阶段一分为二的理由是这个阶段是重负载的操作，一旦事务管理器发出开始准备的消息，每个资源管理器都将马上开始写重做日志，它们所涉及的数据资源即被锁住，如果此时某一个资源管理器宣告无法完成提交，相当于大家都白做了一轮无用功。所以，增加一轮询问阶段，如果都得到了正面的响应，那事务能够成功提交的把握就比较大了，这也意味着因某个资源管理器提交时发生崩溃而导致大家全部回滚的风险相对变小。因此，在事务需要回滚的场景中，三段式的性能通常是要比两段式好很多的，但在事务能够正常提交的场景中，两者的性能都依然很差，甚至三段式因为多了一次询问，还要稍微更差一些。</p>
+<p>示意图：<br><img src="/2024/04/19/backend/architecture/distributed_transaction/%E4%B8%89%E9%98%B6%E6%AE%B5%E6%8F%90%E4%BA%A4.svg"></p>
+<p>三段式提交对单点问题和回滚时的性能问题有所改善，但是它对一致性风险问题并未有任何改进，在这方面它面临的风险甚至反而是略有增加了的。譬如，进入 PreCommit 阶段之后，事务管理器发出的指令不是Commit而是Abort，而此时因网络问题，有部分资源管理器直至超时都未能收到事务管理器的Abort指令的话，这些资源管理器将会错误地提交事务，这就产生了不同资源管理器之间数据不一致的问题（当然，如果超时后还是会锁定资源并等待重新连接，一样可以尽可能地保证数据一致性）。</p>
+<h2 id="代码示范"><a href="#代码示范" class="headerlink" title="代码示范"></a>代码示范</h2><p>在全局事务处理中，存在这样一个层次结构：</p>
+<ul>
+<li><strong>全局事务管理器</strong>：它负责协调跨越多个服务或数据源的整个事务过程。全局事务管理器并不直接与各个数据源交互，而是通过与每个服务的本地事务管理器沟通来间接控制这些数据源上的操作。它主要执行的任务包括发起Prepare请求到所有参与者，并根据所有参与者的反馈决定最终是提交还是回滚全局事务。</li>
+<li><strong>本地事务管理器</strong>：每个服务（如UserService、WarehouseService、LogisticsService）内部都有一个本地事务管理器，它直接管理该服务所依赖的数据源（资源管理器）。本地事务管理器负责响应全局事务管理器的Prepare和Commit&#x2F;Rollback命令，对本服务内的数据库或其他资源执行相应的事务操作。</li>
+<li><strong>资源管理器</strong>：这是最底层，直接管理数据库或其他数据存储的地方，如MySQL数据库、缓存服务等。它们根据本地事务管理器的指令执行实际的读写操作。</li>
+</ul>
+<h3 id="全局事务管理器"><a href="#全局事务管理器" class="headerlink" title="全局事务管理器"></a>全局事务管理器</h3><p>首先定义一个全局事务管理器接口和实现，它将负责协调各个服务的本地事务：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">interface</span> <span class="hljs-title class_">GlobalTransactionManager</span> &#123;<br>    <span class="hljs-keyword">void</span> <span class="hljs-title function_">startTransaction</span><span class="hljs-params">()</span>;<br>    <span class="hljs-keyword">void</span> <span class="hljs-title function_">prepare</span><span class="hljs-params">(TransactionParticipant... participants)</span>;<br>    <span class="hljs-keyword">void</span> <span class="hljs-title function_">commit</span><span class="hljs-params">()</span>;<br>    <span class="hljs-keyword">void</span> <span class="hljs-title function_">rollback</span><span class="hljs-params">()</span>;<br>&#125;<br><br><span class="hljs-keyword">class</span> <span class="hljs-title class_">SimpleGlobalTransactionManager</span> <span class="hljs-keyword">implements</span> <span class="hljs-title class_">GlobalTransactionManager</span> &#123;<br>    <span class="hljs-keyword">private</span> List&lt;TransactionParticipant&gt; preparedParticipants = <span class="hljs-keyword">new</span> <span class="hljs-title class_">ArrayList</span>&lt;&gt;();<br>    <span class="hljs-keyword">private</span> <span class="hljs-type">boolean</span> <span class="hljs-variable">isTransactionActive</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;<br><br>    <span class="hljs-meta">@Override</span><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">startTransaction</span><span class="hljs-params">()</span> &#123;<br>        <span class="hljs-keyword">if</span> (!isTransactionActive) &#123;<br>            isTransactionActive = <span class="hljs-literal">true</span>;<br>            System.out.println(<span class="hljs-string">&quot;Global Transaction Started.&quot;</span>);<br>        &#125;<br>    &#125;<br><br>    <span class="hljs-meta">@Override</span><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">prepare</span><span class="hljs-params">(TransactionParticipant... participants)</span> &#123;<br>        <span class="hljs-keyword">for</span> (TransactionParticipant participant : participants) &#123;<br>            <span class="hljs-keyword">if</span> (participant.prepare()) &#123;<br>                preparedParticipants.add(participant);<br>            &#125; <span class="hljs-keyword">else</span> &#123;<br>                rollback();<br>                <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">RuntimeException</span>(<span class="hljs-string">&quot;Prepare failed for participant: &quot;</span> + participant);<br>            &#125;<br>        &#125;<br>        System.out.println(<span class="hljs-string">&quot;All participants prepared.&quot;</span>);<br>    &#125;<br><br>    <span class="hljs-meta">@Override</span><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">commit</span><span class="hljs-params">()</span> &#123;<br>        <span class="hljs-keyword">if</span> (!preparedParticipants.isEmpty()) &#123;<br>            <span class="hljs-keyword">for</span> (TransactionParticipant participant : preparedParticipants) &#123;<br>                participant.commit();<br>            &#125;<br>            preparedParticipants.clear();<br>            isTransactionActive = <span class="hljs-literal">false</span>;<br>            System.out.println(<span class="hljs-string">&quot;Global Transaction Committed.&quot;</span>);<br>        &#125;<br>    &#125;<br><br>    <span class="hljs-meta">@Override</span><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">rollback</span><span class="hljs-params">()</span> &#123;<br>        <span class="hljs-keyword">if</span> (!preparedParticipants.isEmpty()) &#123;<br>            <span class="hljs-keyword">for</span> (TransactionParticipant participant : preparedParticipants) &#123;<br>                participant.rollback();<br>            &#125;<br>            preparedParticipants.clear();<br>            isTransactionActive = <span class="hljs-literal">false</span>;<br>            System.out.println(<span class="hljs-string">&quot;Global Transaction Rolled Back.&quot;</span>);<br>        &#125;<br>    &#125;<br>&#125;<br><br><span class="hljs-keyword">interface</span> <span class="hljs-title class_">TransactionParticipant</span> &#123;<br>    <span class="hljs-type">boolean</span> <span class="hljs-title function_">prepare</span><span class="hljs-params">()</span>;<br>    <span class="hljs-keyword">void</span> <span class="hljs-title function_">commit</span><span class="hljs-params">()</span>;<br>    <span class="hljs-keyword">void</span> <span class="hljs-title function_">rollback</span><span class="hljs-params">()</span>;<br>&#125;<br></code></pre></td></tr></table></figure>
+<h3 id="本地事务管理器"><a href="#本地事务管理器" class="headerlink" title="本地事务管理器"></a>本地事务管理器</h3><p>接下来，模拟三个服务的本地事务管理器，它们实现了TransactionParticipant接口：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">class</span> <span class="hljs-title class_">UserService</span> <span class="hljs-keyword">implements</span> <span class="hljs-title class_">TransactionParticipant</span> &#123;<br>    <span class="hljs-meta">@Override</span><br>    <span class="hljs-keyword">public</span> <span class="hljs-type">boolean</span> <span class="hljs-title function_">prepare</span><span class="hljs-params">()</span> &#123;<br>        System.out.println(<span class="hljs-string">&quot;User Service: Balance preparation successful.&quot;</span>);<br>        <span class="hljs-keyword">return</span> <span class="hljs-literal">true</span>; <span class="hljs-comment">// 假设操作成功</span><br>    &#125;<br><br>    <span class="hljs-meta">@Override</span><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">commit</span><span class="hljs-params">()</span> &#123;<br>        System.out.println(<span class="hljs-string">&quot;User Service: Balance committed.&quot;</span>);<br>    &#125;<br><br>    <span class="hljs-meta">@Override</span><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">rollback</span><span class="hljs-params">()</span> &#123;<br>        System.out.println(<span class="hljs-string">&quot;User Service: Balance rollback.&quot;</span>);<br>    &#125;<br>&#125;<br><br><span class="hljs-keyword">class</span> <span class="hljs-title class_">WarehouseService</span> <span class="hljs-keyword">implements</span> <span class="hljs-title class_">TransactionParticipant</span> &#123;<br>    <span class="hljs-meta">@Override</span><br>    <span class="hljs-keyword">public</span> <span class="hljs-type">boolean</span> <span class="hljs-title function_">prepare</span><span class="hljs-params">()</span> &#123;<br>        System.out.println(<span class="hljs-string">&quot;Warehouse Service: Inventory preparation successful.&quot;</span>);<br>        <span class="hljs-keyword">return</span> <span class="hljs-literal">true</span>; <span class="hljs-comment">// 假设操作成功</span><br>    &#125;<br><br>    <span class="hljs-meta">@Override</span><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">commit</span><span class="hljs-params">()</span> &#123;<br>        System.out.println(<span class="hljs-string">&quot;Warehouse Service: Inventory committed.&quot;</span>);<br>    &#125;<br><br>    <span class="hljs-meta">@Override</span><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">rollback</span><span class="hljs-params">()</span> &#123;<br>        System.out.println(<span class="hljs-string">&quot;Warehouse Service: Inventory rollback.&quot;</span>);<br>    &#125;<br>&#125;<br><br><span class="hljs-keyword">class</span> <span class="hljs-title class_">LogisticsService</span> <span class="hljs-keyword">implements</span> <span class="hljs-title class_">TransactionParticipant</span> &#123;<br>    <span class="hljs-meta">@Override</span><br>    <span class="hljs-keyword">public</span> <span class="hljs-type">boolean</span> <span class="hljs-title function_">prepare</span><span class="hljs-params">()</span> &#123;<br>        System.out.println(<span class="hljs-string">&quot;Logistics Service: Delivery preparation successful.&quot;</span>);<br>        <span class="hljs-keyword">return</span> <span class="hljs-literal">true</span>; <span class="hljs-comment">// 假设操作成功</span><br>    &#125;<br><br>    <span class="hljs-meta">@Override</span><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">commit</span><span class="hljs-params">()</span> &#123;<br>        System.out.println(<span class="hljs-string">&quot;Logistics Service: Delivery committed.&quot;</span>);<br>    &#125;<br><br>    <span class="hljs-meta">@Override</span><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">rollback</span><span class="hljs-params">()</span> &#123;<br>        System.out.println(<span class="hljs-string">&quot;Logistics Service: Delivery rollback.&quot;</span>);<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+<h3 id="使用全局事务管理器执行购物操作"><a href="#使用全局事务管理器执行购物操作" class="headerlink" title="使用全局事务管理器执行购物操作"></a>使用全局事务管理器执行购物操作</h3><p>最后使用全局事务管理器来协调一个模拟的购物事务：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">TwoPhaseCommitDemo</span> &#123;<br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">main</span><span class="hljs-params">(String[] args)</span> &#123;<br>        <span class="hljs-type">GlobalTransactionManager</span> <span class="hljs-variable">txManager</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">SimpleGlobalTransactionManager</span>();<br><br>        <span class="hljs-keyword">try</span> &#123;<br>            txManager.startTransaction();<br>            txManager.prepare(<span class="hljs-keyword">new</span> <span class="hljs-title class_">UserService</span>(), <span class="hljs-keyword">new</span> <span class="hljs-title class_">WarehouseService</span>(), <span class="hljs-keyword">new</span> <span class="hljs-title class_">LogisticsService</span>());<br>            txManager.commit();<br>        &#125; <span class="hljs-keyword">catch</span> (Exception e) &#123;<br>            txManager.rollback();<br>        &#125;<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p>注意：这个示例极度简化，实际应用中的二阶段提交会涉及到复杂的网络通信、超时处理、异常恢复以及可能的分布式锁机制等，而且通常会使用成熟的分布式事务框架（如XA、Seata等）来实现，而不是手动编码。</p>
+</blockquote>
+<h1 id="分布式事务"><a href="#分布式事务" class="headerlink" title="分布式事务"></a>分布式事务</h1><p>基于CAP理论，XA的事务机制无法在分布式环境中良好地应用。</p>
+<h2 id="CAP"><a href="#CAP" class="headerlink" title="CAP"></a>CAP</h2><p><strong>CAP 定理（Consistency、Availability、Partition Tolerance Theorem）</strong>表示，在一个分布式的系统中，涉及共享数据问题时，以下三个特性最多只能同时满足其中两个：</p>
+<ul>
+<li><strong>一致性（Consistency）</strong>：代表数据在任何时刻、任何分布式节点中所看到的都是符合预期的。</li>
+<li><strong>可用性（Availability）</strong>：代表系统不间断地提供服务的能力。<ul>
+<li>理解可用性要先理解与其密切相关两个指标：可靠性（Reliability）和可维护性（Serviceability）。可靠性使用平均无故障时间（Mean Time Between Failure，MTBF）来度量；可维护性使用平均可修复时间（Mean Time To Repair，MTTR）来度量。可用性衡量系统可以正常使用的时间与总时间之比，其表征为：A&#x3D;MTBF&#x2F;（MTBF+MTTR），即可用性是由可靠性和可维护性计算得出的比例值，譬如 99.9999%可用，即代表平均年故障修复时间为 32 秒。</li>
+</ul>
+</li>
+<li><strong>分区容忍性（Partition Tolerance）</strong>：代表分布式环境中部分节点因网络原因而彼此失联后，即与其他节点形成“网络分区”时，系统仍能正确地提供服务的能力。</li>
+</ul>
+<h3 id="场景举例"><a href="#场景举例" class="headerlink" title="场景举例"></a>场景举例</h3><p>依旧使用上述的那个购物流程来说明案例。</p>
+<ul>
+<li>从单个服务角度出发：（比如减去用户余额，用户的余额数据存储在多个节点中，并存在冗余）<ul>
+<li>一致性：每个节点都需要得知该余额的减少，不能存在某个节点不知道；如果无法达成一致性，就可能导致两次购物使用了两个不同的节点，而导致双重支付的可能。</li>
+<li>可用性：如果要避免上述一致性问题，就需要先暂停对该用户的余额服务，等到达成一致后再提供服务，期间是无法提供服务的，这就会导致可用性问题。</li>
+<li>分区容忍性：如果余额服务中的一部分节点出现问题，整个集群能否继续提供正常的服务。</li>
+</ul>
+</li>
+<li>从整个购物服务出发：<ul>
+<li>一致性：一个用户账户扣款之后，全局的库存节点中的库存都要减去。</li>
+<li>可用性：某个商品的交易正在进行，可能导致购买用户、该商品的交易服务都需要临时锁定。</li>
+<li>分区容忍性：如果任意或多个服务中的一部分节点出现问题，整个集群能否继续提供正常的服务。</li>
+</ul>
+</li>
+</ul>
+<h3 id="舍弃C、A、P时所带来的不同影响"><a href="#舍弃C、A、P时所带来的不同影响" class="headerlink" title="舍弃C、A、P时所带来的不同影响"></a>舍弃C、A、P时所带来的不同影响</h3><blockquote>
+<p>证明CAP理论需自行了解，本文不做介绍。</p>
+</blockquote>
+<p>舍弃 C、A、P 时所带来的不同影响：</p>
+<ol>
+<li><p><strong>放弃分区容忍性（CA without P）</strong>：要在保证一致性的同时保证可用性，则要求节点之间通信永远是可靠的，但这难以实现。因此当舍弃分区容忍性时，通常会导致一个分布式系统会严重受限于对网络分区的敏感性，进而演变成单体系统以避免由网络不稳定导致分区问题。在实际应用中，很少有系统会选择完全放弃分区容忍性，因为网络通信的不可靠性是分布式计算的基本假设之一。</p>
+<blockquote>
+<p>常见的CA系统有Oracle的RAC集群。Oracle RAC的工作原理是通过多个节点共享相同的数据库存储（通常是通过高速SAN或集群文件系统实现），每个节点运行一个数据库实例，这些实例共同访问同一份数据库数据。如果集群中的某个节点（实例）发生故障，其他节点可以继续提供服务，因为所有节点都能访问共享的存储，从而保证数据库服务不间断。这种机制有效地消除了单点故障，因为即使单个服务器或实例出现问题，数据库仍然可以继续运行。此外，由于使用的是共享的相同数据库存储，同时可以保证一致性。但是RAC集群在设计上提前假设了所有节点都能够访问共享存储，这就隐含了对网络连通性的高度依赖。如果网络出现分区，即某些节点无法访问共享存储，这将违反了RAC的基本运作前提，可能导致数据不一致或服务中断。因此，RAC在设计上并未追求在面对网络分区时仍能维持服务，而是通过硬件冗余（如多路径存储访问）、网络冗余和快速故障检测转移机制来减少分区发生的可能性，并确保在单一数据中心内的高可用性。</p>
+</blockquote>
+</li>
+<li><p><strong>放弃可用性（CP without A）</strong>：这意味着一旦网络发生分区，节点之间的信息同步时间可以无限制地延长，近似于之前全局事务中的2PC&#x2F;3PC的情况。在现实中，选择放弃可用性的 CP 系统情况一般用于对数据质量要求很高的场合中。</p>
+</li>
+<li><p><strong>放弃一致性（AP without C）</strong>：这意味着一旦网络发生分区，节点之间所提供的数据可能不一致。选择放弃一致性的AP系统目前是设计分布式系统的主流选择，因为P是分布式网络的天然属性，无法丢弃；而A通常是建设分布式的目的，如果可用性随着节点数量增加反而降低的话，很多分布式系统可能就失去了存在的价值，除非银行、证券这些涉及金钱交易的服务，宁可中断也不能出错，否则多数系统是不能容忍节点越多可用性反而越低的。目前大多数 NoSQL 库和支持分布式的缓存框架都是 AP 系统，以 Redis 集群为例，如果某个 Redis 节点出现网络分区，那仍不妨碍各个节点以自己本地存储的数据对外提供缓存服务，但这时有可能出现请求分配到不同节点时返回给客户端的是不一致的数据。</p>
+</li>
+</ol>
+<p>在分布式环境中，“一致性”通常不得不被放弃，但是终究还是要确保操作结果至少在最终交付的时候是正确的。因此人们又重新给一致性下了定义，在CAP、ACID中讨论的一致性称为<strong>强一致性（Strong Consistency）</strong>，而把牺牲了C的AP系统又要尽可能获得正确的结果的行为称为追求<strong>最终一致性（Eventual Consistency）</strong>。最终一致性是指：如果数据在一段时间之内没有被另外的操作所更改，那它最终将会达到与强一致性过程相同的结果，有时候面向最终一致性的算法也被称为“乐观复制算法”。</p>
+<h2 id="BASE"><a href="#BASE" class="headerlink" title="BASE"></a>BASE</h2><p><strong>BASE</strong>是一种独立于ACID获得的强一致性之外的达成一致性目的的途径。</p>
+<p>BASE理论的核心思想是：尽管在分布式系统中很难同时实现强一致性、高可用性和分区容忍性，但每个应用可以根据自身的业务需求，采用适当的方法来达到最终的一致性。BASE理论包含三个基本要素：</p>
+<ul>
+<li><strong>基本可用（Basically Available）</strong>：这意味着分布式系统在面对部分故障时，仍然能够提供一定程度的服务。尽管可能不是所有操作都能完成，但系统的核心功能应当能够持续可用。例如，在电商系统中，即使库存更新服务暂时不可用，用户浏览商品和加入购物车的功能仍然可以正常工作。</li>
+<li><strong>软状态（Soft State）</strong>：软状态指的是系统中的数据可以处于中间状态，而且这个中间状态对于用户来说是可以接受的，不会直接影响到系统的整体可用性。在数据同步过程中，不同节点间的数据副本可能存在不一致的情况，这种不一致性被视为暂时的、可以接受的状态。例如，用户下单后，订单状态可能在“待确认”和“已确认”之间短暂地处于不确定状态。</li>
+<li><strong>最终一致性（Eventually Consistent）</strong>：最终一致性保证系统中的所有数据副本，在经过一段时间之后，没有更多的更新操作发生时，最终能够达到一致的状态。这个时间的长短取决于系统的设计、网络延迟以及数据复制策略等因素。在分布式系统中，数据可能通过异步复制或事件驱动的方式在各个节点间传播，确保所有节点最终达成一致。</li>
+</ul>
+<p>接下来将介绍三种基于BASE理论指导的分布式事务处理方案。</p>
+<h2 id="可靠事件队列"><a href="#可靠事件队列" class="headerlink" title="可靠事件队列"></a>可靠事件队列</h2><p>我们继续以本文的场景事例来解释<strong>可靠事件队列</strong>是如何实现最终一致性的。<br>现在存在用户余额、商品库存、物流系统三个相关数据源，购物的流程是：</p>
+<ol>
+<li>用户购买货物，减去余额。</li>
+<li>仓库取出货物，减去库存。</li>
+<li>物流系统发送货物，创建相关信息。</li>
+</ol>
+<pre><code class=" mermaid">sequenceDiagram
+    participant 整体系统
+    participant 用户服务
+    participant 消息队列
+    participant 仓库服务
+    participant 发货服务
+    整体系统-&gt;&gt;用户服务: 启动事务
+    用户服务-&gt;&gt;用户服务: 扣除余额
+    用户服务-&gt;&gt;消息队列: 发送相关业务消息
+    loop 循环直至成功
+        消息队列-&gt;&gt;仓库服务: 处理业务消息，扣除库存
+        alt 扣减成功
+        仓库服务--&gt;&gt;消息队列: 成功
+        else 扣减失败
+        仓库服务--&gt;&gt;消息队列: 失败
+        end
+    end
+    loop 循环直至成功
+        消息队列-&gt;&gt;发货服务: 处理业务消息，发货
+        alt 发货成功
+        发货服务--&gt;&gt;消息队列: 成功
+        else 发货失败
+        发货服务--&gt;&gt;消息队列: 失败
+        end
+    end
+</code></pre>
+<p>过程说明：</p>
+<ol>
+<li>用户发出购物请求。</li>
+<li>用户服务进行扣款，扣款成功后发送送货消息和减库存消息到消息队列。（并在数据库中记录：xxx商品，已付款，未减库存，未发货）</li>
+<li>库存服务对消息进行消费。（并在数据库中记录：xxx商品，已付款，已减库存，未发货）</li>
+<li>发货服务对消息进行消费。（并在数据库中记录：xxx商品，已付款，已减库存，已发货）</li>
+</ol>
+<p>如果该过程中，任意一条消息发生消费失败，则重新进行消息消费，直至操作成功，或者被人工介入为止。（可靠事件队列只要第一步业务完成了，后续就没有失败回滚的概念，只许成功，不许失败。）</p>
+<p>以上是一种靠着<strong>持续重试</strong>来保证可靠性的解决方案，也叫<strong>最大努力交付（Best-Effort Delivery）</strong>。<br>上述的形式是可靠事件队列的一种更普通的形式，被称为<strong>最大努力一次提交（Best-Effort 1PC）</strong>，指的就是将最有可能出错的业务以本地事务的方式完成后，采用不断重试的方式（不限于消息系统）来促使同一个分布式事务中的其他关联业务全部完成。（当然也可以直接发送三条消息进行消费）</p>
+<h2 id="TCC事务"><a href="#TCC事务" class="headerlink" title="TCC事务"></a>TCC事务</h2><p><strong>TCC（Try-Confirm-Cancel）</strong>是另一种常见的分布式事务机制。</p>
+<p>之前讲的可靠消息队列虽然是一种分布式事务处理方案，但是存在一个缺陷——<strong>缺乏隔离性</strong>。<br>比如有多个用户购买同一个货物时，如果减库存消息的数量大于总库存，就会导致库存不足，如果是限量版的商品，就会引发很严重的问题…<br><strong>因此，如果业务需要隔离，就通常就应该重点考虑TCC方案，因为该方案天生适合用于需要强隔离性的分布式事务中。</strong></p>
+<p>在具体实现上，TCC 较为烦琐，它是一种业务侵入式较强的事务方案，要求业务处理过程必须拆分为<strong>预留业务资源</strong>和<strong>确认&#x2F;释放消费资源</strong>两个子过程。如同 TCC 的名字所示，它分为以下三个阶段。</p>
+<ul>
+<li><strong>Try</strong>：尝试执行阶段，完成所有业务可执行性的检查（保障一致性），并且预留好全部需用到的业务资源（保障隔离性）。</li>
+<li><strong>Confirm</strong>：确认执行阶段，不进行任何业务检查，直接使用 Try 阶段准备的资源来完成业务处理。Confirm 阶段可能会重复执行，因此本阶段所执行的操作需要具备幂等性。</li>
+<li><strong>Cancel</strong>：取消执行阶段，释放 Try 阶段预留的业务资源。Cancel 阶段可能会重复执行，也需要满足幂等性。</li>
+</ul>
+<p>我们继续以本文的场景事例来解释<strong>TCC事务</strong>是如何实现最终一致性的。<br><img src="/2024/04/19/backend/architecture/distributed_transaction/TCC.svg"></p>
+<p>上述流程说明：</p>
+<ol>
+<li>用户发出购物请求。</li>
+<li>系统尝试预留资源。<ol>
+<li>冻结余额</li>
+<li>冻结库存</li>
+<li>创建物流信息</li>
+</ol>
+</li>
+<li>如果预留成功，执行Confirm业务逻辑，直至执行成功。</li>
+<li>如果预留失败，执行Cancel业务逻辑，直至执行成功。</li>
+</ol>
+<p>伪代码示范：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">buyOneThing</span><span class="hljs-params">(PaymentBill bill)</span> &#123;<br>    <span class="hljs-comment">// 1. 初始化事务协调器，用于管理TCC的Try、Confirm、Cancel操作</span><br>    <span class="hljs-type">TccTransactionCoordinator</span> <span class="hljs-variable">coordinator</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">TccTransactionCoordinator</span>();<br>    <br>    <span class="hljs-keyword">try</span> &#123;<br>        <span class="hljs-comment">// 2.1 Try阶段</span><br>        <span class="hljs-comment">// 预扣用户余额</span><br>        <span class="hljs-type">boolean</span> <span class="hljs-variable">balanceTryResult</span> <span class="hljs-operator">=</span> userService.trySubtractBalance(bill.getUserID(), bill.getMoney());<br>        <span class="hljs-keyword">if</span> (!balanceTryResult) <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">RuntimeException</span>(<span class="hljs-string">&quot;Try subtract balance failed.&quot;</span>);<br><br>        <span class="hljs-comment">// 预减仓库库存</span><br>        <span class="hljs-type">boolean</span> <span class="hljs-variable">inventoryTryResult</span> <span class="hljs-operator">=</span> warehouseService.tryMinusInventory(bill.getItems());<br>        <span class="hljs-keyword">if</span> (!inventoryTryResult) <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">RuntimeException</span>(<span class="hljs-string">&quot;Try minus inventory failed.&quot;</span>);<br>        <br>        <span class="hljs-comment">// 尝试创建物流信息</span><br>        <span class="hljs-type">boolean</span> <span class="hljs-variable">logisticsTryResult</span> <span class="hljs-operator">=</span> logisticsService.tryDeliverGoods(bill.getItems(), bill.getBuyerInfo());<br>        <span class="hljs-keyword">if</span> (!logisticsTryResult) <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">RuntimeException</span>(<span class="hljs-string">&quot;Try deliver goods failed.&quot;</span>);<br>        <br>        <span class="hljs-comment">// 3. 将所有Try操作加入到事务协调器</span><br>        coordinator.enlistTryOperations(<br>            () -&gt; userService.confirmSubtractBalance(bill.getUserID(), bill.getMoney()),<br>            () -&gt; warehouseService.confirmMinusInventory(bill.getItems()),<br>            () -&gt; logisticsService.confirmDeliverGoods(bill.getItems(), bill.getBuyerInfo())<br>        );<br>        <br>        <span class="hljs-comment">// 4. 注册Cancel操作，用于异常情况下的资源回滚</span><br>        coordinator.enlistCancelOperations(<br>            () -&gt; userService.cancelSubtractBalance(bill.getUserID(), bill.getMoney()),<br>            () -&gt; warehouseService.cancelMinusInventory(bill.getItems()),<br>            () -&gt; logisticsService.cancelDeliverGoods(bill.getItems(), bill.getBuyerInfo())<br>        );<br>        <br>        <span class="hljs-comment">// 5. 执行Confirm阶段，这里假设coordinator.commit会按需调用Confirm或Cancel</span><br>        coordinator.commit();<br>        <br>    &#125; <span class="hljs-keyword">catch</span> (Exception e) &#123;<br>        <span class="hljs-comment">// 6. 异常时，通过事务协调器自动或手动触发Cancel操作</span><br>        coordinator.rollback();<br>        <span class="hljs-keyword">throw</span> e; <span class="hljs-comment">// 可能需要重新抛出异常或者记录日志</span><br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>TCC位于用户代码层面，可以根据需要设计资源锁定的粒度，在业务执行时只操作预留资源，几乎不会涉及锁和资源的争用，具有很高的性能潜力；但是TCC有较高的开发成本和业务侵入性，因此通常不会裸编码实现，而是使用分布式事务中间件如Seata来实现。</p>
+<h2 id="SAGA事务"><a href="#SAGA事务" class="headerlink" title="SAGA事务"></a>SAGA事务</h2><p>TCC事务实现了较强的隔离性，但是由于其业务侵入性很强，如果Try阶段的所需相关资源是由第三方接口把控的，无法实现类似冻结、解冻操作，则需要引入新的事务处理方案。<br><strong>SAGA事务</strong>是另外一种柔性事务方案，大致思路是把一个大事务分解为可以交错运行的一系列子事务集合：</p>
+<ul>
+<li>大事务拆分若干个小事务，将整个分布式事务$T$分解为$n$个子事务，命名为$T_1$，$T_2$，$…$，$T_i$，$…$，$T_n$。每个子事务都应该是或者能被视为是原子行为。如果分布式事务能够正常提交，其对数据的影响（最终一致性）应与连续按顺序成功提交$T_i$等价。</li>
+<li>为每一个子事务设计对应的补偿动作，命名为$C_1$，$C_2$，$…$，$C_i$，$…$，$C_n$。$T_i$与$C_i$必须满足以下条件：<ul>
+<li>$T_i$与$C_i$都具备幂等性。</li>
+<li>$T_i$与$C_i$满足交换律（Commutative），即先执行$T_i$还是先执行$C_i$，其效果都是一样的。</li>
+<li>$C_i$必须能成功提交，即不考虑$C_i$本身提交失败被回滚的情形，如出现就必须持续重试直至成功，或者要人工介入。</li>
+</ul>
+</li>
+<li>如果$T_1$到$T_n$均成功提交，那事务顺利完成，否则，要采取以下两种恢复策略之一：<ul>
+<li><strong>正向恢复（Forward Recovery）</strong>：如果$T_i$事务提交失败，则一直对$T_i$进行重试，直至成功为止（最大努力交付）。（这种恢复方式不需要补偿，适用于事务最终都要成功的场景）</li>
+<li><strong>反向恢复（Backward Recovery）</strong>：如果$T_i$事务提交失败，则一直执行$C_i$对$T_i$进行补偿，直至成功为止（最大努力交付）。这里要求$C_i$必须（在持续重试后）执行成功。反向恢复的执行模式为：$T_1$，$T_2$，$…$，$T_i$（失败），$C_i$（补偿），$…$，$C_2$，$C_1$。</li>
+</ul>
+</li>
+</ul>
+<p>代码示例：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><code class="hljs java"><span class="hljs-comment">//首先，为每个服务定义正向操作和相应的补偿操作：</span><br><span class="hljs-comment">//UserService: 扣除用户余额（正向），增加用户余额（补偿）</span><br><span class="hljs-comment">//WarehouseService: 减少库存（正向），增加库存（补偿）</span><br><span class="hljs-comment">//LogisticsService: 创建物流信息并发货（正向），取消物流订单（补偿）</span><br><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">buyOneThingSaga</span><span class="hljs-params">(PaymentBill bill)</span> &#123;<br>    <span class="hljs-type">SagaTransaction</span> <span class="hljs-variable">sagaTxn</span> <span class="hljs-operator">=</span> SagaTransaction.startNewTransaction(<span class="hljs-string">&quot;buyOneThing&quot;</span>);<br><br>    <span class="hljs-keyword">try</span> &#123;<br>        <span class="hljs-comment">// 1. 尝试扣款，作为Saga的一个步骤</span><br>        userService.subtractBalanceSaga(bill.getUserID(), bill.getMoney(), sagaTxn);<br>        <br>        <span class="hljs-comment">// 2. 尝试减库存，作为Saga的另一个步骤</span><br>        warehouseService.minusInventorySaga(bill.getItems(), sagaTxn);<br>        <br>        <span class="hljs-comment">// 3. 尝试创建物流信息，同样作为Saga的一个步骤</span><br>        logisticsService.deliverGoodsSaga(bill.getItems(), bill.getBuyerInfo(), sagaTxn);<br>        <br>        <span class="hljs-comment">// 4. 如果一切顺利，提交Saga事务</span><br>        sagaTxn.commit();<br>    &#125; <span class="hljs-keyword">catch</span> (Exception e) &#123;<br>        <span class="hljs-comment">// 5. 出现异常时，触发补偿操作</span><br>        sagaTxn.abort();<br>        handleAbort(sagaTxn); <span class="hljs-comment">// 处理事务中止，可能需要记录日志或通知等</span><br>        <span class="hljs-keyword">throw</span> e; <span class="hljs-comment">// 可能需要重新抛出异常或者记录日志</span><br>    &#125;<br>&#125;<br><br><span class="hljs-comment">// 补偿逻辑处理方法，根据Saga事务中的操作历史执行相应的补偿操作</span><br><span class="hljs-keyword">private</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">handleAbort</span><span class="hljs-params">(SagaTransaction sagaTxn)</span> &#123;<br>    List&lt;SagaStep&gt; stepsToCompensate = sagaTxn.getFailedSteps();<br>    <span class="hljs-keyword">for</span> (SagaStep step : stepsToCompensate) &#123;<br>        <span class="hljs-keyword">if</span> (step.getServiceName().equals(<span class="hljs-string">&quot;subtractBalance&quot;</span>)) &#123;<br>            userService.compensateSubtractBalance((PaymentBill) step.getPayload());<br>        &#125; <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (step.getServiceName().equals(<span class="hljs-string">&quot;minusInventory&quot;</span>)) &#123;<br>            warehouseService.compensateMinusInventory((List&lt;Item&gt;) step.getPayload());<br>        &#125; <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (step.getServiceName().equals(<span class="hljs-string">&quot;deliverGoods&quot;</span>)) &#123;<br>            logisticsService.compensateDeliverGoods((DeliveryInfo) step.getPayload());<br>        &#125;<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p>由于SAGA系统本身也有可能会崩溃，所以其必须设计成与数据库类似的日志机制（被称为SAGA Log）以保证系统恢复后可以追踪到子事务的执行情况。<br>另外，尽管补偿操作通常比冻结&#x2F;撤销容易实现，但保证正向、反向恢复过程的能严谨地进行也需要花费不少的工夫，譬如通过服务编排、可靠事件队列等方式完成，所以，SAGA事务通常也不会直接靠裸编码来实现，一般也是在事务中间件的基础上完成，前面提到的 Seata 就同样支持 SAGA 事务模式。</p>
+</blockquote>
+]]></content>
+      <categories>
+        <category>分布式</category>
+        <category>架构</category>
+      </categories>
+      <tags>
+        <tag>事务处理</tag>
+        <tag>一致性</tag>
+        <tag>原子性</tag>
+        <tag>隔离性</tag>
+        <tag>持久性</tag>
+        <tag>全局事务</tag>
+        <tag>二段式提交</tag>
+        <tag>三段式提交</tag>
+        <tag>CAP</tag>
+        <tag>强一致性</tag>
+        <tag>最终一致性</tag>
+        <tag>最大努力交付</tag>
+        <tag>可靠事件队列</tag>
+        <tag>TCC事务</tag>
+        <tag>SAGA事务</tag>
+        <tag>正向恢复</tag>
+        <tag>反向恢复</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>微服务：认识篇</title>
+    <url>/2024/03/13/backend/microservice/microservice-introduce/</url>
+    <content><![CDATA[<p>本文将从时代背景、发展过程、微服务特点出发，对微服务整体构建一个大致的理解：</p>
+<h2 id="时代背景"><a href="#时代背景" class="headerlink" title="时代背景"></a>时代背景</h2><ol>
+<li><p>解决<strong>复杂性</strong>的需求——传统的单体应用架构将所有的功能和模块集中在一个单独的应用程序中，导致应用程序开发、部署和维护变得困难，并且不利于快速迭代和扩展。</p>
+</li>
+<li><p>对<strong>高可用性和扩展性</strong>的需求（如高并发和大规模用户访问）——用户对于应用程序的高可用性和即时响应的期望越来越高，而单体应用架构难以实现高可用性和弹性扩展（一个组件的故障可能会影响整个应用程序的可用性，并且扩展整个应用程序可能会面临技术和性能上的限制）。</p>
+</li>
+<li><p>快速迭代和团队协作的需求（可包含于1.1）——传统的单体应用架构可能不利于快速迭代，因为一个小的更改可能需要重新构建整个应用程序并进行全面的测试和部署，而且微服务为人员的分工提供了便捷，可以更好地支持快速迭代和敏捷开发。</p>
+<blockquote>
+<p>来自《凤凰架构》：譬如，制约软件质量与业务能力提升的最大因素是人而非硬件。多数企业即使有钱也很难招到大量的靠谱的开发者。此时，无论是引入外包团队，抑或是让少量技术专家带着大量普通水平的开发者去共同完成一个大型系统就成为了必然的选择。在单体架构下，没有什么有效阻断错误传播的手段，系统中“整体”与“部分”的关系没有物理的划分，系统质量只能靠研发与项目管理措施来尽可能地保障，少量的技术专家很难阻止大量螺丝钉式的程序员或者不熟悉原有技术架构的外包人员在某个不起眼的地方犯错并产生全局性的影响，并不容易做出整体可靠的大型系统。</p>
+</blockquote>
+</li>
+<li><p><strong>新技术云计算</strong>和<strong>分布式架构</strong>的支持——云计算的兴起为分布式架构提供了理想的基础设施。云计算提供了弹性的计算资源和可扩展的基础设施，使得构建分布式系统和服务变得更加容易。</p>
+</li>
+</ol>
+<h2 id="发展过程："><a href="#发展过程：" class="headerlink" title="发展过程："></a>发展过程：</h2><ol>
+<li>早期阶段：<ol>
+<li>SOA的出现：在这个阶段，服务导向架构（SOA）的概念开始引起关注。SOA提倡将应用程序拆分为一组可重用的服务，通过标准化的接口进行通信。这为后来微服务架构的发展奠定了基础。</li>
+</ol>
+</li>
+<li>兴起阶段：<ol>
+<li>架构模式的探索：微服务架构作为一种新兴的架构风格（更灵活、可维护和可扩展）开始受到关注。</li>
+<li>云计算和虚拟化技术的发展：云计算和虚拟化技术的兴起为微服务架构的发展提供了理想的基础设施。这些技术为构建分布式系统和部署微服务提供了更好的支持。</li>
+</ol>
+</li>
+<li>推广阶段：<ol>
+<li>微服务的推广：微服务架构开始广泛被采用并得到推广。越来越多的组织开始采用微服务架构，以应对复杂性增加、快速迭代和团队协作的挑战。</li>
+<li>开源和商业化工具的涌现：随着微服务的普及，大量的开源和商业化工具、框架和平台涌现，用于辅助微服务架构的开发、部署和管理。这些工具提供了服务注册与发现、负载均衡、容器化和编排、监控和日志等功能，为微服务架构提供了更好的支持。</li>
+<li>实践经验的积累：随着实际应用的增多，对于微服务架构的实践经验也在不断积累。开发人员和组织逐渐摸索出一些最佳实践、设计模式和解决方案，以应对微服务架构中的挑战和复杂性。</li>
+</ol>
+</li>
+<li>演进阶段（将来）：微服务架构是一个动态的领域，仍在不断演进和发展中。它的发展历史仍在进行中，将随着技术的进步和业务需求的变化而不断推进。因此，微服务架构的未来发展将会受到更多新技术、实践经验和业务需求的影响。</li>
+</ol>
+<h2 id="微服务特点："><a href="#微服务特点：" class="headerlink" title="微服务特点："></a>微服务特点：</h2><table>
+<thead>
+<tr>
+<th>不同点</th>
+<th>微服务架构</th>
+<th>单体架构</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>团队规模</td>
+<td>微服务架构可以将传统模式下的单个应用拆分为多个独立的服务，每个微服务都可以单独开发、部署和维护。<strong>每个服务从设计、开发到维护所需的团队规模小，团队管理成本小。</strong></td>
+<td>单体架构的应用程序通常需要一个大型团队，围绕一个庞大的应用程序工作，团队管理的成本大。</td>
+</tr>
+<tr>
+<td>项目结构（部署方式）</td>
+<td>微服务架构中<strong>每个服务都可以独立开发、部署和维护</strong>，也可以独立于其他服务进行扩展。如果部署得当，基于微服务的架构可以帮助企业提高应用程序的部署效率。</td>
+<td>采用单体架构的应用程序的每一次功能更改或 bug 修复都必须对整个应用程序重新进行部署（所有的业务逻辑都集中在同一个工程中）。</td>
+</tr>
+<tr>
+<td>开发模式</td>
+<td>在采用微服务架构的应用程序中，<strong>不同模块可以使用不同的技术或语言进行开发，开发模式更加灵活</strong>。</td>
+<td>在采用单体架构的应用程序中，所有模块使用的技术和语言必须相同，开发模式受限。</td>
+</tr>
+<tr>
+<td>故障隔离</td>
+<td>在微服务架构中，<strong>故障被隔离在单个服务中</strong>，避免系统的整体崩溃。</td>
+<td>在单体架构中，当一个组件出现故障时，故障很可能会在进程中蔓延，导致系统全局不可用。</td>
+</tr>
+</tbody></table>
+<p>优点：</p>
+<ul>
+<li><strong>松耦合</strong>：微服务架构通过将应用程序拆分为多个独立的服务来实现松耦合。每个服务都是自治的，可以独立开发、部署、扩展和维护。这种松耦合性使团队能够独立开发和部署不同的服务，降低了开发的复杂性，并且更容易实现敏捷开发和持续交付。</li>
+<li><strong>可伸缩性（扩展性）</strong>：由于微服务架构中的每个服务都是独立的，可以根据需求对每个服务进行单独的扩展。这意味着可以根据流量和负载的变化，只需对需要扩展的服务进行扩展，而无需扩展整个应用程序。这种可伸缩性使系统能够更好地应对高流量和大规模的并发请求。</li>
+<li><strong>技术多样性</strong>：微服务架构允许使用不同的编程语言、框架和技术栈来构建不同的服务。这使得团队可以选择最适合其需求和技术能力的工具和技术，从而实现更好的灵活性和创新性。</li>
+</ul>
+<p>缺点：</p>
+<ul>
+<li><strong>分布式系统复杂性</strong>：微服务架构引入了分布式系统的复杂性。服务之间的通信和协调需要考虑网络延迟、服务发现、故障处理等因素。这增加了系统的复杂性，并需要适当的工具和技术来管理分布式环境。</li>
+<li><strong>运维复杂性</strong>：由于微服务架构中存在大量的服务实例和组件，运维和监控这些服务变得更加复杂。需要适当的工具和流程来管理和监控每个服务的性能、可用性和健康状态。</li>
+<li><strong>分布式事务管理</strong>：微服务架构中的服务可能需要进行跨服务的事务操作。由于每个服务都是自治的，保持一致的事务管理变得复杂。需要使用一些机制（如分布式事务或补偿性事务）来管理分布式事务的一致性和可靠性。<br>此外，微服务还有其他一些特点，比如可以与容器（Docker）配合使用，可以进行链路追踪等，但是我们主要的目的，还是为了解决复杂性（实现独立开发、部署和维护，保证敏捷开发和持续交付）和提高可用性和扩展性（故障隔离、对服务进行扩展、可使用多种技术和语言），所以仅列出上述优缺点和特点。</li>
+</ul>
+<h2 id="与SOA的区别："><a href="#与SOA的区别：" class="headerlink" title="与SOA的区别："></a>与SOA的区别：</h2><p>微服务 VS SOA：</p>
+<ul>
+<li>相同：面向服务；</li>
+<li>不同：强约束 VS 软指导；强一致 VS 自由；规范标准 VS 实践标准。<br>微服务丢掉了 SOA 的强标准，换来了自由。自由的代价是工程师需根据业务情况选择适合的技术，过程中可能会犯错。微服务带来自由，也带来迷茫。微服务只是一种思想，它丢掉了 SOA 的包袱，却没带来什么具体的东西。RPC 等分布式的问题重新出现，交由社区解决；一时间，百花齐放，百家争鸣。</li>
+</ul>
+<blockquote>
+<p>引自《凤凰架构》：<br>SOA 在 21 世纪最初的十年里曾经盛行一时，有 IBM 等一众行业巨头厂商为其呐喊冲锋，吸引了不少软件开发商、尤其是企业级软件的开发商的跟随，最终却还是偃旗息鼓，沉寂了下去。在稍后的远程服务调用一节，笔者会提到 SOAP 协议被逐渐边缘化的本质原因：过于严格的规范定义带来过度的复杂性。而构建在 SOAP 基础之上的 ESB、BPM、SCA、SDO 等诸多上层建筑，进一步加剧了这种复杂性。开发信息系统毕竟不是作八股文章，过于精密的流程和理论也需要懂得复杂概念的专业人员才能够驾驭。SOA 诞生的那一天起，就已经注定了它只能是少数系统阳春白雪式的精致奢侈品，它可以实现多个异构大型系统之间的复杂集成交互，却很难作为一种具有广泛普适性的软件架构风格来推广。SOA 最终没有获得成功的致命伤与当年的EJB (opens new window)如出一辙，尽管有 Sun Microsystems 和 IBM 等一众巨头在背后力挺，EJB 仍然败于以 Spring、Hibernate 为代表的“草根框架”，可见一旦脱离人民群众，终究会淹没在群众的海洋之中，连信息技术也不曾例外过。</p>
+</blockquote>
+]]></content>
+      <categories>
+        <category>分布式</category>
+        <category>微服务</category>
+      </categories>
+      <tags>
+        <tag>微服务</tag>
+        <tag>SOA</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>《区块链：技术驱动金融》摘录（概念目录）</title>
     <url>/2024/03/03/Web3/readingNotes/%E5%8C%BA%E5%9D%97%E9%93%BE%EF%BC%9A%E6%8A%80%E6%9C%AF%E9%A9%B1%E5%8A%A8%E9%87%91%E8%9E%8D/</url>
     <content><![CDATA[<p>本文将介绍一些区块链领域的技术概念，充当一份技术目录以供备用。</p>
@@ -276,188 +616,6 @@
         <tag>工作量证明</tag>
         <tag>零币</tag>
         <tag>虚拟挖矿</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>分布式：全局事务&amp;分布式事务</title>
-    <url>/2024/04/19/backend/architecture/distributed_transaction/</url>
-    <content><![CDATA[<p>事务几乎存在于每一个信息系统中，其保证了<strong>系统中所有的数据都是符合期望的，且相互关联的数据之间不会产生矛盾（一致性）</strong>。</p>
-<p>按照数据库的经典理论，要达成这个目标，需要三方面共同努力来保障：<br><strong>原子性（Atomic）</strong>：在同一项业务处理过程中，事务保证了对多个数据的修改，要么同时成功，要么同时被撤销。<br><strong>隔离性（Isolation）</strong>：在不同的业务处理过程中，事务保证了各自业务正在读、写的数据互相独立，不会彼此影响。<br><strong>持久性（Durability）</strong>：事务应当保证所有成功被提交的数据修改都能够正确地被持久化，不丢失数据。</p>
-<p>如今，事务的概念已不再局限于数据库本身，所有需要保证数据一致性的应用场景，包括但不限于数据库、事务内存 (opens new window)、缓存、消息队列、分布式存储，等等，都有可能会用到事务。</p>
-<ul>
-<li>当一个服务<strong>只使用一个数据源</strong>时，通过 A、I、D 来获得一致性是最经典的做法，也是相对容易的。此时，多个并发事务所读写的数据能够被数据源感知是否存在冲突，<strong>并发事务的读写在时间线上的最终顺序是由数据源来确定的</strong>，这种事务间一致性被称为 <strong>“内部一致性”</strong>。</li>
-<li>当一个服务<strong>使用到多个不同的数据源</strong>，甚至多个不同服务同时涉及多个不同的数据源时，问题就变得相对困难了许多。此时，并发执行甚至是先后执行的多个事务，在时间线上的顺序并不由任何一个数据源来决定，这种涉及多个数据源的事务间一致性被称为 <strong>“外部一致性”</strong>。</li>
-</ul>
-<p>外部一致性问题通常很难再使用 A、I、D 来解决，因为这样需要付出很大乃至不切实际的代价；但是外部一致性又是分布式系统中必然会遇到且必须要解决的问题，为此我们要转变观念，将一致性从“是或否”的二元属性转变为可以按不同强度分开讨论的多元属性，在确保代价可承受的前提下获得强度尽可能高的一致性保障，也正因如此，事务处理才从一个具体操作上的“编程问题”上升成一个需要全局权衡的“架构问题”。</p>
-<h1 id="本地事务"><a href="#本地事务" class="headerlink" title="本地事务"></a>本地事务</h1><p><strong>本地事务</strong>是最基础的一种事务解决方案，只适用于<strong>单个服务使用单个数据源</strong>的场景。从应用角度看，它是直接依赖于数据源本身提供的事务能力来工作的，在程序代码层面，最多只能对事务接口做一层标准化的包装（如JDBC接口），并不能深入参与到事务的运作过程当中，事务的开启、终止、提交、回滚、嵌套、设置隔离级别，乃至与应用代码贴近的事务传播方式，全部都要依赖底层数据源的支持才能工作。</p>
-<blockquote>
-<p>本文不会介绍相关的内容，刚兴趣的可自行去了解相关的文章，如<a href="/2024/03/21/backend/database/mysql/mysql_log/" title="MySQL：日志">MySQL：日志</a>、<a href="/2024/03/22/backend/database/mysql/mysql_concurrent/" title="MySQL：并发">MySQL：并发</a>、<a href="https://jingyecn.top:18080/architect-perspective/general-architecture/transaction/local.html">凤凰架构-本地事务</a>等。</p>
-</blockquote>
-<h1 id="全局事务"><a href="#全局事务" class="headerlink" title="全局事务"></a>全局事务</h1><p><strong>全局事务（Global Transaction）</strong>是一种在分布式环境中仍追求强一致性的事务处理方案。</p>
-<p>全局事务涉及两个核心概念：</p>
-<ul>
-<li><strong>事务管理器（Transaction Manager）</strong>：全局存在，用于协调全局事务。</li>
-<li><strong>资源管理器（Resource Manager）</strong>：局部存在，用于驱动本地事务。</li>
-</ul>
-<p>一个事务管理器和多个资源管理器之间可以形成通信桥梁，通过协调多个数据源的一致动作，实现全局事务的统一提交或者统一回滚。</p>
-<blockquote>
-<p>Java中的JTA，即JSR 907 Java Transaction API，实际上也是使用该思路实现的全局事务，其涉及到两个接口：</p>
-<ul>
-<li>事务管理器的接口：javax.transaction.TransactionManager。这套接口是给 Java EE 服务器提供容器事务（由容器自动负责事务管理）使用的，还提供了另外一套javax.transaction.UserTransaction接口，用于通过程序代码手动开启、提交和回滚事务。</li>
-<li>满足 XA 规范的资源定义接口：javax.transaction.xa.XAResource，任何资源（JDBC、JMS 等等）如果想要支持 JTA，只要实现 XAResource 接口中的方法即可。</li>
-</ul>
-<p>（XA事务处理框架由X&#x2F;Open组织提出，其定义了事务管理器和资源管理器之间的通信接口。）</p>
-</blockquote>
-<h2 id="场景说明"><a href="#场景说明" class="headerlink" title="场景说明"></a>场景说明</h2><p>我们将假设一个场景，用于让事务处理从本地事务向全局事务过渡。<br>现在存在用户余额、商品库存、物流系统三个相关数据源，购物的流程是：</p>
-<ol>
-<li>用户购买货物，减去余额。</li>
-<li>仓库取出货物，减去库存。</li>
-<li>物流系统发送货物，创建相关信息。</li>
-</ol>
-<p>使用伪代码描述如果是本地事务时的全过程：</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">buyOneThing</span><span class="hljs-params">(PaymentBill bill)</span> &#123;<br>    <span class="hljs-comment">//1. 开启事务</span><br>    transaction.begin();<br>	<span class="hljs-keyword">try</span> &#123;<br>        <span class="hljs-comment">//2. 执行业务逻辑</span><br>        userService.subtractBalance(bill.getUserID(),bill.getMoney());<br>        warehouseService.minusInventory(bill.getItems());<br>        logisticsService.deliverGoods(bill.getItems(),bill.getBuyerInfo());<br>        <span class="hljs-comment">//3.1 提交事务</span><br>        transaction.commit();<br>	&#125; <span class="hljs-keyword">catch</span>(Exception e) &#123;<br>        <span class="hljs-comment">//3.2 回滚事务</span><br>        transaction.rollback();<br>	&#125;<br>&#125;<br></code></pre></td></tr></table></figure>
-<p>如果购物、取货、发货的过程都是成功的，那么提交事务即可；如果发生异常，那么回滚即可。</p>
-<p>但是如果存在多个数据源，则该代码结构会存在问题：</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">buyOneThing</span><span class="hljs-params">(PaymentBill bill)</span> &#123;<br>    <span class="hljs-comment">//1. 开启事务</span><br>    userTransaction.begin();<br>    warehouseTransaction.begin();<br>    logisticsTransaction.begin();<br>	<span class="hljs-keyword">try</span> &#123;<br>        <span class="hljs-comment">//2. 执行业务逻辑</span><br>        userService.subtractBalance(bill.getUserID(),bill.getMoney());<br>        warehouseService.minusInventory(bill.getItems());<br>        logisticsService.deliverGoods(bill.getItems(),bill.getBuyerInfo());<br>        <span class="hljs-comment">//3.1 提交事务</span><br>        userTransaction.commit();<br>        warehouseTransaction.commit();<br>        logisticsTransaction.commit();<br>	&#125; <span class="hljs-keyword">catch</span>(Exception e) &#123;<br>        <span class="hljs-comment">//3.2 回滚事务</span><br>        userTransaction.rollback();<br>        warehouseTransaction.rollback();<br>        logisticsTransaction.rollback();<br>	&#125;<br>&#125;<br></code></pre></td></tr></table></figure>
-
-<p>看上去没有问题，但是如果在提交事务时抛出异常，比如执行<code>logisticsTransaction.commit();</code>出现异常，进行回滚时由于<code>userTransaction</code>和<code>userTransaction</code>已经<code>commit</code>了，会导致回滚无效。</p>
-<h2 id="两段式提交"><a href="#两段式提交" class="headerlink" title="两段式提交"></a>两段式提交</h2><p>为了解决提交期间可能出现的异常，XA将事务提交拆分成为两阶段过程：</p>
-<ul>
-<li><strong>准备阶段</strong>：又称投票阶段。在这一阶段，事务管理器询问事务的所有资源管理器是否准备好提交，资源管理器如果已经准备好提交则回复<code>Prepared</code>，否则回复 <code>Non-Prepared</code>。对于数据库来说，<strong>准备操作是在重做日志中记录全部事务提交操作所要做的内容</strong>，它与本地事务中真正提交的区别只是暂不写入最后一条Commit Record而已。</li>
-<li><strong>提交阶段</strong>：又称执行阶段，事务管理器如果在上一阶段收到所有事务资源管理器回复的<code>Prepared</code>消息，则先自己在本地持久化事务状态为<code>Commit</code>，在此操作完成后向所有资源管理器发送<code>Commit</code>指令，所有资源管理器立即执行提交操作；否则，任意一个资源管理器回复了<code>Non-Prepared</code>消息，或任意一个资源管理器超时未回复，事务管理器将自己的事务状态持久化为<code>Abort</code>之后，向所有资源管理器发送<code>Abort</code>指令，资源管理器立即执行回滚操作。对于数据库来说，这个阶段的提交操作应是很轻量的，仅仅是持久化一条<code>Commit Record</code>而已，通常能够快速完成，只有收到<code>Abort</code>指令时，才需要根据回滚日志清理已提交的数据，这可能是相对重负载的操作。<br>示意图：<br><img src="/2024/04/19/backend/architecture/distributed_transaction/%E4%BA%8C%E9%98%B6%E6%AE%B5%E6%8F%90%E4%BA%A4.svg"><br>以上这两个过程被称为<strong>两段式提交（2 Phase Commit，2PC）</strong>协议。该协议要求：</li>
-</ul>
-<ol>
-<li><strong>网络在提交阶段的短时间内是可靠的，即提交阶段不会丢失消息。（或可以丢失消息，但不会传递错误的消息）</strong>两段式提交中投票阶段失败了可以补救（回滚），而提交阶段失败了无法补救（不再改变提交或回滚的结果，只能等崩溃的节点重新恢复），因而此阶段耗时应尽可能短，这也是为了尽量控制网络风险的考虑。</li>
-<li><strong>因为网络分区、机器崩溃或者其他原因而导致失联的节点最终能够恢复，不会永久性地处于失联状态。</strong>由于在准备阶段已经写入了完整的重做日志，所以当失联机器一旦恢复，就能够从日志中找出已准备妥当但并未提交的事务数据，并向事务管理器查询该事务的状态，确定下一步应该进行提交还是回滚操作。</li>
-</ol>
-<p>二阶段提交的缺点：</p>
-<ul>
-<li><strong>单点问题</strong>：资源管理器宕机，可以一段时间后从事务管理器中获得事务的执行情况进行回滚或提交，不会影响整体执行情况；但是事务管理器宕机，会导致所有事务无法执行，所有资源管理器必须等待事务管理器恢复。</li>
-<li><strong>性能问题</strong>：两段提交过程中，涉及两次远程服务调用，三次数据持久化（准备阶段写重做日志，事务管理器做状态持久化，提交阶段在日志写入 Commit Record），整个过程将持续到资源管理器集群中最慢的那一个处理操作结束为止。</li>
-<li><strong>一致性风险</strong>：提交阶段，如果事务管理器刚刚记录Commit阶段，这时候网络忽然被断开（或者事务管理器宕机），无法向所有资源管理器发出<code>Commit</code>指令，会导致部分数据（事务管理器的）已提交，但部分数据（资源管理器的）既未提交，也没有办法回滚，产生了数据不一致的问题。<ul>
-<li>存在一段强一致性无法达成的时间，并且会根据资源管理器处理超时的不同策略导致不同程度的数据不一致风险：如果此时未收到指令的资源管理器进入等待状态，维持事务的锁定或预备状态，并等待事务管理器恢复或者新的事务管理器接管，可最大程度减少数据不一致风险；如果直接进行回滚操作，就会导致数据的不一致。</li>
-</ul>
-</li>
-</ul>
-<blockquote>
-<p>FLP不可能原理：如果宕机最后不能恢复，那就不存在任何一种分布式协议可以正确地达成一致性结果。</p>
-</blockquote>
-<h2 id="三段式提交"><a href="#三段式提交" class="headerlink" title="三段式提交"></a>三段式提交</h2><p>为了缓解两段式提交协议的一部分缺陷，后续又发展出了 <strong>“三段式提交”（3 Phase Commit，3PC）协议</strong>。</p>
-<p>三段式提交把原本的两段式提交的准备阶段再细分为两个阶段，分别称为<code>CanCommit</code>、<code>PreCommit</code>，把提交阶段改称为<code>DoCommit</code>阶段。<br><strong>CanCommit</strong>：事务管理器让每个参与的数据库根据自身状态，评估该事务是否有可能顺利完成。</p>
-<p>将准备阶段一分为二的理由是这个阶段是重负载的操作，一旦事务管理器发出开始准备的消息，每个资源管理器都将马上开始写重做日志，它们所涉及的数据资源即被锁住，如果此时某一个资源管理器宣告无法完成提交，相当于大家都白做了一轮无用功。所以，增加一轮询问阶段，如果都得到了正面的响应，那事务能够成功提交的把握就比较大了，这也意味着因某个资源管理器提交时发生崩溃而导致大家全部回滚的风险相对变小。因此，在事务需要回滚的场景中，三段式的性能通常是要比两段式好很多的，但在事务能够正常提交的场景中，两者的性能都依然很差，甚至三段式因为多了一次询问，还要稍微更差一些。</p>
-<p>示意图：<br><img src="/2024/04/19/backend/architecture/distributed_transaction/%E4%B8%89%E9%98%B6%E6%AE%B5%E6%8F%90%E4%BA%A4.svg"></p>
-<p>三段式提交对单点问题和回滚时的性能问题有所改善，但是它对一致性风险问题并未有任何改进，在这方面它面临的风险甚至反而是略有增加了的。譬如，进入 PreCommit 阶段之后，事务管理器发出的指令不是Commit而是Abort，而此时因网络问题，有部分资源管理器直至超时都未能收到事务管理器的Abort指令的话，这些资源管理器将会错误地提交事务，这就产生了不同资源管理器之间数据不一致的问题（当然，如果超时后还是会锁定资源并等待重新连接，一样可以尽可能地保证数据一致性）。</p>
-<h1 id="分布式事务"><a href="#分布式事务" class="headerlink" title="分布式事务"></a>分布式事务</h1><blockquote>
-<p>未完待续……</p>
-</blockquote>
-]]></content>
-      <categories>
-        <category>分布式</category>
-        <category>架构</category>
-      </categories>
-      <tags>
-        <tag>事务处理</tag>
-        <tag>一致性</tag>
-        <tag>原子性</tag>
-        <tag>隔离性</tag>
-        <tag>持久性</tag>
-        <tag>全局事务</tag>
-        <tag>二段式提交</tag>
-        <tag>三段式提交</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>微服务：认识篇</title>
-    <url>/2024/03/13/backend/microservice/microservice-introduce/</url>
-    <content><![CDATA[<p>本文将从时代背景、发展过程、微服务特点出发，对微服务整体构建一个大致的理解：</p>
-<h2 id="时代背景"><a href="#时代背景" class="headerlink" title="时代背景"></a>时代背景</h2><ol>
-<li><p>解决<strong>复杂性</strong>的需求——传统的单体应用架构将所有的功能和模块集中在一个单独的应用程序中，导致应用程序开发、部署和维护变得困难，并且不利于快速迭代和扩展。</p>
-</li>
-<li><p>对<strong>高可用性和扩展性</strong>的需求（如高并发和大规模用户访问）——用户对于应用程序的高可用性和即时响应的期望越来越高，而单体应用架构难以实现高可用性和弹性扩展（一个组件的故障可能会影响整个应用程序的可用性，并且扩展整个应用程序可能会面临技术和性能上的限制）。</p>
-</li>
-<li><p>快速迭代和团队协作的需求（可包含于1.1）——传统的单体应用架构可能不利于快速迭代，因为一个小的更改可能需要重新构建整个应用程序并进行全面的测试和部署，而且微服务为人员的分工提供了便捷，可以更好地支持快速迭代和敏捷开发。</p>
-<blockquote>
-<p>来自《凤凰架构》：譬如，制约软件质量与业务能力提升的最大因素是人而非硬件。多数企业即使有钱也很难招到大量的靠谱的开发者。此时，无论是引入外包团队，抑或是让少量技术专家带着大量普通水平的开发者去共同完成一个大型系统就成为了必然的选择。在单体架构下，没有什么有效阻断错误传播的手段，系统中“整体”与“部分”的关系没有物理的划分，系统质量只能靠研发与项目管理措施来尽可能地保障，少量的技术专家很难阻止大量螺丝钉式的程序员或者不熟悉原有技术架构的外包人员在某个不起眼的地方犯错并产生全局性的影响，并不容易做出整体可靠的大型系统。</p>
-</blockquote>
-</li>
-<li><p><strong>新技术云计算</strong>和<strong>分布式架构</strong>的支持——云计算的兴起为分布式架构提供了理想的基础设施。云计算提供了弹性的计算资源和可扩展的基础设施，使得构建分布式系统和服务变得更加容易。</p>
-</li>
-</ol>
-<h2 id="发展过程："><a href="#发展过程：" class="headerlink" title="发展过程："></a>发展过程：</h2><ol>
-<li>早期阶段：<ol>
-<li>SOA的出现：在这个阶段，服务导向架构（SOA）的概念开始引起关注。SOA提倡将应用程序拆分为一组可重用的服务，通过标准化的接口进行通信。这为后来微服务架构的发展奠定了基础。</li>
-</ol>
-</li>
-<li>兴起阶段：<ol>
-<li>架构模式的探索：微服务架构作为一种新兴的架构风格（更灵活、可维护和可扩展）开始受到关注。</li>
-<li>云计算和虚拟化技术的发展：云计算和虚拟化技术的兴起为微服务架构的发展提供了理想的基础设施。这些技术为构建分布式系统和部署微服务提供了更好的支持。</li>
-</ol>
-</li>
-<li>推广阶段：<ol>
-<li>微服务的推广：微服务架构开始广泛被采用并得到推广。越来越多的组织开始采用微服务架构，以应对复杂性增加、快速迭代和团队协作的挑战。</li>
-<li>开源和商业化工具的涌现：随着微服务的普及，大量的开源和商业化工具、框架和平台涌现，用于辅助微服务架构的开发、部署和管理。这些工具提供了服务注册与发现、负载均衡、容器化和编排、监控和日志等功能，为微服务架构提供了更好的支持。</li>
-<li>实践经验的积累：随着实际应用的增多，对于微服务架构的实践经验也在不断积累。开发人员和组织逐渐摸索出一些最佳实践、设计模式和解决方案，以应对微服务架构中的挑战和复杂性。</li>
-</ol>
-</li>
-<li>演进阶段（将来）：微服务架构是一个动态的领域，仍在不断演进和发展中。它的发展历史仍在进行中，将随着技术的进步和业务需求的变化而不断推进。因此，微服务架构的未来发展将会受到更多新技术、实践经验和业务需求的影响。</li>
-</ol>
-<h2 id="微服务特点："><a href="#微服务特点：" class="headerlink" title="微服务特点："></a>微服务特点：</h2><table>
-<thead>
-<tr>
-<th>不同点</th>
-<th>微服务架构</th>
-<th>单体架构</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>团队规模</td>
-<td>微服务架构可以将传统模式下的单个应用拆分为多个独立的服务，每个微服务都可以单独开发、部署和维护。<strong>每个服务从设计、开发到维护所需的团队规模小，团队管理成本小。</strong></td>
-<td>单体架构的应用程序通常需要一个大型团队，围绕一个庞大的应用程序工作，团队管理的成本大。</td>
-</tr>
-<tr>
-<td>项目结构（部署方式）</td>
-<td>微服务架构中<strong>每个服务都可以独立开发、部署和维护</strong>，也可以独立于其他服务进行扩展。如果部署得当，基于微服务的架构可以帮助企业提高应用程序的部署效率。</td>
-<td>采用单体架构的应用程序的每一次功能更改或 bug 修复都必须对整个应用程序重新进行部署（所有的业务逻辑都集中在同一个工程中）。</td>
-</tr>
-<tr>
-<td>开发模式</td>
-<td>在采用微服务架构的应用程序中，<strong>不同模块可以使用不同的技术或语言进行开发，开发模式更加灵活</strong>。</td>
-<td>在采用单体架构的应用程序中，所有模块使用的技术和语言必须相同，开发模式受限。</td>
-</tr>
-<tr>
-<td>故障隔离</td>
-<td>在微服务架构中，<strong>故障被隔离在单个服务中</strong>，避免系统的整体崩溃。</td>
-<td>在单体架构中，当一个组件出现故障时，故障很可能会在进程中蔓延，导致系统全局不可用。</td>
-</tr>
-</tbody></table>
-<p>优点：</p>
-<ul>
-<li><strong>松耦合</strong>：微服务架构通过将应用程序拆分为多个独立的服务来实现松耦合。每个服务都是自治的，可以独立开发、部署、扩展和维护。这种松耦合性使团队能够独立开发和部署不同的服务，降低了开发的复杂性，并且更容易实现敏捷开发和持续交付。</li>
-<li><strong>可伸缩性（扩展性）</strong>：由于微服务架构中的每个服务都是独立的，可以根据需求对每个服务进行单独的扩展。这意味着可以根据流量和负载的变化，只需对需要扩展的服务进行扩展，而无需扩展整个应用程序。这种可伸缩性使系统能够更好地应对高流量和大规模的并发请求。</li>
-<li><strong>技术多样性</strong>：微服务架构允许使用不同的编程语言、框架和技术栈来构建不同的服务。这使得团队可以选择最适合其需求和技术能力的工具和技术，从而实现更好的灵活性和创新性。</li>
-</ul>
-<p>缺点：</p>
-<ul>
-<li><strong>分布式系统复杂性</strong>：微服务架构引入了分布式系统的复杂性。服务之间的通信和协调需要考虑网络延迟、服务发现、故障处理等因素。这增加了系统的复杂性，并需要适当的工具和技术来管理分布式环境。</li>
-<li><strong>运维复杂性</strong>：由于微服务架构中存在大量的服务实例和组件，运维和监控这些服务变得更加复杂。需要适当的工具和流程来管理和监控每个服务的性能、可用性和健康状态。</li>
-<li><strong>分布式事务管理</strong>：微服务架构中的服务可能需要进行跨服务的事务操作。由于每个服务都是自治的，保持一致的事务管理变得复杂。需要使用一些机制（如分布式事务或补偿性事务）来管理分布式事务的一致性和可靠性。<br>此外，微服务还有其他一些特点，比如可以与容器（Docker）配合使用，可以进行链路追踪等，但是我们主要的目的，还是为了解决复杂性（实现独立开发、部署和维护，保证敏捷开发和持续交付）和提高可用性和扩展性（故障隔离、对服务进行扩展、可使用多种技术和语言），所以仅列出上述优缺点和特点。</li>
-</ul>
-<h2 id="与SOA的区别："><a href="#与SOA的区别：" class="headerlink" title="与SOA的区别："></a>与SOA的区别：</h2><p>微服务 VS SOA：</p>
-<ul>
-<li>相同：面向服务；</li>
-<li>不同：强约束 VS 软指导；强一致 VS 自由；规范标准 VS 实践标准。<br>微服务丢掉了 SOA 的强标准，换来了自由。自由的代价是工程师需根据业务情况选择适合的技术，过程中可能会犯错。微服务带来自由，也带来迷茫。微服务只是一种思想，它丢掉了 SOA 的包袱，却没带来什么具体的东西。RPC 等分布式的问题重新出现，交由社区解决；一时间，百花齐放，百家争鸣。</li>
-</ul>
-<blockquote>
-<p>引自《凤凰架构》：<br>SOA 在 21 世纪最初的十年里曾经盛行一时，有 IBM 等一众行业巨头厂商为其呐喊冲锋，吸引了不少软件开发商、尤其是企业级软件的开发商的跟随，最终却还是偃旗息鼓，沉寂了下去。在稍后的远程服务调用一节，笔者会提到 SOAP 协议被逐渐边缘化的本质原因：过于严格的规范定义带来过度的复杂性。而构建在 SOAP 基础之上的 ESB、BPM、SCA、SDO 等诸多上层建筑，进一步加剧了这种复杂性。开发信息系统毕竟不是作八股文章，过于精密的流程和理论也需要懂得复杂概念的专业人员才能够驾驭。SOA 诞生的那一天起，就已经注定了它只能是少数系统阳春白雪式的精致奢侈品，它可以实现多个异构大型系统之间的复杂集成交互，却很难作为一种具有广泛普适性的软件架构风格来推广。SOA 最终没有获得成功的致命伤与当年的EJB (opens new window)如出一辙，尽管有 Sun Microsystems 和 IBM 等一众巨头在背后力挺，EJB 仍然败于以 Spring、Hibernate 为代表的“草根框架”，可见一旦脱离人民群众，终究会淹没在群众的海洋之中，连信息技术也不曾例外过。</p>
-</blockquote>
-]]></content>
-      <categories>
-        <category>分布式</category>
-        <category>微服务</category>
-      </categories>
-      <tags>
-        <tag>微服务</tag>
-        <tag>SOA</tag>
       </tags>
   </entry>
   <entry>
@@ -1250,279 +1408,6 @@
       </tags>
   </entry>
   <entry>
-    <title>JVM各类图示</title>
-    <url>/2024/03/28/backend/language/java/JVM/</url>
-    <content><![CDATA[<p>JVM主要分为三大模块内容：<br><strong>类加载器</strong>、<strong>运行时数据区</strong>和<strong>执行引擎</strong>。</p>
-<p>示意图：<br><img src="/2024/03/28/backend/language/java/JVM/%E4%B8%89%E5%A4%A7%E6%A8%A1%E5%9D%97.png"></p>
-<h1 id="类加载"><a href="#类加载" class="headerlink" title="类加载"></a>类加载</h1><p>类加载过程：<br><img src="/2024/03/28/backend/language/java/JVM/%E7%B1%BB%E5%8A%A0%E8%BD%BD%E8%BF%87%E7%A8%8B.svg"></p>
-<p>类加载器：<br><img src="/2024/03/28/backend/language/java/JVM/%E7%B1%BB%E5%8A%A0%E8%BD%BD%E5%99%A8.svg"></p>
-<h1 id="运行时数据区"><a href="#运行时数据区" class="headerlink" title="运行时数据区"></a>运行时数据区</h1><p>栈帧：<br><img src="/2024/03/28/backend/language/java/JVM/%E6%A0%88%E5%B8%A7.svg"></p>
-]]></content>
-      <categories>
-        <category>后端开发</category>
-        <category>语言</category>
-        <category>Java</category>
-      </categories>
-      <tags>
-        <tag>Java</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>JAVA：AOT入门</title>
-    <url>/2024/03/18/backend/language/java/JIT_AOT/</url>
-    <content><![CDATA[<p>本文将介绍使用AOT相比使用JVM运行java程序的优点，以及如何使用AOT生成可执行文件。</p>
-<blockquote>
-<p>资料来源：<br><a href="https://www.graalvm.org/">GraalVM官网</a><br><a href="https://mp.weixin.qq.com/s/4haTyXUmh8m-dBQaEzwDJw">阿里巴巴微信公众号</a></p>
-</blockquote>
-<h1 id="JIT"><a href="#JIT" class="headerlink" title="JIT"></a>JIT</h1><p>传统的一个 Java 应用从代码编写到启动运行大致可以分为如下步骤：</p>
-<ol>
-<li>首先，编写<code>.java</code>源代码程序。</li>
-<li>然后，借助<strong>javac</strong>工具将<code>.java</code>文件翻译为<code>.class</code>的<strong>字节码</strong>。字节码是 Java 中非常重要的内容之一，正是因为它的出现，Java 才实现对底层环境的屏蔽，达到 Write once, run anywhere 的效果。</li>
-<li>基于步骤2的<code>.class</code>文件会被打包成 <strong>jar</strong> 包或者 <strong>war</strong> 包进行部署执行，部署过程中通过Java虚拟机加载应用程序然后<strong>解释字节码</strong>运行业务逻辑。<ul>
-<li>我们需要格外注意的是，<code>.class-&gt;机器码</code>的过程中，JVM类加载器首先加载字节码文件，然后通过解释器逐行解释执行，这种方式的执行速度会相对比较慢。而且，有些方法和代码块是经常需要被调用的(也就是所谓的热点代码)，所以后面引进了<strong>JIT（Just in Time Compilation）</strong>编译器，而 JIT 属于运行时编译。当 JIT 编译器完成第一次编译后，其会将字节码对应的机器码保存下来，下次可以直接使用。而我们知道，机器码的运行效率肯定是高于 Java 解释器的。这也解释了我们为什么经常会说Java 是<strong>编译与解释共存</strong>的语言。</li>
-</ul>
-</li>
-</ol>
-<p>示意图：<br><img src="/2024/03/18/backend/language/java/JIT_AOT/java_jdk.svg"></p>
-<p><img src="/2024/03/18/backend/language/java/JIT_AOT/java2.svg"></p>
-<h1 id="AOT"><a href="#AOT" class="headerlink" title="AOT"></a>AOT</h1><h2 id="传统方案的缺陷"><a href="#传统方案的缺陷" class="headerlink" title="传统方案的缺陷"></a>传统方案的缺陷</h2><p><img src="/2024/03/18/backend/language/java/JIT_AOT/JVM_invoke.png"><br>Java 程序启动运行详细过程如上图所示。</p>
-<p>具体过程：</p>
-<ol>
-<li>一个 Java 应用启动过程首先需要<strong>加载</strong>该应用程序对应的<strong>JVM 虚拟机软件程序到内存中</strong>，如上图<span style="color: #fe4006;">红色</span>部分描述所示。</li>
-<li>然后 JVM 虚拟机再<strong>加载对应的应用程序到内存中</strong>，该过程对应上图中的<span style="color: #ccfefe;">浅蓝色</span>类加载（Class Load，CL）部分。</li>
-<li>在类加载过程中，<strong>应用程序</strong>就会开始<strong>被解释执行</strong>，对应上图中<span style="color: #adce00;">浅绿色</span>部分。</li>
-<li>解释执行过程 JVM 对垃圾对象进行回收，对应上图中的<span style="color: #fed220;">黄色</span>部分。</li>
-<li>随着程序的运行的深入，JVM 会采用<strong>及时编译（Just In Time，JIT）技术</strong>对执行频率较高的代码进行编译优化，以便提升应用程序运行速度。JIT 过程对应上图中的<span style="color: #fefefe;">白色</span>部分。</li>
-<li>经过 JIT 编译优化后的代码对应图中<span style="color: #00ad00;">深绿色</span>部分。</li>
-</ol>
-<p>经过上述分析，不难看出，一个 Java 程序从启动到达到被JIT动态编译优化会经过<strong>VM init</strong>，<strong>App init</strong>和<strong>App active</strong>几个阶段，相比于其他一些编译型语言，其<strong>冷启动问题</strong>比较严重。</p>
-<p>除了冷启动问题，在一个 Java 程序运行过程中，什么都不做首先就需要加载一个 JVM 虚拟机，该操作一般占用一定内存。另外，由于 Java 程序是先解释执行字节码，然后再做 JIT 编译优化。由于相比于一些编译型语言其将编译优化的动作后置到运行时，因此非常容易出现实际加载的代码比实际需要运行的代码多很多的情况，造成了一些无效内存占用情况。综上所述就是为什么很多人常诟病 Java 程序<strong>运行内存占用高</strong>的几点主要原因。</p>
-<h2 id="解决方案：AOT"><a href="#解决方案：AOT" class="headerlink" title="解决方案：AOT"></a>解决方案：AOT</h2><p><strong>提前编译（Ahead-of-Time Compilation，AOT Compilation）</strong>或者叫<strong>静态编译</strong>在 Java 领域很早就被提了出来。其核心思想就是让 Java 程序也跟其他程序语言，比如 C&#x2F;C++ 一样，先编译后执行解决上述问题，将 Java 程序的编译阶段提前到程序启动前，然后在编译阶段进行代码编译优化，让程序启动既巅峰，消除冷启动，降低运行时内存开销。</p>
-<p>Java 领域静态编译的实现技术有很多，其中最具代表性的还属 Oracle 推出的 <strong>GraalVM</strong> 开源高性能多语言运行时平台。</p>
-<blockquote>
-<p><img src="/2024/03/18/backend/language/java/JIT_AOT/GraalVM.png"><br>GraalVM 中通过提供 Truffle 解释器实现框架，让开发人员可以使用 Truffle 提供的 API 快速实现特定语言的解释器从而实现对上图中各种编程语言所写的程序都能进行编译运行的效果，从而成为一个多语言运行时平台。GraalVM 实现静态编译能力的编译器就是 GraalVM JIT Compiler。静态编译框架和运行时由 Substrate VM 子项目实现，兼容 OpenJDK 运行时实现，提供了原生镜像程序运行时的异常处理、同步调度、线程管理、内存管理等功能。<br>因此，GraalVM 不仅可以作为一个多语言运行时平台，而且由于其中提供的 GraalVM JIT Compiler 静态编译器，其可用来对 Java 程序进行静态编译。</p>
-</blockquote>
-<p>基于静态编译的 Java 程序相比于目前应用广泛的 JVM 运行时编译 Java 程序，整个从代码编写到编译执行的区别如下：<br><img src="/2024/03/18/backend/language/java/JIT_AOT/nativeImage.png"></p>
-<p>相比于 JVM 运行时方式，静态编译在运行之前会先对程序解析编译，然后生成一个跟运行时环境强相关的 <strong>native image 可执行文件</strong>，最后直接执行该文件即可启动程序进行执行。</p>
-<h3 id="静态编译过程"><a href="#静态编译过程" class="headerlink" title="静态编译过程"></a>静态编译过程</h3><blockquote>
-<p>静态编译过程到底会对 Java 程序做哪些解析操作？静态编译后的可执行程序垃圾回收问题怎么解决？</p>
-</blockquote>
-<p>GraalVM 静态编译实现示意图：<br><img src="/2024/03/18/backend/language/java/JIT_AOT/%E9%9D%99%E6%80%81%E7%BC%96%E8%AF%91.png"></p>
-<p>图中左侧前三个输入内容 Applicaton，Libraries 和 JDK 是一个 Java 程序编译运行必备的三部分，不必多说。而 <strong>Substrate VM</strong> 就是 GraalVM 中实现静态编译的核心部分，在整个静态编译过程中扮演了重要作用。<br>在静态分析过程中Substrate VM 通过<strong>上下文不敏感的指向分析（Points-to Analysis）</strong>来对应用程序做<strong>静态分析</strong>，其可以在不需要运行程序的情况下，基于源程序分析给出所有可能的可达函数列表然后作为后续编译阶段的输入对程序<strong>进行静态编译</strong>。<br>在静态分析完成后，基于静态分析结果的可达函数列表，会调用介绍的 GraalVM 中的 GraalVM JIT Compiler 编译器将应用程序编译为与目标平台强相关的本地代码以完成编译过程。<br>编译完成后，就会进入到上图中右侧 Native 可执行文件生成阶段。在该过程中，Substrate VM 会将静态编译阶段确定和初始化的内容以及跟 Substrate VM 运行时以及 JDK 库中的数据一起保存到最终可执行文件的 Image Heap 中。其中 <strong>Substrate VM 运行时</strong>就为最终可执行文件提供了运行过程中所需的垃圾回收、异常处理等能力。</p>
-<h4 id="静态分析局限性"><a href="#静态分析局限性" class="headerlink" title="静态分析局限性"></a>静态分析局限性</h4><p>在Substrate VM的静态分析过程中，由于静态分析无法覆盖 Java 中的反射、动态代理、JNI 调用等动态特性。这也造成了很多的 Java 框架由于在实现过程中使用了大量的上述特性，因此，都难以直接基于 Substrate VM 完成对自身所有代码的静态分析，需要通过<strong>额外的外部配置</strong>来解决静态分析本身的不足。</p>
-<blockquote>
-<p>一个java项目，该如何进行静态编译适配呢？其最核心要解决的本质问题，就是将开源框架中的 GraalVM 无法识别和处理的动态内容转换为其可识别的内容即可。</p>
-<p>Spring 社区为了应对Spring项目中反射和动态代理等特性在静态编译环境下的挑战，开发了<strong>AOT Engine</strong>工具。AOT Engine专注于在构建阶段对Spring应用中的特定内容进行静态分析与转换处理，这些内容包括但不限于使用@Configuration注解声明的配置类及其初始化逻辑。<br>通过AOT Engine，能够识别并预先处理那些原本只能在运行时动态生成的类结构，如基于Java的动态代理类。这样，在静态编译阶段就能够有效生成这些原本动态创建的对象，确保它们能被Substrate VM或类似支持提前编译的技术识别和兼容。<br>因此，AOT Engine有效地解决了Spring应用在静态编译场景下可能遇到的问题，使得Spring应用能够适应静态编译并实现性能优化，同时保持框架的灵活性和功能完整性。</p>
-<p>对于非 Spring 体系项目或者自身使用了一些 JDK 中原生的反射或者其他 Java 动态特性，针对自身代码中的 Java 动态用法需要在项目中提供对应的静态配置文件才能在静态编译过程中让编译器识别其中的动态特性，对其进行编译构建才能实现项目的顺利编译与执行。<br>针对这种情况，GraalVM 提供了一个名叫 <strong>native-image-agent</strong> 的 Tracing Agent 来帮助大家更方便地收集元数据并准备配置文件。该 Agent 会在常规 Java VM 上的应用程序运行过程中自动收集其中的动态特性使用情况并将其转换为 GraalVM 可以识别的配置文件。最后，将通过 Agent 生成的框架自身的动态配置文件存放在项目的：META-INF&#x2F;native-image&#x2F;&lt;group.id&gt;&#x2F;&lt;artifact.id&gt; 目录下，就可以在静态编译过程中根据这些配置内容，识别项目包中的动态特性。</p>
-</blockquote>
-<h2 id="基于静态编译构建微服务"><a href="#基于静态编译构建微服务" class="headerlink" title="基于静态编译构建微服务"></a>基于静态编译构建微服务</h2><blockquote>
-<p>Spring Cloud Alibaba 2022.0.0.0 版本所包含的所有中间件客户端已完成了构建 GraalVM 原生应用的适配。为用户提供了开箱即用的静态编译能力。</p>
-</blockquote>
-<h3 id="环境准备"><a href="#环境准备" class="headerlink" title="环境准备"></a>环境准备</h3><ol>
-<li>安装 GraalVM 发行版。（windows安装可参考：<a href="https://medium.com/graalvm/using-graalvm-and-native-image-on-windows-10-9954dc071311">Using GraalVM and Native Image on Windows 10</a>）</li>
-<li>检查 java -version 的输出来验证是否配置了正确的版本。</li>
-</ol>
-<blockquote>
-<p>建议不要使用Windows。</p>
-</blockquote>
-<h3 id="应用构建"><a href="#应用构建" class="headerlink" title="应用构建"></a>应用构建</h3><ol>
-<li>要使用 GraalVM 静态编译能力构建微服务，首先确保项目的<code>Spring Boot</code>版本为<code>3.0.0</code>或以上<code>Spring Cloud</code>版本为<code>2022.0.0</code>或以上。然后在项目中引入<code>Spring Cloud Alibaba 2022.0.0.0</code>版本的所需模块依赖即可。</li>
-<li>通过maven命令生成应用中反射、序列化和动态代理所需的 Hints 配置文件：<code>mvn -Pnative spring-boot:run</code>（前提是应用中引入了<code>spring-boot-starter-parent</code>父模块）</li>
-<li>之后应用会启动，进行预执行，需要尽可能完整的测试一遍应用的所有功能，保证应用的大部分代码都被测试用例覆盖，该过程会基于 GraalVM 的 native-image-agent 收集程序中的动态特性，这样可以确保完整生成应用运行过程中的所有必须的动态属性。</li>
-<li>运行完所有测试用例后，我们发现<code>resource/META-INF/native-image</code>目录下会生成以下一些<code>hints</code>文件:<ul>
-<li>resource-config.json：应用中资源 hint 文件</li>
-<li>reflect-config.json：应用中反射定义 hint 文件</li>
-<li>serialization-config.json：应用中序列化内容 hint 文件</li>
-<li>proxy-config.json：应用中 Java 代理相关内容 hint 文件</li>
-<li>jni-config.json：应用中 Java Native Interface（JNI）内容 hint 文件</li>
-</ul>
-</li>
-</ol>
-<blockquote>
-<p>上述预执行过程主要为了扫描应用自身业务代码以及其他第三方包中的动态特性，以便后续静态编译过程能顺利进行，应用能正常启动。</p>
-<p>如果没有使用动态特性，可直接进行下一步。</p>
-</blockquote>
-<h3 id="静态编译"><a href="#静态编译" class="headerlink" title="静态编译"></a>静态编译</h3><p>通过maven命令来构建原生镜像：<code>mvn -Pnative native:compile</code><br>成功执行后，可在<code>/target</code>目录看到生成的可执行文件。</p>
-<h3 id="执行可执行文件"><a href="#执行可执行文件" class="headerlink" title="执行可执行文件"></a>执行可执行文件</h3><p>进入<code>/target</code>，命令行输入<code>./&lt;可执行文件名称&gt;</code>，即可发现项目被光速启动了。</p>
-<blockquote>
-<p>这是真TM快啊！</p>
-</blockquote>
-]]></content>
-      <categories>
-        <category>后端开发</category>
-        <category>语言</category>
-        <category>Java</category>
-      </categories>
-      <tags>
-        <tag>JAVA</tag>
-        <tag>JDK</tag>
-        <tag>AOT</tag>
-        <tag>JIT</tag>
-        <tag>GraalVM</tag>
-        <tag>运行时编译</tag>
-        <tag>及时编译</tag>
-        <tag>静态编译</tag>
-        <tag>静态分析</tag>
-        <tag>提前编译</tag>
-        <tag>字节码</tag>
-        <tag>冷启动问题</tag>
-        <tag>native image</tag>
-        <tag>Substrate VM</tag>
-        <tag>Substrate VM运行时</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>Shell：基础篇</title>
-    <url>/2024/03/21/backend/language/shell/shell1/</url>
-    <content><![CDATA[<h1 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h1><p>Shell 是计算机操作系统中的一个重要组成部分，尤其在类Unix系统（如Linux、BSD等）以及早期的MS-DOS等系统中扮演着核心角色。</p>
-<p><strong>Shell 是一种命令行界面（CLI）程序，通常被称为命令解释器，它是用户与操作系统内核之间交互的接口或桥梁。</strong></p>
-<blockquote>
-<p>命令行界面（CLI）程序是一种软件应用程序，它专为通过字符界面与用户交互而设计，用户通过键盘输入特定的文本命令及其相关参数来进行操作。在CLI程序中，没有图形元素，如窗口、按钮或菜单，所有的交互完全依赖于文本命令和响应。</p>
-</blockquote>
-<p>具体而言，Shell 主要具有以下几个特点和功能：</p>
-<ul>
-<li><strong>命令解释器</strong>：Shell 接收用户通过键盘输入的命令，解析这些命令并将其转换成内核能理解的操作请求。</li>
-<li><strong>脚本语言</strong>：Shell 不仅允许用户输入单个命令，还支持编写包含一系列命令和控制结构的脚本文件（称为Shell脚本或Shell程序）。这些脚本可以实现自动化任务，简化重复性工作，或是构建复杂的系统管理流程。</li>
-<li>用户交互：Shell 提供了交互式的命令行环境，用户可以在提示符下实时输入和执行命令，获取即时反馈。</li>
-<li>环境配置：Shell 可以设置和管理用户的环境变量，影响程序的行为和系统环境配置。</li>
-<li>I&#x2F;O重定向与管道：Shell 允许用户将命令的标准输入、输出重定向至文件或其他命令，同时支持通过管道（|）连接多个命令，形成数据流式处理。</li>
-<li>命令扩展与别名：Shell 可以为命令添加额外的便利功能，比如命令补全、命令历史记录，以及定义命令别名等。</li>
-</ul>
-<p>流行的Shell有多种，例如<strong>Bash（Bourne-Again SHell）</strong>、sh（Bourne Shell）、csh（C Shell）、zsh（Z Shell）等。其中，bash在大多数Linux发行版中被用作默认的登录Shell。</p>
-<h1 id="运行"><a href="#运行" class="headerlink" title="运行"></a>运行</h1><p>运行 Shell 脚本有多种方法：</p>
-<ol>
-<li><strong>作为可执行程序运行</strong>：<strong>直接执行</strong>，需有执行权限，<ul>
-<li>确保脚本文件的第一行包含了正确的Shebang（#!），例如 #!&#x2F;bin&#x2F;bash 或 #!&#x2F;usr&#x2F;bin&#x2F;env bash，用于指定解释此脚本的Shell版本。</li>
-<li>给脚本添加执行权限：<code>chmod +x script.sh</code></li>
-<li>使用相对路径或绝对路径执行：相对路径<code>./script.sh</code>；绝对路径<code>/path/to/script.sh</code>。</li>
-</ul>
-</li>
-<li><strong>作为解释器参数</strong>：<ul>
-<li>如<code>bash script.sh</code></li>
-<li>即使脚本没有执行权限，也可以通过明确指定解释器来执行</li>
-</ul>
-</li>
-<li>source命令：当希望脚本中的环境变量更改、函数定义等对当前Shell会话生效时，可以使用source命令。<ul>
-<li>如<code>source script.sh</code></li>
-</ul>
-</li>
-</ol>
-<h1 id="语法"><a href="#语法" class="headerlink" title="语法"></a>语法</h1><h2 id="变量"><a href="#变量" class="headerlink" title="变量"></a>变量</h2><p>在Shell中定义变量非常直观且简单，无需事先声明变量类型，<strong>只需给变量分配一个值即可完成定义</strong>。<br>如<code>name=&quot;chilun&quot;</code>，即定义了一个变量name为字符串“chilun”。</p>
-<h3 id="变量命名规则"><a href="#变量命名规则" class="headerlink" title="变量命名规则"></a>变量命名规则</h3><ul>
-<li><strong>只包含字母、数字和下划线</strong>： 变量名可以包含字母（大小写敏感）、数字和下划线 _，不能包含其他特殊字符。</li>
-<li><strong>不能以数字开头</strong>： 变量名不能以数字开头，但可以包含数字。</li>
-<li><strong>避免使用 Shell 关键字</strong>： 不要使用Shell的关键字（例如 if、then、else、fi、for、while 等）作为变量名，以免引起混淆。</li>
-<li>使用大写字母表示常量： 习惯上，常量的变量名通常使用大写字母，例如 PI&#x3D;3.14。</li>
-</ul>
-<h3 id="定义变量"><a href="#定义变量" class="headerlink" title="定义变量"></a>定义变量</h3><ol>
-<li><strong>直接赋值</strong>：通过等号（&#x3D;）来给变量赋值，注意变量名和等号之间不能有空格。<ul>
-<li><code>name=&quot;chilun&quot;</code>：将“chilun”字符串赋给变量 name。</li>
-</ul>
-</li>
-<li><strong>语句赋值</strong>：可使用for循环等语句对变量进行赋值。<ul>
-<li><code>for file in $(ls /etc) </code>：将 &#x2F;etc 目录下的所有文件和目录名逐个赋值给变量 file。</li>
-</ul>
-</li>
-<li><strong>命令赋值</strong>：可使用标准输入读取命令等对变量进行赋值。<ul>
-<li><code>read -p &quot;请输入你的名字: &quot; name</code>：用户输入的名字会被赋值给变量 name。</li>
-</ul>
-</li>
-<li><strong>定义变量</strong>：使用<code>declare</code>或<code>typeset</code>命令定义变量时可以指定变量的类型（如整型、数组等）。<ul>
-<li><code>declare -i age=30</code>：定义一个整数类型的变量age并赋值为30。</li>
-</ul>
-</li>
-<li><strong>计算变量</strong>：使用<code>let</code>命令执行简单的算术运算并赋值给变量。<ul>
-<li><code>let b=a+1</code>：将b赋值为a+1后的整数；如果直接<code>b=a+1</code>，b会被赋值为“a+1”的字符串。</li>
-</ul>
-</li>
-<li><strong>定义环境变量</strong>：使用<code>export</code>命令可以定义环境变量，在子shell进程中变量也能被访问。<ul>
-<li><code>export PATH=$PATH:/usr/local/bin</code>：将新的路径添加到已存在的PATH环境变量中。</li>
-</ul>
-</li>
-<li><strong>删除变量</strong>：使用<code>unset</code>命令删除已定义的变量。<ul>
-<li><code>unset name</code>：删除变量name。</li>
-</ul>
-</li>
-<li><strong>只读变量</strong>：使用<code>readonly</code>命令可以将变量定义为只读变量，只读变量的值不能被改变，不能被删除。<ul>
-<li><code>readonly name</code>：之后再修改就会报错：<code>name: readonly variable</code>。</li>
-</ul>
-</li>
-</ol>
-<h3 id="使用变量"><a href="#使用变量" class="headerlink" title="使用变量"></a>使用变量</h3><p>使用一个定义过的变量，只要在变量名前面加美元符号即可。<br>变量名外面的花括号是可选的，加不加都行，加花括号是为了帮助解释器识别变量的边界（推荐给所有变量加上花括号）。</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><code class="hljs shell">name=&quot;chilun&quot;<br>echo $name<br>echo $&#123;name&#125;<br></code></pre></td></tr></table></figure>
-<p>输出为：</p>
-<blockquote>
-<p>chilun<br>chilun</p>
-</blockquote>
-<h3 id="变量类型"><a href="#变量类型" class="headerlink" title="变量类型"></a>变量类型</h3><p>Shell 支持不同类型的变量。</p>
-<h4 id="字符串变量"><a href="#字符串变量" class="headerlink" title="字符串变量"></a>字符串变量</h4><p>在 Shell中，变量通常被视为字符串。<br>在Bash中，所有变量值本质上都是字符串。即使一个变量可用于数值计算，其在内部依旧是以字符串的形式存储的，只是在进行算术运算时进行了相应的转换和处理。<br>可使用单引号或双引号来定义字符串，比如：<code>a=&#39;Hello, World!&#39;</code>或者<code>b=&quot;Hello, World!&quot;</code>。</p>
-<p>当直接赋值一个不包含变量扩展、算术扩展或其他形式扩展的纯文本给一个变量时，Bash也会将这个值当作字符串来处理，如<code>c=hello,World!</code>。<br>（当设置一个变量时，其值默认被视为一个整体，直到遇到第一个未经转义的特殊字符为止。如果<code>c=hello, World!</code>就会报错，因为存在空格，空格是Bash解析命令行参数时的分隔符，会导致Bash会尝试将<code>hello,</code>、<code>World!</code>视为不同的参数。）</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><code class="hljs shell"><span class="hljs-meta prompt_">#</span><span class="language-bash">!/bin/bash</span><br>a=&#x27;Hello, World!&#x27;<br>b=&quot;Hello, World!&quot;<br>c=hello,World!<br>echo $&#123;a&#125; $&#123;b&#125; $&#123;c&#125; <br></code></pre></td></tr></table></figure>
-
-<p>输出结果为：</p>
-<blockquote>
-<p>Hello, World! Hello, World! hello,World!</p>
-</blockquote>
-<h4 id="整数变量"><a href="#整数变量" class="headerlink" title="整数变量"></a>整数变量</h4><p>可以使用 declare 或 typeset 命令来声明整数变量。<br>这样的变量只包含整数值，例如：<code>declare -i a=42</code>。<br>这样的声明告诉Shell将a视为整数，如果尝试将非整数值赋给它，Shell会尝试将其转换为整数。</p>
-<p>示例：</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><code class="hljs shell"><span class="hljs-meta prompt_">#</span><span class="language-bash">!/bin/bash</span><br>a=42<br>declare -i b=a+1<br>echo $&#123;b&#125;<br></code></pre></td></tr></table></figure>
-<p>输出为：</p>
-<blockquote>
-<p>43</p>
-</blockquote>
-<p>（如果不声明为整数，b就会被看做是“a+1”的字符串。）</p>
-<h4 id="数组变量"><a href="#数组变量" class="headerlink" title="数组变量"></a>数组变量</h4><p>Shell 支持数组，允许在一个变量中存储多个值。括号用来表示数组，数组元素用”空格”符号分割开。<br>数组可以是<strong>整数索引数组</strong>或<strong>关联数组</strong>：</p>
-<ul>
-<li>整数索引数组：<code>array1=(1 2 3 4 5)</code></li>
-<li>关联数组：<figure class="highlight shell"><table><tr><td class="code"><pre><code class="hljs shell">declare -A array2<br>array2[&#x27;he&#x27;]=&quot;wor&quot;<br>array2[&#x27;llo,&#x27;]=&quot;ld!&quot;<br></code></pre></td></tr></table></figure></li>
-</ul>
-<p>示例：</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><code class="hljs shell">array1=(1 2 3 4 5)<br>echo $&#123;array1[0]&#125; $&#123;array1[1]&#125; $&#123;array1[2]&#125; $&#123;array1[3]&#125; $&#123;array1[4]&#125;<br>declare -A array2<br>array2[&#x27;he&#x27;]=&quot;wor&quot;<br>array2[&#x27;llo,&#x27;]=&quot;ld!&quot;<br>echo $&#123;array2[&#x27;he&#x27;]&#125;$&#123;array2[&#x27;llo,&#x27;]&#125;<br></code></pre></td></tr></table></figure>
-<p>输出为：</p>
-<blockquote>
-<p>1 2 3 4 5<br>world!</p>
-</blockquote>
-<blockquote>
-<p>未完待续……</p>
-</blockquote>
-<h2 id="字符串"><a href="#字符串" class="headerlink" title="字符串"></a>字符串</h2><p>字符串可以用单引号，也可以用双引号，也可以不用引号。</p>
-<h3 id="单引号"><a href="#单引号" class="headerlink" title="单引号"></a>单引号</h3><p>单引号里的任何字符都会原样输出，单引号字符串中的变量是无效的。</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><code class="hljs shell"><span class="hljs-meta prompt_">#</span><span class="language-bash">!/bin/bash</span><br>a=chilun<br>echo &#x27;$&#123;a&#125;&#x27;<br></code></pre></td></tr></table></figure>
-<p>输出为：</p>
-<blockquote>
-<p>${a}</p>
-</blockquote>
-<p>由于单引号里的任何字符都会原样输出，所以单引号字符串中无法输出单引号（不支持转义），但可成对出现，作为字符串拼接使用。</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><code class="hljs shell"><span class="hljs-meta prompt_">#</span><span class="language-bash">!/bin/bash</span><br>a=chilun<br>echo &#x27;$&#123;a&#125;&#x27;&#x27;$&#123;a&#125;&#x27;<br></code></pre></td></tr></table></figure>
-<p>输出为：</p>
-<blockquote>
-<p>${a}${a}</p>
-</blockquote>
-<h3 id="双引号"><a href="#双引号" class="headerlink" title="双引号"></a>双引号</h3><p>双引号字符串支持变量展开和转义字符。</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><code class="hljs shell"><span class="hljs-meta prompt_">#</span><span class="language-bash">!/bin/bash</span><br>a=chilun<br>echo &quot;$&#123;a&#125;&quot;&quot;\$&#123;a&#125;&quot;<br></code></pre></td></tr></table></figure>
-<p>输出为：</p>
-<blockquote>
-<p>chilun${a}</p>
-</blockquote>
-<h3 id="字符串操作"><a href="#字符串操作" class="headerlink" title="字符串操作"></a>字符串操作</h3><h4 id="获得长度"><a href="#获得长度" class="headerlink" title="获得长度"></a>获得长度</h4><p>使用&#96;$</p>
-]]></content>
-      <categories>
-        <category>后端开发</category>
-        <category>语言</category>
-        <category>shell</category>
-      </categories>
-      <tags>
-        <tag>Linux</tag>
-        <tag>Shell</tag>
-        <tag>CLI</tag>
-        <tag>Bash</tag>
-        <tag>Bourne-Again SHell</tag>
-        <tag>变量</tag>
-        <tag>字符串</tag>
-        <tag>数组</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>Spring入门篇：IOC&amp;AOP</title>
     <url>/2024/03/03/backend/devframe/spring/Spring_IOC&amp;AOP/</url>
     <content><![CDATA[<p>本文<sup id="fnref:1" class="footnote-ref"><a href="#fn:1" rel="footnote"><span class="hint--top hint--rounded" aria-label="本文写于2023年初，经修正后发布于个人博客。">[1]</span></a></sup>包含：</p>
@@ -1892,6 +1777,375 @@ newProxyInstance方法的三个参数：</li>
       </tags>
   </entry>
   <entry>
+    <title>JAVA：AOT入门</title>
+    <url>/2024/03/18/backend/language/java/JIT_AOT/</url>
+    <content><![CDATA[<p>本文将介绍使用AOT相比使用JVM运行java程序的优点，以及如何使用AOT生成可执行文件。</p>
+<blockquote>
+<p>资料来源：<br><a href="https://www.graalvm.org/">GraalVM官网</a><br><a href="https://mp.weixin.qq.com/s/4haTyXUmh8m-dBQaEzwDJw">阿里巴巴微信公众号</a></p>
+</blockquote>
+<h1 id="JIT"><a href="#JIT" class="headerlink" title="JIT"></a>JIT</h1><p>传统的一个 Java 应用从代码编写到启动运行大致可以分为如下步骤：</p>
+<ol>
+<li>首先，编写<code>.java</code>源代码程序。</li>
+<li>然后，借助<strong>javac</strong>工具将<code>.java</code>文件翻译为<code>.class</code>的<strong>字节码</strong>。字节码是 Java 中非常重要的内容之一，正是因为它的出现，Java 才实现对底层环境的屏蔽，达到 Write once, run anywhere 的效果。</li>
+<li>基于步骤2的<code>.class</code>文件会被打包成 <strong>jar</strong> 包或者 <strong>war</strong> 包进行部署执行，部署过程中通过Java虚拟机加载应用程序然后<strong>解释字节码</strong>运行业务逻辑。<ul>
+<li>我们需要格外注意的是，<code>.class-&gt;机器码</code>的过程中，JVM类加载器首先加载字节码文件，然后通过解释器逐行解释执行，这种方式的执行速度会相对比较慢。而且，有些方法和代码块是经常需要被调用的(也就是所谓的热点代码)，所以后面引进了<strong>JIT（Just in Time Compilation）</strong>编译器，而 JIT 属于运行时编译。当 JIT 编译器完成第一次编译后，其会将字节码对应的机器码保存下来，下次可以直接使用。而我们知道，机器码的运行效率肯定是高于 Java 解释器的。这也解释了我们为什么经常会说Java 是<strong>编译与解释共存</strong>的语言。</li>
+</ul>
+</li>
+</ol>
+<p>示意图：<br><img src="/2024/03/18/backend/language/java/JIT_AOT/java_jdk.svg"></p>
+<p><img src="/2024/03/18/backend/language/java/JIT_AOT/java2.svg"></p>
+<h1 id="AOT"><a href="#AOT" class="headerlink" title="AOT"></a>AOT</h1><h2 id="传统方案的缺陷"><a href="#传统方案的缺陷" class="headerlink" title="传统方案的缺陷"></a>传统方案的缺陷</h2><p><img src="/2024/03/18/backend/language/java/JIT_AOT/JVM_invoke.png"><br>Java 程序启动运行详细过程如上图所示。</p>
+<p>具体过程：</p>
+<ol>
+<li>一个 Java 应用启动过程首先需要<strong>加载</strong>该应用程序对应的<strong>JVM 虚拟机软件程序到内存中</strong>，如上图<span style="color: #fe4006;">红色</span>部分描述所示。</li>
+<li>然后 JVM 虚拟机再<strong>加载对应的应用程序到内存中</strong>，该过程对应上图中的<span style="color: #ccfefe;">浅蓝色</span>类加载（Class Load，CL）部分。</li>
+<li>在类加载过程中，<strong>应用程序</strong>就会开始<strong>被解释执行</strong>，对应上图中<span style="color: #adce00;">浅绿色</span>部分。</li>
+<li>解释执行过程 JVM 对垃圾对象进行回收，对应上图中的<span style="color: #fed220;">黄色</span>部分。</li>
+<li>随着程序的运行的深入，JVM 会采用<strong>及时编译（Just In Time，JIT）技术</strong>对执行频率较高的代码进行编译优化，以便提升应用程序运行速度。JIT 过程对应上图中的<span style="color: #fefefe;">白色</span>部分。</li>
+<li>经过 JIT 编译优化后的代码对应图中<span style="color: #00ad00;">深绿色</span>部分。</li>
+</ol>
+<p>经过上述分析，不难看出，一个 Java 程序从启动到达到被JIT动态编译优化会经过<strong>VM init</strong>，<strong>App init</strong>和<strong>App active</strong>几个阶段，相比于其他一些编译型语言，其<strong>冷启动问题</strong>比较严重。</p>
+<p>除了冷启动问题，在一个 Java 程序运行过程中，什么都不做首先就需要加载一个 JVM 虚拟机，该操作一般占用一定内存。另外，由于 Java 程序是先解释执行字节码，然后再做 JIT 编译优化。由于相比于一些编译型语言其将编译优化的动作后置到运行时，因此非常容易出现实际加载的代码比实际需要运行的代码多很多的情况，造成了一些无效内存占用情况。综上所述就是为什么很多人常诟病 Java 程序<strong>运行内存占用高</strong>的几点主要原因。</p>
+<h2 id="解决方案：AOT"><a href="#解决方案：AOT" class="headerlink" title="解决方案：AOT"></a>解决方案：AOT</h2><p><strong>提前编译（Ahead-of-Time Compilation，AOT Compilation）</strong>或者叫<strong>静态编译</strong>在 Java 领域很早就被提了出来。其核心思想就是让 Java 程序也跟其他程序语言，比如 C&#x2F;C++ 一样，先编译后执行解决上述问题，将 Java 程序的编译阶段提前到程序启动前，然后在编译阶段进行代码编译优化，让程序启动既巅峰，消除冷启动，降低运行时内存开销。</p>
+<p>Java 领域静态编译的实现技术有很多，其中最具代表性的还属 Oracle 推出的 <strong>GraalVM</strong> 开源高性能多语言运行时平台。</p>
+<blockquote>
+<p><img src="/2024/03/18/backend/language/java/JIT_AOT/GraalVM.png"><br>GraalVM 中通过提供 Truffle 解释器实现框架，让开发人员可以使用 Truffle 提供的 API 快速实现特定语言的解释器从而实现对上图中各种编程语言所写的程序都能进行编译运行的效果，从而成为一个多语言运行时平台。GraalVM 实现静态编译能力的编译器就是 GraalVM JIT Compiler。静态编译框架和运行时由 Substrate VM 子项目实现，兼容 OpenJDK 运行时实现，提供了原生镜像程序运行时的异常处理、同步调度、线程管理、内存管理等功能。<br>因此，GraalVM 不仅可以作为一个多语言运行时平台，而且由于其中提供的 GraalVM JIT Compiler 静态编译器，其可用来对 Java 程序进行静态编译。</p>
+</blockquote>
+<p>基于静态编译的 Java 程序相比于目前应用广泛的 JVM 运行时编译 Java 程序，整个从代码编写到编译执行的区别如下：<br><img src="/2024/03/18/backend/language/java/JIT_AOT/nativeImage.png"></p>
+<p>相比于 JVM 运行时方式，静态编译在运行之前会先对程序解析编译，然后生成一个跟运行时环境强相关的 <strong>native image 可执行文件</strong>，最后直接执行该文件即可启动程序进行执行。</p>
+<h3 id="静态编译过程"><a href="#静态编译过程" class="headerlink" title="静态编译过程"></a>静态编译过程</h3><blockquote>
+<p>静态编译过程到底会对 Java 程序做哪些解析操作？静态编译后的可执行程序垃圾回收问题怎么解决？</p>
+</blockquote>
+<p>GraalVM 静态编译实现示意图：<br><img src="/2024/03/18/backend/language/java/JIT_AOT/%E9%9D%99%E6%80%81%E7%BC%96%E8%AF%91.png"></p>
+<p>图中左侧前三个输入内容 Applicaton，Libraries 和 JDK 是一个 Java 程序编译运行必备的三部分，不必多说。而 <strong>Substrate VM</strong> 就是 GraalVM 中实现静态编译的核心部分，在整个静态编译过程中扮演了重要作用。<br>在静态分析过程中Substrate VM 通过<strong>上下文不敏感的指向分析（Points-to Analysis）</strong>来对应用程序做<strong>静态分析</strong>，其可以在不需要运行程序的情况下，基于源程序分析给出所有可能的可达函数列表然后作为后续编译阶段的输入对程序<strong>进行静态编译</strong>。<br>在静态分析完成后，基于静态分析结果的可达函数列表，会调用介绍的 GraalVM 中的 GraalVM JIT Compiler 编译器将应用程序编译为与目标平台强相关的本地代码以完成编译过程。<br>编译完成后，就会进入到上图中右侧 Native 可执行文件生成阶段。在该过程中，Substrate VM 会将静态编译阶段确定和初始化的内容以及跟 Substrate VM 运行时以及 JDK 库中的数据一起保存到最终可执行文件的 Image Heap 中。其中 <strong>Substrate VM 运行时</strong>就为最终可执行文件提供了运行过程中所需的垃圾回收、异常处理等能力。</p>
+<h4 id="静态分析局限性"><a href="#静态分析局限性" class="headerlink" title="静态分析局限性"></a>静态分析局限性</h4><p>在Substrate VM的静态分析过程中，由于静态分析无法覆盖 Java 中的反射、动态代理、JNI 调用等动态特性。这也造成了很多的 Java 框架由于在实现过程中使用了大量的上述特性，因此，都难以直接基于 Substrate VM 完成对自身所有代码的静态分析，需要通过<strong>额外的外部配置</strong>来解决静态分析本身的不足。</p>
+<blockquote>
+<p>一个java项目，该如何进行静态编译适配呢？其最核心要解决的本质问题，就是将开源框架中的 GraalVM 无法识别和处理的动态内容转换为其可识别的内容即可。</p>
+<p>Spring 社区为了应对Spring项目中反射和动态代理等特性在静态编译环境下的挑战，开发了<strong>AOT Engine</strong>工具。AOT Engine专注于在构建阶段对Spring应用中的特定内容进行静态分析与转换处理，这些内容包括但不限于使用@Configuration注解声明的配置类及其初始化逻辑。<br>通过AOT Engine，能够识别并预先处理那些原本只能在运行时动态生成的类结构，如基于Java的动态代理类。这样，在静态编译阶段就能够有效生成这些原本动态创建的对象，确保它们能被Substrate VM或类似支持提前编译的技术识别和兼容。<br>因此，AOT Engine有效地解决了Spring应用在静态编译场景下可能遇到的问题，使得Spring应用能够适应静态编译并实现性能优化，同时保持框架的灵活性和功能完整性。</p>
+<p>对于非 Spring 体系项目或者自身使用了一些 JDK 中原生的反射或者其他 Java 动态特性，针对自身代码中的 Java 动态用法需要在项目中提供对应的静态配置文件才能在静态编译过程中让编译器识别其中的动态特性，对其进行编译构建才能实现项目的顺利编译与执行。<br>针对这种情况，GraalVM 提供了一个名叫 <strong>native-image-agent</strong> 的 Tracing Agent 来帮助大家更方便地收集元数据并准备配置文件。该 Agent 会在常规 Java VM 上的应用程序运行过程中自动收集其中的动态特性使用情况并将其转换为 GraalVM 可以识别的配置文件。最后，将通过 Agent 生成的框架自身的动态配置文件存放在项目的：META-INF&#x2F;native-image&#x2F;&lt;group.id&gt;&#x2F;&lt;artifact.id&gt; 目录下，就可以在静态编译过程中根据这些配置内容，识别项目包中的动态特性。</p>
+</blockquote>
+<h2 id="基于静态编译构建微服务"><a href="#基于静态编译构建微服务" class="headerlink" title="基于静态编译构建微服务"></a>基于静态编译构建微服务</h2><blockquote>
+<p>Spring Cloud Alibaba 2022.0.0.0 版本所包含的所有中间件客户端已完成了构建 GraalVM 原生应用的适配。为用户提供了开箱即用的静态编译能力。</p>
+</blockquote>
+<h3 id="环境准备"><a href="#环境准备" class="headerlink" title="环境准备"></a>环境准备</h3><ol>
+<li>安装 GraalVM 发行版。（windows安装可参考：<a href="https://medium.com/graalvm/using-graalvm-and-native-image-on-windows-10-9954dc071311">Using GraalVM and Native Image on Windows 10</a>）</li>
+<li>检查 java -version 的输出来验证是否配置了正确的版本。</li>
+</ol>
+<blockquote>
+<p>建议不要使用Windows。</p>
+</blockquote>
+<h3 id="应用构建"><a href="#应用构建" class="headerlink" title="应用构建"></a>应用构建</h3><ol>
+<li>要使用 GraalVM 静态编译能力构建微服务，首先确保项目的<code>Spring Boot</code>版本为<code>3.0.0</code>或以上<code>Spring Cloud</code>版本为<code>2022.0.0</code>或以上。然后在项目中引入<code>Spring Cloud Alibaba 2022.0.0.0</code>版本的所需模块依赖即可。</li>
+<li>通过maven命令生成应用中反射、序列化和动态代理所需的 Hints 配置文件：<code>mvn -Pnative spring-boot:run</code>（前提是应用中引入了<code>spring-boot-starter-parent</code>父模块）</li>
+<li>之后应用会启动，进行预执行，需要尽可能完整的测试一遍应用的所有功能，保证应用的大部分代码都被测试用例覆盖，该过程会基于 GraalVM 的 native-image-agent 收集程序中的动态特性，这样可以确保完整生成应用运行过程中的所有必须的动态属性。</li>
+<li>运行完所有测试用例后，我们发现<code>resource/META-INF/native-image</code>目录下会生成以下一些<code>hints</code>文件:<ul>
+<li>resource-config.json：应用中资源 hint 文件</li>
+<li>reflect-config.json：应用中反射定义 hint 文件</li>
+<li>serialization-config.json：应用中序列化内容 hint 文件</li>
+<li>proxy-config.json：应用中 Java 代理相关内容 hint 文件</li>
+<li>jni-config.json：应用中 Java Native Interface（JNI）内容 hint 文件</li>
+</ul>
+</li>
+</ol>
+<blockquote>
+<p>上述预执行过程主要为了扫描应用自身业务代码以及其他第三方包中的动态特性，以便后续静态编译过程能顺利进行，应用能正常启动。</p>
+<p>如果没有使用动态特性，可直接进行下一步。</p>
+</blockquote>
+<h3 id="静态编译"><a href="#静态编译" class="headerlink" title="静态编译"></a>静态编译</h3><p>通过maven命令来构建原生镜像：<code>mvn -Pnative native:compile</code><br>成功执行后，可在<code>/target</code>目录看到生成的可执行文件。</p>
+<h3 id="执行可执行文件"><a href="#执行可执行文件" class="headerlink" title="执行可执行文件"></a>执行可执行文件</h3><p>进入<code>/target</code>，命令行输入<code>./&lt;可执行文件名称&gt;</code>，即可发现项目被光速启动了。</p>
+<blockquote>
+<p>这是真TM快啊！</p>
+</blockquote>
+]]></content>
+      <categories>
+        <category>后端开发</category>
+        <category>语言</category>
+        <category>Java</category>
+      </categories>
+      <tags>
+        <tag>JAVA</tag>
+        <tag>JDK</tag>
+        <tag>AOT</tag>
+        <tag>JIT</tag>
+        <tag>GraalVM</tag>
+        <tag>运行时编译</tag>
+        <tag>及时编译</tag>
+        <tag>静态编译</tag>
+        <tag>静态分析</tag>
+        <tag>提前编译</tag>
+        <tag>字节码</tag>
+        <tag>冷启动问题</tag>
+        <tag>native image</tag>
+        <tag>Substrate VM</tag>
+        <tag>Substrate VM运行时</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>JVM各类图示</title>
+    <url>/2024/03/28/backend/language/java/JVM/</url>
+    <content><![CDATA[<p>JVM主要分为三大模块内容：<br><strong>类加载器</strong>、<strong>运行时数据区</strong>和<strong>执行引擎</strong>。</p>
+<p>示意图：<br><img src="/2024/03/28/backend/language/java/JVM/%E4%B8%89%E5%A4%A7%E6%A8%A1%E5%9D%97.png"></p>
+<h1 id="类加载"><a href="#类加载" class="headerlink" title="类加载"></a>类加载</h1><p>类加载过程：<br><img src="/2024/03/28/backend/language/java/JVM/%E7%B1%BB%E5%8A%A0%E8%BD%BD%E8%BF%87%E7%A8%8B.svg"></p>
+<p>类加载器：<br><img src="/2024/03/28/backend/language/java/JVM/%E7%B1%BB%E5%8A%A0%E8%BD%BD%E5%99%A8.svg"></p>
+<h1 id="运行时数据区"><a href="#运行时数据区" class="headerlink" title="运行时数据区"></a>运行时数据区</h1><p>栈帧：<br><img src="/2024/03/28/backend/language/java/JVM/%E6%A0%88%E5%B8%A7.svg"></p>
+]]></content>
+      <categories>
+        <category>后端开发</category>
+        <category>语言</category>
+        <category>Java</category>
+      </categories>
+      <tags>
+        <tag>Java</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Shell：基础篇</title>
+    <url>/2024/03/21/backend/language/shell/shell1/</url>
+    <content><![CDATA[<h1 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h1><p>Shell 是计算机操作系统中的一个重要组成部分，尤其在类Unix系统（如Linux、BSD等）以及早期的MS-DOS等系统中扮演着核心角色。</p>
+<p><strong>Shell 是一种命令行界面（CLI）程序，通常被称为命令解释器，它是用户与操作系统内核之间交互的接口或桥梁。</strong></p>
+<blockquote>
+<p>命令行界面（CLI）程序是一种软件应用程序，它专为通过字符界面与用户交互而设计，用户通过键盘输入特定的文本命令及其相关参数来进行操作。在CLI程序中，没有图形元素，如窗口、按钮或菜单，所有的交互完全依赖于文本命令和响应。</p>
+</blockquote>
+<p>具体而言，Shell 主要具有以下几个特点和功能：</p>
+<ul>
+<li><strong>命令解释器</strong>：Shell 接收用户通过键盘输入的命令，解析这些命令并将其转换成内核能理解的操作请求。</li>
+<li><strong>脚本语言</strong>：Shell 不仅允许用户输入单个命令，还支持编写包含一系列命令和控制结构的脚本文件（称为Shell脚本或Shell程序）。这些脚本可以实现自动化任务，简化重复性工作，或是构建复杂的系统管理流程。</li>
+<li>用户交互：Shell 提供了交互式的命令行环境，用户可以在提示符下实时输入和执行命令，获取即时反馈。</li>
+<li>环境配置：Shell 可以设置和管理用户的环境变量，影响程序的行为和系统环境配置。</li>
+<li>I&#x2F;O重定向与管道：Shell 允许用户将命令的标准输入、输出重定向至文件或其他命令，同时支持通过管道（|）连接多个命令，形成数据流式处理。</li>
+<li>命令扩展与别名：Shell 可以为命令添加额外的便利功能，比如命令补全、命令历史记录，以及定义命令别名等。</li>
+</ul>
+<p>流行的Shell有多种，例如<strong>Bash（Bourne-Again SHell）</strong>、sh（Bourne Shell）、csh（C Shell）、zsh（Z Shell）等。其中，bash在大多数Linux发行版中被用作默认的登录Shell。</p>
+<h1 id="运行"><a href="#运行" class="headerlink" title="运行"></a>运行</h1><p>运行 Shell 脚本有多种方法：</p>
+<ol>
+<li><strong>作为可执行程序运行</strong>：<strong>直接执行</strong>，需有执行权限，<ul>
+<li>确保脚本文件的第一行包含了正确的Shebang（#!），例如 #!&#x2F;bin&#x2F;bash 或 #!&#x2F;usr&#x2F;bin&#x2F;env bash，用于指定解释此脚本的Shell版本。</li>
+<li>给脚本添加执行权限：<code>chmod +x script.sh</code></li>
+<li>使用相对路径或绝对路径执行：相对路径<code>./script.sh</code>；绝对路径<code>/path/to/script.sh</code>。</li>
+</ul>
+</li>
+<li><strong>作为解释器参数</strong>：<ul>
+<li>如<code>bash script.sh</code></li>
+<li>即使脚本没有执行权限，也可以通过明确指定解释器来执行</li>
+</ul>
+</li>
+<li>source命令：当希望脚本中的环境变量更改、函数定义等对当前Shell会话生效时，可以使用source命令。<ul>
+<li>如<code>source script.sh</code></li>
+</ul>
+</li>
+</ol>
+<h1 id="语法"><a href="#语法" class="headerlink" title="语法"></a>语法</h1><h2 id="变量"><a href="#变量" class="headerlink" title="变量"></a>变量</h2><p>在Shell中定义变量非常直观且简单，无需事先声明变量类型，<strong>只需给变量分配一个值即可完成定义</strong>。<br>如<code>name=&quot;chilun&quot;</code>，即定义了一个变量name为字符串“chilun”。</p>
+<h3 id="变量命名规则"><a href="#变量命名规则" class="headerlink" title="变量命名规则"></a>变量命名规则</h3><ul>
+<li><strong>只包含字母、数字和下划线</strong>： 变量名可以包含字母（大小写敏感）、数字和下划线 _，不能包含其他特殊字符。</li>
+<li><strong>不能以数字开头</strong>： 变量名不能以数字开头，但可以包含数字。</li>
+<li><strong>避免使用 Shell 关键字</strong>： 不要使用Shell的关键字（例如 if、then、else、fi、for、while 等）作为变量名，以免引起混淆。</li>
+<li>使用大写字母表示常量： 习惯上，常量的变量名通常使用大写字母，例如 PI&#x3D;3.14。</li>
+</ul>
+<h3 id="定义变量"><a href="#定义变量" class="headerlink" title="定义变量"></a>定义变量</h3><ol>
+<li><strong>直接赋值</strong>：通过等号（&#x3D;）来给变量赋值，注意变量名和等号之间不能有空格。<ul>
+<li><code>name=&quot;chilun&quot;</code>：将“chilun”字符串赋给变量 name。</li>
+</ul>
+</li>
+<li><strong>语句赋值</strong>：可使用for循环等语句对变量进行赋值。<ul>
+<li><code>for file in $(ls /etc) </code>：将 &#x2F;etc 目录下的所有文件和目录名逐个赋值给变量 file。</li>
+</ul>
+</li>
+<li><strong>命令赋值</strong>：可使用标准输入读取命令等对变量进行赋值。<ul>
+<li><code>read -p &quot;请输入你的名字: &quot; name</code>：用户输入的名字会被赋值给变量 name。</li>
+</ul>
+</li>
+<li><strong>定义变量</strong>：使用<code>declare</code>或<code>typeset</code>命令定义变量时可以指定变量的类型（如整型、数组等）。<ul>
+<li><code>declare -i age=30</code>：定义一个整数类型的变量age并赋值为30。</li>
+</ul>
+</li>
+<li><strong>计算变量</strong>：使用<code>let</code>命令执行简单的算术运算并赋值给变量。<ul>
+<li><code>let b=a+1</code>：将b赋值为a+1后的整数；如果直接<code>b=a+1</code>，b会被赋值为“a+1”的字符串。</li>
+</ul>
+</li>
+<li><strong>定义环境变量</strong>：使用<code>export</code>命令可以定义环境变量，在子shell进程中变量也能被访问。<ul>
+<li><code>export PATH=$PATH:/usr/local/bin</code>：将新的路径添加到已存在的PATH环境变量中。</li>
+</ul>
+</li>
+<li><strong>删除变量</strong>：使用<code>unset</code>命令删除已定义的变量。<ul>
+<li><code>unset name</code>：删除变量name。</li>
+</ul>
+</li>
+<li><strong>只读变量</strong>：使用<code>readonly</code>命令可以将变量定义为只读变量，只读变量的值不能被改变，不能被删除。<ul>
+<li><code>readonly name</code>：之后再修改就会报错：<code>name: readonly variable</code>。</li>
+</ul>
+</li>
+</ol>
+<h3 id="使用变量"><a href="#使用变量" class="headerlink" title="使用变量"></a>使用变量</h3><p>使用一个定义过的变量，只要在变量名前面加美元符号即可。<br>变量名外面的花括号是可选的，加不加都行，加花括号是为了帮助解释器识别变量的边界（推荐给所有变量加上花括号）。</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><code class="hljs shell">name=&quot;chilun&quot;<br>echo $name<br>echo $&#123;name&#125;<br></code></pre></td></tr></table></figure>
+<p>输出为：</p>
+<blockquote>
+<p>chilun<br>chilun</p>
+</blockquote>
+<h3 id="变量类型"><a href="#变量类型" class="headerlink" title="变量类型"></a>变量类型</h3><p>Shell 支持不同类型的变量。</p>
+<h4 id="字符串变量"><a href="#字符串变量" class="headerlink" title="字符串变量"></a>字符串变量</h4><p>在 Shell中，变量通常被视为字符串。<br>在Bash中，所有变量值本质上都是字符串。即使一个变量可用于数值计算，其在内部依旧是以字符串的形式存储的，只是在进行算术运算时进行了相应的转换和处理。<br>可使用单引号或双引号来定义字符串，比如：<code>a=&#39;Hello, World!&#39;</code>或者<code>b=&quot;Hello, World!&quot;</code>。</p>
+<p>当直接赋值一个不包含变量扩展、算术扩展或其他形式扩展的纯文本给一个变量时，Bash也会将这个值当作字符串来处理，如<code>c=hello,World!</code>。<br>（当设置一个变量时，其值默认被视为一个整体，直到遇到第一个未经转义的特殊字符为止。如果<code>c=hello, World!</code>就会报错，因为存在空格，空格是Bash解析命令行参数时的分隔符，会导致Bash会尝试将<code>hello,</code>、<code>World!</code>视为不同的参数。）</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><code class="hljs shell"><span class="hljs-meta prompt_">#</span><span class="language-bash">!/bin/bash</span><br>a=&#x27;Hello, World!&#x27;<br>b=&quot;Hello, World!&quot;<br>c=hello,World!<br>echo $&#123;a&#125; $&#123;b&#125; $&#123;c&#125; <br></code></pre></td></tr></table></figure>
+
+<p>输出结果为：</p>
+<blockquote>
+<p>Hello, World! Hello, World! hello,World!</p>
+</blockquote>
+<h4 id="整数变量"><a href="#整数变量" class="headerlink" title="整数变量"></a>整数变量</h4><p>可以使用 declare 或 typeset 命令来声明整数变量。<br>这样的变量只包含整数值，例如：<code>declare -i a=42</code>。<br>这样的声明告诉Shell将a视为整数，如果尝试将非整数值赋给它，Shell会尝试将其转换为整数。</p>
+<p>示例：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><code class="hljs shell"><span class="hljs-meta prompt_">#</span><span class="language-bash">!/bin/bash</span><br>a=42<br>declare -i b=a+1<br>echo $&#123;b&#125;<br></code></pre></td></tr></table></figure>
+<p>输出为：</p>
+<blockquote>
+<p>43</p>
+</blockquote>
+<p>（如果不声明为整数，b就会被看做是“a+1”的字符串。）</p>
+<h4 id="数组变量"><a href="#数组变量" class="headerlink" title="数组变量"></a>数组变量</h4><p>Shell 支持数组，允许在一个变量中存储多个值。括号用来表示数组，数组元素用”空格”符号分割开。<br>数组可以是<strong>整数索引数组</strong>或<strong>关联数组</strong>：</p>
+<ul>
+<li>整数索引数组：<code>array1=(1 2 3 4 5)</code></li>
+<li>关联数组：<figure class="highlight shell"><table><tr><td class="code"><pre><code class="hljs shell">declare -A array2<br>array2[&#x27;he&#x27;]=&quot;wor&quot;<br>array2[&#x27;llo,&#x27;]=&quot;ld!&quot;<br></code></pre></td></tr></table></figure></li>
+</ul>
+<p>示例：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><code class="hljs shell">array1=(1 2 3 4 5)<br>echo $&#123;array1[0]&#125; $&#123;array1[1]&#125; $&#123;array1[2]&#125; $&#123;array1[3]&#125; $&#123;array1[4]&#125;<br>declare -A array2<br>array2[&#x27;he&#x27;]=&quot;wor&quot;<br>array2[&#x27;llo,&#x27;]=&quot;ld!&quot;<br>echo $&#123;array2[&#x27;he&#x27;]&#125;$&#123;array2[&#x27;llo,&#x27;]&#125;<br></code></pre></td></tr></table></figure>
+<p>输出为：</p>
+<blockquote>
+<p>1 2 3 4 5<br>world!</p>
+</blockquote>
+<blockquote>
+<p>未完待续……</p>
+</blockquote>
+<h2 id="字符串"><a href="#字符串" class="headerlink" title="字符串"></a>字符串</h2><p>字符串可以用单引号，也可以用双引号，也可以不用引号。</p>
+<h3 id="单引号"><a href="#单引号" class="headerlink" title="单引号"></a>单引号</h3><p>单引号里的任何字符都会原样输出，单引号字符串中的变量是无效的。</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><code class="hljs shell"><span class="hljs-meta prompt_">#</span><span class="language-bash">!/bin/bash</span><br>a=chilun<br>echo &#x27;$&#123;a&#125;&#x27;<br></code></pre></td></tr></table></figure>
+<p>输出为：</p>
+<blockquote>
+<p>${a}</p>
+</blockquote>
+<p>由于单引号里的任何字符都会原样输出，所以单引号字符串中无法输出单引号（不支持转义），但可成对出现，作为字符串拼接使用。</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><code class="hljs shell"><span class="hljs-meta prompt_">#</span><span class="language-bash">!/bin/bash</span><br>a=chilun<br>echo &#x27;$&#123;a&#125;&#x27;&#x27;$&#123;a&#125;&#x27;<br></code></pre></td></tr></table></figure>
+<p>输出为：</p>
+<blockquote>
+<p>${a}${a}</p>
+</blockquote>
+<h3 id="双引号"><a href="#双引号" class="headerlink" title="双引号"></a>双引号</h3><p>双引号字符串支持变量展开和转义字符。</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><code class="hljs shell"><span class="hljs-meta prompt_">#</span><span class="language-bash">!/bin/bash</span><br>a=chilun<br>echo &quot;$&#123;a&#125;&quot;&quot;\$&#123;a&#125;&quot;<br></code></pre></td></tr></table></figure>
+<p>输出为：</p>
+<blockquote>
+<p>chilun${a}</p>
+</blockquote>
+<h3 id="字符串操作"><a href="#字符串操作" class="headerlink" title="字符串操作"></a>字符串操作</h3><h4 id="获得长度"><a href="#获得长度" class="headerlink" title="获得长度"></a>获得长度</h4><p>使用&#96;$</p>
+]]></content>
+      <categories>
+        <category>后端开发</category>
+        <category>语言</category>
+        <category>shell</category>
+      </categories>
+      <tags>
+        <tag>Linux</tag>
+        <tag>Shell</tag>
+        <tag>CLI</tag>
+        <tag>Bash</tag>
+        <tag>Bourne-Again SHell</tag>
+        <tag>变量</tag>
+        <tag>字符串</tag>
+        <tag>数组</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>canal入门篇：2.实现MySQL&amp;Redis双写一致性</title>
+    <url>/2024/03/06/backend/middleware/canal/canal_MySQL&amp;Redis/</url>
+    <content><![CDATA[<p>本文将介绍如何使用canal实现MySQl和Redis的双写一致性。前文为：<a href="/2024/03/06/backend/middleware/canal/canal_config/" title="canal入门篇：1.介绍&amp;配置&amp;启动">canal入门篇：1.介绍&amp;配置&amp;启动</a>。</p>
+<blockquote>
+<p><a href="https://github.com/shoumingchilun/API_OPEN_SPACE_CANAL">github仓库链接</a></p>
+</blockquote>
+<h1 id="canalAPI讲解"><a href="#canalAPI讲解" class="headerlink" title="canalAPI讲解"></a>canalAPI讲解</h1><p>本文将使用SpringBoot框架搭建一个应用，通过canal获得数据库的更改消息，并将发生变更的实体同步更新到Redis中。</p>
+<h2 id="优点"><a href="#优点" class="headerlink" title="优点"></a>优点</h2><p>使用canal的好处：</p>
+<ol>
+<li><strong>透明性与低侵入</strong>：使用 Canal 通常不需要对既有业务逻辑进行大规模改造，因为它作为独立的服务组件，可以透明地监听和处理数据库的变化，将更新事件推送给相应的缓存系统，实现数据同步，降低了对业务代码的入侵性。</li>
+<li><strong>扩展性与灵活性</strong>：Canal 支持多种数据源以及不同的消费方式，可以根据实际需求构建灵活的消息处理和分发机制。它可以与各种消息队列或数据处理系统集成，实现复杂的数据同步和多级缓存更新。</li>
+<li><strong>可靠性</strong>：由于 Canal 是基于 MySQL 的主从复制协议设计的，它继承了数据库层面的数据可靠性保障。同时，消息投递失败时（未进行ACK）可以通过重试机制确保最终一致性，而且可以支持幂等处理，避免重复消费造成的问题。</li>
+</ol>
+<h2 id="类说明"><a href="#类说明" class="headerlink" title="类说明"></a>类说明</h2><h3 id="canal-Client"><a href="#canal-Client" class="headerlink" title="canal Client"></a>canal Client</h3><p>先介绍一下canal Client相关的一些配置类：</p>
+<ul>
+<li><strong>ClientIdentity</strong>：canal client和server交互之间的身份标识。</li>
+<li><strong>CanalConnector</strong>：SimpleCanalConnector&#x2F;ClusterCanalConnector是两种connector的实现。simple针对的是简单的ip直连模式，cluster针对多ip的模式，可依赖CanalNodeAccessStrategy进行failover控制。（确保 Canal 在发生故障时能够无缝地切换到备份节点或者恢复服务，暂时不关注）</li>
+<li><strong>CanalNodeAccessStrategy</strong>：SimpleNodeAccessStrategy&#x2F;ClusterNodeAccessStrategy是两种failover的实现。simple针对给定的初始ip列表进行failover选择，cluster基于zookeeper上的cluster节点动态选择正在运行的canal server。（暂时不关注）</li>
+</ul>
+<p>然后即可从<code>connector</code>中通过<code>get</code>&#x2F;<code>getWithoutAck</code>获得的<code>Message</code>的这个类，该类主要的功能就是使用<code>getEntries</code>函数获得包装好的<code>List&lt;Entry&gt;</code>对象。</p>
+<h3 id="Entry"><a href="#Entry" class="headerlink" title="Entry"></a>Entry</h3><p>介绍一下Entry、RowChange、rowdata、column的概念。</p>
+<ol>
+<li><strong>Entry</strong>：Entry 是 Canal 解析 MySQL Binlog 后产生的基本单元，它<strong>代表了Binlog中的一条记录</strong>。每个Entry对象对应了MySQL数据库的一个事务或一个GTID事件（如果启用了GTID）。Entry包含了事务的相关元数据如执行时间、事务ID等，以及实际的数据库更改内容。</li>
+<li><strong>RowChange</strong>： RowChange 是更进一步封装的事件变更细节，它描述了<strong>一次数据库表级别的行级别数据变化</strong>。一个RowChange对象对应binlog中的一次行变更事件，它可以包含多行数据的插入、更新或删除操作。</li>
+<li><strong>RowData</strong>：RowData 表示<strong>单行数据的变更内容</strong>。对于RowChange中的每一次行操作（insert&#x2F;update&#x2F;delete），都会有对应的RowData对象来具体描述变更前后的列值信息。<ol>
+<li>RowData有两个重要的字段：<ul>
+<li>beforeColumnsList：在UPDATE或DELETE事件中，存储的是变更前的列数据集合。</li>
+<li>afterColumnsList：在INSERT或UPDATE事件中，存储的是变更后的列数据集合。</li>
+</ul>
+</li>
+<li>对于INSERT、UPDATE和DELETE事件，其表现形式不同：<ul>
+<li>INSERT事件：RowData会包含这一行插入后的所有列值。</li>
+<li>UPDATE事件：RowData包含两部分，即变更前的列值（beforeColumns）和变更后的列值（afterColumns）。</li>
+<li>DELETE事件：RowData仅包含被删除前的那一行的所有列值。</li>
+</ul>
+</li>
+</ol>
+</li>
+<li><strong>Column</strong>：Column 对象更加细致地表示了数据库表中某一列的数据变化情况，包括列名、列值、是否为空、是否是主键等属性信息。在RowData的beforeColumns和afterColumns列表中，每一项就是一个Column对象。</li>
+</ol>
+<h3 id="解析Entry"><a href="#解析Entry" class="headerlink" title="解析Entry"></a>解析Entry</h3><p>在获得一个<code>List&lt;Entry&gt;</code>后，我们需要对其中每个条目进行逐步解析：</p>
+<ol>
+<li><strong>判断类型</strong>：通过调用<code>getEntryType()</code>获得该<code>Entry</code>的<code>EntryType</code>，常见的类型有**事务开始(BEGIN)、事务结束(COMMIT)、行数据(ROWDATA)**等。</li>
+<li>对于 <strong>ROWDATA 类型</strong>的 Entry，可以从中提取 <strong>RowChange 对象</strong>（包含了数据库行级别的变更详情）：通过调用<code>CanalEntry.RowChange.parseFrom(entry.getStoreValue())</code>获得 RowChange 对象。</li>
+<li>获得 RowChange 对象后，可根据<code>EventType</code>获得具体操作的类型，如<code>INSERT</code>、<code>UPDATE</code>、<code>ALTER</code>等，如： <code>rowChage.getEventType()==EventType.DELETE</code>。</li>
+<li>可从 <code>RowChange</code> 对象中获得 <code>RowData</code> 对象，并从后者中获得一行数据变更前的状态和变更后的状态，再从中获得单独的<code>column</code>进行解析： <figure class="highlight java"><table><tr><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">for</span> (RowData rowData : rowChage.getRowDatasList()) &#123;<br>    rowData.getBeforeColumnsList().forEach(column -&gt; System.out.println(column.getName() + <span class="hljs-string">&quot; : &quot;</span> + column.getValue()));<br>    rowData.getAfterColumnsList().forEach(column -&gt; System.out.println(column.getName() + <span class="hljs-string">&quot; : &quot;</span> + column.getValue()));<br></code></pre></td></tr></table></figure></li>
+</ol>
+<h1 id="实现双写一致性"><a href="#实现双写一致性" class="headerlink" title="实现双写一致性"></a>实现双写一致性</h1><p>（省略启动类）</p>
+<h2 id="添加依赖"><a href="#添加依赖" class="headerlink" title="添加依赖"></a>添加依赖</h2><p>需要添加Springboot和连接Redis、canal的依赖。<br>pom.xml：</p>
+<figure class="highlight xml"><table><tr><td class="code"><pre><code class="hljs xml"><span class="hljs-tag">&lt;<span class="hljs-name">dependencyManagement</span>&gt;</span><br>    <span class="hljs-tag">&lt;<span class="hljs-name">dependencies</span>&gt;</span><br>        <span class="hljs-tag">&lt;<span class="hljs-name">dependency</span>&gt;</span><br>            <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>org.springframework.boot<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span><br>            <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>spring-boot-dependencies<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span><br>            <span class="hljs-tag">&lt;<span class="hljs-name">version</span>&gt;</span>2.7.9<span class="hljs-tag">&lt;/<span class="hljs-name">version</span>&gt;</span><br>            <span class="hljs-tag">&lt;<span class="hljs-name">type</span>&gt;</span>pom<span class="hljs-tag">&lt;/<span class="hljs-name">type</span>&gt;</span><br>            <span class="hljs-tag">&lt;<span class="hljs-name">scope</span>&gt;</span>import<span class="hljs-tag">&lt;/<span class="hljs-name">scope</span>&gt;</span><br>        <span class="hljs-tag">&lt;/<span class="hljs-name">dependency</span>&gt;</span><br>    <span class="hljs-tag">&lt;/<span class="hljs-name">dependencies</span>&gt;</span><br><span class="hljs-tag">&lt;/<span class="hljs-name">dependencyManagement</span>&gt;</span><br><span class="hljs-tag">&lt;<span class="hljs-name">dependencies</span>&gt;</span><br>    <span class="hljs-tag">&lt;<span class="hljs-name">dependency</span>&gt;</span><br>        <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>org.springframework.boot<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span><br>        <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>spring-boot-starter-web<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span><br>    <span class="hljs-tag">&lt;/<span class="hljs-name">dependency</span>&gt;</span><br>    <span class="hljs-tag">&lt;<span class="hljs-name">dependency</span>&gt;</span><br>        <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>org.springframework.boot<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span><br>        <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>spring-boot-starter-data-redis<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span><br>    <span class="hljs-tag">&lt;/<span class="hljs-name">dependency</span>&gt;</span><br>    <span class="hljs-tag">&lt;<span class="hljs-name">dependency</span>&gt;</span><br>        <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>com.alibaba.otter<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span><br>        <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>canal.client<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span><br>        <span class="hljs-tag">&lt;<span class="hljs-name">version</span>&gt;</span>1.1.0<span class="hljs-tag">&lt;/<span class="hljs-name">version</span>&gt;</span><br>    <span class="hljs-tag">&lt;/<span class="hljs-name">dependency</span>&gt;</span><br><span class="hljs-tag">&lt;/<span class="hljs-name">dependencies</span>&gt;</span><br></code></pre></td></tr></table></figure>
+
+<h2 id="注册CanalConnector-Bean"><a href="#注册CanalConnector-Bean" class="headerlink" title="注册CanalConnector Bean"></a>注册CanalConnector Bean</h2><p>使用配置文件注入依赖。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><code class="hljs java"><span class="hljs-meta">@Configuration</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">CanalConfig</span> &#123;<br>    <span class="hljs-meta">@Value(&quot;$&#123;mycanal.hostname&#125;&quot;)</span><br>    <span class="hljs-keyword">private</span> String hostname;<br>    <span class="hljs-meta">@Value(&quot;$&#123;mycanal.port&#125;&quot;)</span><br>    <span class="hljs-keyword">private</span> Integer port;<br>    <span class="hljs-meta">@Value(&quot;$&#123;mycanal.destination&#125;&quot;)</span><br>    <span class="hljs-keyword">private</span> String destination;<br>    <span class="hljs-meta">@Value(&quot;$&#123;mycanal.username&#125;&quot;)</span><br>    <span class="hljs-keyword">private</span> <span class="hljs-type">String</span> <span class="hljs-variable">username</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;&quot;</span>;<br>    <span class="hljs-meta">@Value(&quot;$&#123;mycanal.password&#125;&quot;)</span><br>    <span class="hljs-keyword">private</span> <span class="hljs-type">String</span> <span class="hljs-variable">password</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;&quot;</span>;<br><br><br>    <span class="hljs-meta">@Bean</span><br>    <span class="hljs-keyword">public</span> CanalConnector <span class="hljs-title function_">createCanalConnector</span><span class="hljs-params">()</span> &#123;<br>        <span class="hljs-keyword">return</span> CanalConnectors.newSingleConnector(<span class="hljs-keyword">new</span> <span class="hljs-title class_">InetSocketAddress</span>(hostname,<br>                port), destination, username, password);<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>配置文件application.yml：</p>
+<figure class="highlight dts"><table><tr><td class="code"><pre><code class="hljs dts"><span class="hljs-symbol">mycanal:</span><br><span class="hljs-symbol">  hostname:</span> <span class="hljs-number">192.168</span><span class="hljs-number">.146</span><span class="hljs-number">.132</span><br><span class="hljs-symbol">  port:</span> <span class="hljs-number">11111</span><br><span class="hljs-symbol">  destination:</span> example<br><span class="hljs-symbol">  username:</span><br><span class="hljs-symbol">  password:</span><br></code></pre></td></tr></table></figure>
+
+<h2 id="设置Redis转码方式"><a href="#设置Redis转码方式" class="headerlink" title="设置Redis转码方式"></a>设置Redis转码方式</h2><figure class="highlight java"><table><tr><td class="code"><pre><code class="hljs java"><span class="hljs-meta">@Configuration</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">RedisConfig</span> &#123;<br>    <span class="hljs-meta">@Bean</span><br>    <span class="hljs-keyword">public</span> RedisTemplate&lt;String, Object&gt; <span class="hljs-title function_">redisTemplate</span><span class="hljs-params">(LettuceConnectionFactory lettuceConnectionFactory)</span> &#123;<br>        RedisTemplate&lt;String, Object&gt; redisTemplate = <span class="hljs-keyword">new</span> <span class="hljs-title class_">RedisTemplate</span>&lt;&gt;();<br><br>        redisTemplate.setConnectionFactory(lettuceConnectionFactory);<br>        <span class="hljs-comment">//设置key序列化方式string</span><br>        redisTemplate.setKeySerializer(<span class="hljs-keyword">new</span> <span class="hljs-title class_">StringRedisSerializer</span>());<br>        <span class="hljs-comment">//设置value的序列化方式json，使用GenericJackson2JsonRedisSerializer替换默认序列化</span><br>        redisTemplate.setValueSerializer(<span class="hljs-keyword">new</span> <span class="hljs-title class_">GenericJackson2JsonRedisSerializer</span>());<br>        redisTemplate.setHashKeySerializer(<span class="hljs-keyword">new</span> <span class="hljs-title class_">StringRedisSerializer</span>());<br>        redisTemplate.setHashValueSerializer(<span class="hljs-keyword">new</span> <span class="hljs-title class_">GenericJackson2JsonRedisSerializer</span>());<br><br>        redisTemplate.afterPropertiesSet();<br>        <span class="hljs-keyword">return</span> redisTemplate;<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p>补充：如果使用GenericJackson2JsonRedisSerializer充当序列化&#x2F;反序列化工具的话<code>redisTemplate.setValueSerializer(new GenericJackson2JsonRedisSerializer());</code>，请保证各组件内类名一致（包含包路径）。</p>
+</blockquote>
+<h2 id="创建实体类"><a href="#创建实体类" class="headerlink" title="创建实体类"></a>创建实体类</h2><p>Redis中value对应的实体。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><code class="hljs java"><span class="hljs-meta">@Data</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">InterfaceAccess</span> <span class="hljs-keyword">implements</span> <span class="hljs-title class_">Serializable</span> &#123;<br>    <span class="hljs-keyword">private</span> String accesskey;<br>    <span class="hljs-keyword">private</span> Integer verifyType;<br>    <span class="hljs-keyword">private</span> String secretkey;<br>    <span class="hljs-keyword">private</span> BigDecimal remainingAmount;<br>    <span class="hljs-keyword">private</span> Integer remainingTimes;<br>    <span class="hljs-keyword">private</span> Long interfaceId;<br>    <span class="hljs-keyword">private</span> Long userid;<br>    <span class="hljs-keyword">private</span> Integer callTimes;<br>    <span class="hljs-keyword">private</span> Integer failedCallTimes;<br>    <span class="hljs-keyword">private</span> Date createTime;<br>    <span class="hljs-keyword">private</span> Date updateTime;<br>    <span class="hljs-keyword">private</span> Integer isDeleted;<br>    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-type">long</span> <span class="hljs-variable">serialVersionUID</span> <span class="hljs-operator">=</span> <span class="hljs-number">1L</span>;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h2 id="设计Redis服务接口并实现"><a href="#设计Redis服务接口并实现" class="headerlink" title="设计Redis服务接口并实现"></a>设计Redis服务接口并实现</h2><figure class="highlight java"><table><tr><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">interface</span> <span class="hljs-title class_">RedisService</span> &#123;<br>    <span class="hljs-type">String</span> <span class="hljs-variable">ACCESS_PREFIX</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;InterfaceAccess_&quot;</span>;<br>    <span class="hljs-keyword">void</span> <span class="hljs-title function_">updateInterfaceAccess</span><span class="hljs-params">(InterfaceAccess interfaceAccess)</span>;<br>    <span class="hljs-keyword">void</span> <span class="hljs-title function_">deleteInterfaceAccess</span><span class="hljs-params">(InterfaceAccess interfaceAccess)</span>;<br>&#125;<br><br><span class="hljs-meta">@Service</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">RedisServiceImpl</span> <span class="hljs-keyword">implements</span> <span class="hljs-title class_">RedisService</span> &#123;<br>    <span class="hljs-meta">@Resource</span><br>    <span class="hljs-keyword">private</span> RedisTemplate&lt;String, InterfaceAccess&gt; redisTemplate;<br><br>    <span class="hljs-meta">@Override</span><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">updateInterfaceAccess</span><span class="hljs-params">(InterfaceAccess interfaceAccess)</span> &#123;<br>        redisTemplate.opsForValue().set(RedisService.ACCESS_PREFIX + interfaceAccess.getAccesskey(), interfaceAccess, <span class="hljs-number">2</span>, TimeUnit.MINUTES);<br>    &#125;<br><br>    <span class="hljs-meta">@Override</span><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">deleteInterfaceAccess</span><span class="hljs-params">(InterfaceAccess interfaceAccess)</span> &#123;<br>        redisTemplate.delete(RedisService.ACCESS_PREFIX + interfaceAccess.getAccesskey());<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h2 id="创建CanalMessageHandler类"><a href="#创建CanalMessageHandler类" class="headerlink" title="创建CanalMessageHandler类"></a>创建CanalMessageHandler类</h2><p>使用ApplicationRunner接口实现容器启动后开始监听。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><code class="hljs java"><span class="hljs-meta">@Slf4j</span><br><span class="hljs-meta">@Component</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">CanalMessageHandler</span> <span class="hljs-keyword">implements</span> <span class="hljs-title class_">ApplicationRunner</span> &#123;<br>    <span class="hljs-meta">@Resource</span><br>    <span class="hljs-keyword">private</span> CanalConnector connector;<br><br>    <span class="hljs-meta">@Resource</span><br>    <span class="hljs-keyword">private</span> RedisService redisService;<br><br>    <span class="hljs-meta">@Override</span><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">run</span><span class="hljs-params">(ApplicationArguments args)</span> &#123;<br>        <span class="hljs-type">int</span> <span class="hljs-variable">batchSize</span> <span class="hljs-operator">=</span> <span class="hljs-number">1000</span>;<br>        <span class="hljs-comment">//空闲空转计数器</span><br>        <span class="hljs-type">int</span> <span class="hljs-variable">emptyCount</span> <span class="hljs-operator">=</span> <span class="hljs-number">0</span>;<br>        <span class="hljs-keyword">try</span> &#123;<br>            connector.connect();<br>            <span class="hljs-comment">// 监听api_open_platform数据库下的interface_access表</span><br>            connector.subscribe(<span class="hljs-string">&quot;api_open_platform.interface_access&quot;</span>);<br>            <span class="hljs-comment">// 回滚到未进行 ack 的地方，下次fetch的时候，可以从最后一个没有 ack 的地方开始拿</span><br>            connector.rollback();<br>            <span class="hljs-comment">// 如果3600s内没有监听到更改，则报错并停止运行</span><br>            <span class="hljs-type">int</span> <span class="hljs-variable">totalEmptyCount</span> <span class="hljs-operator">=</span> <span class="hljs-number">3600</span>;<br>            <span class="hljs-keyword">while</span> (emptyCount &lt; totalEmptyCount) &#123;<br>                System.out.println(<span class="hljs-string">&quot;正在监听canal Server: &quot;</span> + System.currentTimeMillis());<br>                <span class="hljs-type">Message</span> <span class="hljs-variable">message</span> <span class="hljs-operator">=</span> connector.getWithoutAck(batchSize); <span class="hljs-comment">// 获取指定数量的数据</span><br>                <span class="hljs-type">long</span> <span class="hljs-variable">batchId</span> <span class="hljs-operator">=</span> message.getId();<br>                <span class="hljs-type">int</span> <span class="hljs-variable">size</span> <span class="hljs-operator">=</span> message.getEntries().size();<br>                <span class="hljs-keyword">if</span> (batchId == -<span class="hljs-number">1</span> || size == <span class="hljs-number">0</span>) &#123;<br>                    emptyCount++;<br>                    <span class="hljs-keyword">try</span> &#123;<br>                        TimeUnit.SECONDS.sleep(<span class="hljs-number">1</span>);<br>                    &#125; <span class="hljs-keyword">catch</span> (InterruptedException e) &#123;<br>                        e.printStackTrace();<br>                    &#125;<br>                &#125; <span class="hljs-keyword">else</span> &#123;<br>                    <span class="hljs-comment">//计数器重新置零</span><br>                    emptyCount = <span class="hljs-number">0</span>;<br>                    handlerMessage(message.getEntries());<br>                &#125;<br>                connector.ack(batchId); <span class="hljs-comment">// 提交确认</span><br>                <span class="hljs-comment">// connector.rollback(batchId); // 处理失败, 回滚数据</span><br>            &#125;<br>            log.error(<span class="hljs-string">&quot;已经监听了&quot;</span> + totalEmptyCount + <span class="hljs-string">&quot;秒，无任何消息，请检查canal是否正常运行或连接是否成功......&quot;</span>);<br>        &#125; <span class="hljs-keyword">finally</span> &#123;<br>            connector.disconnect();<br>        &#125;<br>    &#125;<br><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">handlerMessage</span><span class="hljs-params">(List&lt;Entry&gt; entrys)</span> &#123;<br>        <span class="hljs-comment">//...</span><br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h2 id="实现handlerMessage方法"><a href="#实现handlerMessage方法" class="headerlink" title="实现handlerMessage方法"></a>实现handlerMessage方法</h2><p>对消息进行处理，并通过调用<code>RedisService</code>的方法同步到redis。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">handlerMessage</span><span class="hljs-params">(List&lt;Entry&gt; entrys)</span> &#123;<br>    <span class="hljs-type">ObjectMapper</span> <span class="hljs-variable">objectMapper</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">ObjectMapper</span>();<br>    <span class="hljs-type">SimpleDateFormat</span> <span class="hljs-variable">sdf</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">SimpleDateFormat</span>(<span class="hljs-string">&quot;yyyy-MM-dd HH:mm:ss&quot;</span>);<br>    <span class="hljs-keyword">for</span> (Entry entry : entrys) &#123;<br>        <span class="hljs-comment">//如果不是ROWDATA，则忽略</span><br>        <span class="hljs-keyword">if</span> (entry.getEntryType() != EntryType.ROWDATA) &#123;<br>            <span class="hljs-keyword">continue</span>;<br>        &#125;<br>        <span class="hljs-type">RowChange</span> <span class="hljs-variable">rowchange</span> <span class="hljs-operator">=</span> <span class="hljs-literal">null</span>;<br>        <span class="hljs-keyword">try</span> &#123;<br>            <span class="hljs-comment">//获取变更的row数据</span><br>            rowchange = CanalEntry.RowChange.parseFrom(entry.getStoreValue());<br>        &#125; <span class="hljs-keyword">catch</span> (Exception e) &#123;<br>            log.error(<span class="hljs-string">&quot;解析Entry获得RowChange失败：&quot;</span> + entry, e);<br>            <span class="hljs-keyword">return</span>;<br>        &#125;<br>        <span class="hljs-comment">//获取变动类型</span><br>        <span class="hljs-type">EventType</span> <span class="hljs-variable">eventType</span> <span class="hljs-operator">=</span> rowchange.getEventType();<br>        log.info(String.format(<span class="hljs-string">&quot;================binlog[%s:%s] , name[%s,%s] , eventType : %s&quot;</span>,<br>                entry.getHeader().getLogfileName(), entry.getHeader().getLogfileOffset(),<br>                entry.getHeader().getSchemaName(), entry.getHeader().getTableName(), eventType));<br><br>        <span class="hljs-keyword">for</span> (RowData rowData : rowchange.getRowDatasList()) &#123;<br>            <span class="hljs-comment">//由于使用逻辑删除，delete实现方式为将is_deleted属性设置为1，所以删除逻辑写在update中</span><br>            <span class="hljs-keyword">if</span> (eventType == EventType.UPDATE) &#123;<br>                <span class="hljs-comment">//可使用该方式查看各个index对应的列名是什么</span><br>                <span class="hljs-comment">//rowData.getAfterColumnsList().stream().forEach(column -&gt; &#123;</span><br>                <span class="hljs-comment">//    System.out.println(column.getName());</span><br>                <span class="hljs-comment">//&#125;);</span><br>                <span class="hljs-type">InterfaceAccess</span> <span class="hljs-variable">interfaceAccess</span> <span class="hljs-operator">=</span> parseRowDateIntoInterfaceAccess(rowData);<br>                <span class="hljs-keyword">if</span> (interfaceAccess.getIsDeleted() == <span class="hljs-number">1</span>) &#123;<br>                    <span class="hljs-comment">//说明已经删除，需要同步删除</span><br>                    redisService.deleteInterfaceAccess(interfaceAccess);<br>                &#125; <span class="hljs-keyword">else</span> &#123;<br>                    <span class="hljs-comment">//说明未删除，需要同步更新</span><br>                    redisService.updateInterfaceAccess(interfaceAccess);<br>                &#125;<br>            &#125;<br>        &#125;<br>    &#125;<br>&#125;<br><br><span class="hljs-keyword">private</span> InterfaceAccess <span class="hljs-title function_">parseRowDateIntoInterfaceAccess</span><span class="hljs-params">(RowData rowData)</span> &#123;<br>    <span class="hljs-type">SimpleDateFormat</span> <span class="hljs-variable">sdf</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">SimpleDateFormat</span>(<span class="hljs-string">&quot;yyyy-MM-dd HH:mm:ss&quot;</span>);<br>    <span class="hljs-type">InterfaceAccess</span> <span class="hljs-variable">interfaceAccess</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">InterfaceAccess</span>();<br>    <span class="hljs-type">String</span> <span class="hljs-variable">accesskey</span> <span class="hljs-operator">=</span> rowData.getAfterColumns(<span class="hljs-number">0</span>).getValue();<br>    <span class="hljs-type">Integer</span> <span class="hljs-variable">verifyType</span> <span class="hljs-operator">=</span> Integer.parseInt(rowData.getAfterColumns(<span class="hljs-number">1</span>).getValue());<br>    <span class="hljs-comment">//允许为空的参数如果为空，则column.getValue().equals(&quot;&quot;)</span><br>    <span class="hljs-type">String</span> <span class="hljs-variable">secretkey</span> <span class="hljs-operator">=</span> rowData.getAfterColumns(<span class="hljs-number">2</span>).getValue().equals(<span class="hljs-string">&quot;&quot;</span>) ? <span class="hljs-literal">null</span> : rowData.getAfterColumns(<span class="hljs-number">2</span>).getValue();<br>    <span class="hljs-type">BigDecimal</span> <span class="hljs-variable">remainingAmount</span> <span class="hljs-operator">=</span> <span class="hljs-literal">null</span>;<br>    <span class="hljs-keyword">if</span> (!rowData.getAfterColumns(<span class="hljs-number">3</span>).getValue().equals(<span class="hljs-string">&quot;&quot;</span>)) &#123;<br>        remainingAmount = <span class="hljs-keyword">new</span> <span class="hljs-title class_">BigDecimal</span>(rowData.getAfterColumns(<span class="hljs-number">3</span>).getValue());<br>    &#125;<br>    <span class="hljs-type">Integer</span> <span class="hljs-variable">remainingTimes</span> <span class="hljs-operator">=</span> <span class="hljs-literal">null</span>;<br>    <span class="hljs-keyword">if</span> (!rowData.getAfterColumns(<span class="hljs-number">4</span>).getValue().equals(<span class="hljs-string">&quot;&quot;</span>)) &#123;<br>        remainingTimes = Integer.parseInt(rowData.getAfterColumns(<span class="hljs-number">4</span>).getValue());<br>    &#125;<br>    <span class="hljs-type">Long</span> <span class="hljs-variable">interfaceId</span> <span class="hljs-operator">=</span> Long.parseLong(rowData.getAfterColumns(<span class="hljs-number">5</span>).getValue());<br>    <span class="hljs-type">Long</span> <span class="hljs-variable">userid</span> <span class="hljs-operator">=</span> Long.parseLong(rowData.getAfterColumns(<span class="hljs-number">6</span>).getValue());<br>    <span class="hljs-type">Integer</span> <span class="hljs-variable">callTimes</span> <span class="hljs-operator">=</span> Integer.parseInt(rowData.getAfterColumns(<span class="hljs-number">7</span>).getValue());<br>    <span class="hljs-type">Integer</span> <span class="hljs-variable">failedCallTimes</span> <span class="hljs-operator">=</span> Integer.parseInt(rowData.getAfterColumns(<span class="hljs-number">8</span>).getValue());<br>    <span class="hljs-type">Date</span> <span class="hljs-variable">createTime</span> <span class="hljs-operator">=</span> <span class="hljs-literal">null</span>;<br>    <span class="hljs-type">Date</span> <span class="hljs-variable">updateTime</span> <span class="hljs-operator">=</span> <span class="hljs-literal">null</span>;<br>    <span class="hljs-keyword">try</span> &#123;<br>        createTime = sdf.parse(rowData.getAfterColumns(<span class="hljs-number">9</span>).getValue());<br>        updateTime = sdf.parse(rowData.getAfterColumns(<span class="hljs-number">10</span>).getValue());<br>    &#125; <span class="hljs-keyword">catch</span> (ParseException e) &#123;<br>        log.error(<span class="hljs-string">&quot;解析日期失败：&quot;</span>, e);<br>    &#125;<br>    <span class="hljs-type">Integer</span> <span class="hljs-variable">isDeleted</span> <span class="hljs-operator">=</span> Integer.parseInt(rowData.getAfterColumns(<span class="hljs-number">11</span>).getValue());<br>    interfaceAccess.setAccesskey(accesskey);<br>    interfaceAccess.setVerifyType(verifyType);<br>    interfaceAccess.setSecretkey(secretkey);<br>    interfaceAccess.setRemainingAmount(remainingAmount);<br>    interfaceAccess.setRemainingTimes(remainingTimes);<br>    interfaceAccess.setInterfaceId(interfaceId);<br>    interfaceAccess.setUserid(userid);<br>    interfaceAccess.setCallTimes(callTimes);<br>    interfaceAccess.setFailedCallTimes(failedCallTimes);<br>    interfaceAccess.setCreateTime(createTime);<br>    interfaceAccess.setUpdateTime(updateTime);<br>    interfaceAccess.setIsDeleted(isDeleted);<br>    <span class="hljs-keyword">return</span> interfaceAccess;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h2 id="效果"><a href="#效果" class="headerlink" title="效果"></a>效果</h2><h3 id="1-数据库更新后："><a href="#1-数据库更新后：" class="headerlink" title="1. 数据库更新后："></a>1. 数据库更新后：</h3><p>标准输出：</p>
+<blockquote>
+<p>正在监听canal Server: 1709812780346<br>2024-03-07 19:59:40.394  INFO 26712 — [           main] c.c.a.canal.handler.CanalMessageHandler  : &#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;binlog[mysql-bin.000354:6832] , name[api_open_platform,interface_access] , eventType : UPDATE<br>2024-03-07 19:59:40.425  INFO 26712 — [           main] c.c.a.canal.handler.CanalMessageHandler  : 在redis中同步f607abdc-c80e-4255-81d3-37ea6fe355b4<br>正在监听canal Server: 1709812780425<br>正在监听canal Server: 1709812781481</p>
+</blockquote>
+<p>查询redis：<br><img src="/2024/03/06/backend/middleware/canal/canal_MySQL&Redis/redis-update.png"></p>
+<h3 id="2-数据库删除后"><a href="#2-数据库删除后" class="headerlink" title="2. 数据库删除后"></a>2. 数据库删除后</h3><p>标准输出：</p>
+<blockquote>
+<p>正在监听canal Server: 1709812979293<br>正在监听canal Server: 1709812980340<br>2024-03-07 20:03:00.383  INFO 26712 — [           main] c.c.a.canal.handler.CanalMessageHandler  : &#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;binlog[mysql-bin.000354:7413] , name[api_open_platform,interface_access] , eventType : UPDATE<br>2024-03-07 20:03:00.384  INFO 26712 — [           main] c.c.a.canal.handler.CanalMessageHandler  : 从redis中删除f607abdc-c80e-4255-81d3-37ea6fe355b4<br>正在监听canal Server: 1709812980384</p>
+</blockquote>
+<p>查询redis：<br><img src="/2024/03/06/backend/middleware/canal/canal_MySQL&Redis/redis-delete.png"></p>
+]]></content>
+      <categories>
+        <category>分布式</category>
+        <category>中间件</category>
+        <category>canal</category>
+      </categories>
+      <tags>
+        <tag>canal</tag>
+        <tag>双写一致性</tag>
+        <tag>redis</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>canal入门篇：1.介绍&amp;配置&amp;启动</title>
     <url>/2024/03/06/backend/middleware/canal/canal_config/</url>
     <content><![CDATA[<p>本文将讲述canal的安装、配置、启动以及验证监听是否成功。</p>
@@ -2005,106 +2259,10 @@ newProxyInstance方法的三个参数：</li>
       </categories>
       <tags>
         <tag>canal</tag>
+        <tag>双写一致性</tag>
         <tag>Dump</tag>
         <tag>Binary log</tag>
-        <tag>双写一致性</tag>
         <tag>mysql slave</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>canal入门篇：2.实现MySQL&amp;Redis双写一致性</title>
-    <url>/2024/03/06/backend/middleware/canal/canal_MySQL&amp;Redis/</url>
-    <content><![CDATA[<p>本文将介绍如何使用canal实现MySQl和Redis的双写一致性。前文为：<a href="/2024/03/06/backend/middleware/canal/canal_config/" title="canal入门篇：1.介绍&amp;配置&amp;启动">canal入门篇：1.介绍&amp;配置&amp;启动</a>。</p>
-<blockquote>
-<p><a href="https://github.com/shoumingchilun/API_OPEN_SPACE_CANAL">github仓库链接</a></p>
-</blockquote>
-<h1 id="canalAPI讲解"><a href="#canalAPI讲解" class="headerlink" title="canalAPI讲解"></a>canalAPI讲解</h1><p>本文将使用SpringBoot框架搭建一个应用，通过canal获得数据库的更改消息，并将发生变更的实体同步更新到Redis中。</p>
-<h2 id="优点"><a href="#优点" class="headerlink" title="优点"></a>优点</h2><p>使用canal的好处：</p>
-<ol>
-<li><strong>透明性与低侵入</strong>：使用 Canal 通常不需要对既有业务逻辑进行大规模改造，因为它作为独立的服务组件，可以透明地监听和处理数据库的变化，将更新事件推送给相应的缓存系统，实现数据同步，降低了对业务代码的入侵性。</li>
-<li><strong>扩展性与灵活性</strong>：Canal 支持多种数据源以及不同的消费方式，可以根据实际需求构建灵活的消息处理和分发机制。它可以与各种消息队列或数据处理系统集成，实现复杂的数据同步和多级缓存更新。</li>
-<li><strong>可靠性</strong>：由于 Canal 是基于 MySQL 的主从复制协议设计的，它继承了数据库层面的数据可靠性保障。同时，消息投递失败时（未进行ACK）可以通过重试机制确保最终一致性，而且可以支持幂等处理，避免重复消费造成的问题。</li>
-</ol>
-<h2 id="类说明"><a href="#类说明" class="headerlink" title="类说明"></a>类说明</h2><h3 id="canal-Client"><a href="#canal-Client" class="headerlink" title="canal Client"></a>canal Client</h3><p>先介绍一下canal Client相关的一些配置类：</p>
-<ul>
-<li><strong>ClientIdentity</strong>：canal client和server交互之间的身份标识。</li>
-<li><strong>CanalConnector</strong>：SimpleCanalConnector&#x2F;ClusterCanalConnector是两种connector的实现。simple针对的是简单的ip直连模式，cluster针对多ip的模式，可依赖CanalNodeAccessStrategy进行failover控制。（确保 Canal 在发生故障时能够无缝地切换到备份节点或者恢复服务，暂时不关注）</li>
-<li><strong>CanalNodeAccessStrategy</strong>：SimpleNodeAccessStrategy&#x2F;ClusterNodeAccessStrategy是两种failover的实现。simple针对给定的初始ip列表进行failover选择，cluster基于zookeeper上的cluster节点动态选择正在运行的canal server。（暂时不关注）</li>
-</ul>
-<p>然后即可从<code>connector</code>中通过<code>get</code>&#x2F;<code>getWithoutAck</code>获得的<code>Message</code>的这个类，该类主要的功能就是使用<code>getEntries</code>函数获得包装好的<code>List&lt;Entry&gt;</code>对象。</p>
-<h3 id="Entry"><a href="#Entry" class="headerlink" title="Entry"></a>Entry</h3><p>介绍一下Entry、RowChange、rowdata、column的概念。</p>
-<ol>
-<li><strong>Entry</strong>：Entry 是 Canal 解析 MySQL Binlog 后产生的基本单元，它<strong>代表了Binlog中的一条记录</strong>。每个Entry对象对应了MySQL数据库的一个事务或一个GTID事件（如果启用了GTID）。Entry包含了事务的相关元数据如执行时间、事务ID等，以及实际的数据库更改内容。</li>
-<li><strong>RowChange</strong>： RowChange 是更进一步封装的事件变更细节，它描述了<strong>一次数据库表级别的行级别数据变化</strong>。一个RowChange对象对应binlog中的一次行变更事件，它可以包含多行数据的插入、更新或删除操作。</li>
-<li><strong>RowData</strong>：RowData 表示<strong>单行数据的变更内容</strong>。对于RowChange中的每一次行操作（insert&#x2F;update&#x2F;delete），都会有对应的RowData对象来具体描述变更前后的列值信息。<ol>
-<li>RowData有两个重要的字段：<ul>
-<li>beforeColumnsList：在UPDATE或DELETE事件中，存储的是变更前的列数据集合。</li>
-<li>afterColumnsList：在INSERT或UPDATE事件中，存储的是变更后的列数据集合。</li>
-</ul>
-</li>
-<li>对于INSERT、UPDATE和DELETE事件，其表现形式不同：<ul>
-<li>INSERT事件：RowData会包含这一行插入后的所有列值。</li>
-<li>UPDATE事件：RowData包含两部分，即变更前的列值（beforeColumns）和变更后的列值（afterColumns）。</li>
-<li>DELETE事件：RowData仅包含被删除前的那一行的所有列值。</li>
-</ul>
-</li>
-</ol>
-</li>
-<li><strong>Column</strong>：Column 对象更加细致地表示了数据库表中某一列的数据变化情况，包括列名、列值、是否为空、是否是主键等属性信息。在RowData的beforeColumns和afterColumns列表中，每一项就是一个Column对象。</li>
-</ol>
-<h3 id="解析Entry"><a href="#解析Entry" class="headerlink" title="解析Entry"></a>解析Entry</h3><p>在获得一个<code>List&lt;Entry&gt;</code>后，我们需要对其中每个条目进行逐步解析：</p>
-<ol>
-<li><strong>判断类型</strong>：通过调用<code>getEntryType()</code>获得该<code>Entry</code>的<code>EntryType</code>，常见的类型有**事务开始(BEGIN)、事务结束(COMMIT)、行数据(ROWDATA)**等。</li>
-<li>对于 <strong>ROWDATA 类型</strong>的 Entry，可以从中提取 <strong>RowChange 对象</strong>（包含了数据库行级别的变更详情）：通过调用<code>CanalEntry.RowChange.parseFrom(entry.getStoreValue())</code>获得 RowChange 对象。</li>
-<li>获得 RowChange 对象后，可根据<code>EventType</code>获得具体操作的类型，如<code>INSERT</code>、<code>UPDATE</code>、<code>ALTER</code>等，如： <code>rowChage.getEventType()==EventType.DELETE</code>。</li>
-<li>可从 <code>RowChange</code> 对象中获得 <code>RowData</code> 对象，并从后者中获得一行数据变更前的状态和变更后的状态，再从中获得单独的<code>column</code>进行解析： <figure class="highlight java"><table><tr><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">for</span> (RowData rowData : rowChage.getRowDatasList()) &#123;<br>    rowData.getBeforeColumnsList().forEach(column -&gt; System.out.println(column.getName() + <span class="hljs-string">&quot; : &quot;</span> + column.getValue()));<br>    rowData.getAfterColumnsList().forEach(column -&gt; System.out.println(column.getName() + <span class="hljs-string">&quot; : &quot;</span> + column.getValue()));<br></code></pre></td></tr></table></figure></li>
-</ol>
-<h1 id="实现双写一致性"><a href="#实现双写一致性" class="headerlink" title="实现双写一致性"></a>实现双写一致性</h1><p>（省略启动类）</p>
-<h2 id="添加依赖"><a href="#添加依赖" class="headerlink" title="添加依赖"></a>添加依赖</h2><p>需要添加Springboot和连接Redis、canal的依赖。<br>pom.xml：</p>
-<figure class="highlight xml"><table><tr><td class="code"><pre><code class="hljs xml"><span class="hljs-tag">&lt;<span class="hljs-name">dependencyManagement</span>&gt;</span><br>    <span class="hljs-tag">&lt;<span class="hljs-name">dependencies</span>&gt;</span><br>        <span class="hljs-tag">&lt;<span class="hljs-name">dependency</span>&gt;</span><br>            <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>org.springframework.boot<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span><br>            <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>spring-boot-dependencies<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span><br>            <span class="hljs-tag">&lt;<span class="hljs-name">version</span>&gt;</span>2.7.9<span class="hljs-tag">&lt;/<span class="hljs-name">version</span>&gt;</span><br>            <span class="hljs-tag">&lt;<span class="hljs-name">type</span>&gt;</span>pom<span class="hljs-tag">&lt;/<span class="hljs-name">type</span>&gt;</span><br>            <span class="hljs-tag">&lt;<span class="hljs-name">scope</span>&gt;</span>import<span class="hljs-tag">&lt;/<span class="hljs-name">scope</span>&gt;</span><br>        <span class="hljs-tag">&lt;/<span class="hljs-name">dependency</span>&gt;</span><br>    <span class="hljs-tag">&lt;/<span class="hljs-name">dependencies</span>&gt;</span><br><span class="hljs-tag">&lt;/<span class="hljs-name">dependencyManagement</span>&gt;</span><br><span class="hljs-tag">&lt;<span class="hljs-name">dependencies</span>&gt;</span><br>    <span class="hljs-tag">&lt;<span class="hljs-name">dependency</span>&gt;</span><br>        <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>org.springframework.boot<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span><br>        <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>spring-boot-starter-web<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span><br>    <span class="hljs-tag">&lt;/<span class="hljs-name">dependency</span>&gt;</span><br>    <span class="hljs-tag">&lt;<span class="hljs-name">dependency</span>&gt;</span><br>        <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>org.springframework.boot<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span><br>        <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>spring-boot-starter-data-redis<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span><br>    <span class="hljs-tag">&lt;/<span class="hljs-name">dependency</span>&gt;</span><br>    <span class="hljs-tag">&lt;<span class="hljs-name">dependency</span>&gt;</span><br>        <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>com.alibaba.otter<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span><br>        <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>canal.client<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span><br>        <span class="hljs-tag">&lt;<span class="hljs-name">version</span>&gt;</span>1.1.0<span class="hljs-tag">&lt;/<span class="hljs-name">version</span>&gt;</span><br>    <span class="hljs-tag">&lt;/<span class="hljs-name">dependency</span>&gt;</span><br><span class="hljs-tag">&lt;/<span class="hljs-name">dependencies</span>&gt;</span><br></code></pre></td></tr></table></figure>
-
-<h2 id="注册CanalConnector-Bean"><a href="#注册CanalConnector-Bean" class="headerlink" title="注册CanalConnector Bean"></a>注册CanalConnector Bean</h2><p>使用配置文件注入依赖。</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><code class="hljs java"><span class="hljs-meta">@Configuration</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">CanalConfig</span> &#123;<br>    <span class="hljs-meta">@Value(&quot;$&#123;mycanal.hostname&#125;&quot;)</span><br>    <span class="hljs-keyword">private</span> String hostname;<br>    <span class="hljs-meta">@Value(&quot;$&#123;mycanal.port&#125;&quot;)</span><br>    <span class="hljs-keyword">private</span> Integer port;<br>    <span class="hljs-meta">@Value(&quot;$&#123;mycanal.destination&#125;&quot;)</span><br>    <span class="hljs-keyword">private</span> String destination;<br>    <span class="hljs-meta">@Value(&quot;$&#123;mycanal.username&#125;&quot;)</span><br>    <span class="hljs-keyword">private</span> <span class="hljs-type">String</span> <span class="hljs-variable">username</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;&quot;</span>;<br>    <span class="hljs-meta">@Value(&quot;$&#123;mycanal.password&#125;&quot;)</span><br>    <span class="hljs-keyword">private</span> <span class="hljs-type">String</span> <span class="hljs-variable">password</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;&quot;</span>;<br><br><br>    <span class="hljs-meta">@Bean</span><br>    <span class="hljs-keyword">public</span> CanalConnector <span class="hljs-title function_">createCanalConnector</span><span class="hljs-params">()</span> &#123;<br>        <span class="hljs-keyword">return</span> CanalConnectors.newSingleConnector(<span class="hljs-keyword">new</span> <span class="hljs-title class_">InetSocketAddress</span>(hostname,<br>                port), destination, username, password);<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
-
-<p>配置文件application.yml：</p>
-<figure class="highlight dts"><table><tr><td class="code"><pre><code class="hljs dts"><span class="hljs-symbol">mycanal:</span><br><span class="hljs-symbol">  hostname:</span> <span class="hljs-number">192.168</span><span class="hljs-number">.146</span><span class="hljs-number">.132</span><br><span class="hljs-symbol">  port:</span> <span class="hljs-number">11111</span><br><span class="hljs-symbol">  destination:</span> example<br><span class="hljs-symbol">  username:</span><br><span class="hljs-symbol">  password:</span><br></code></pre></td></tr></table></figure>
-
-<h2 id="设置Redis转码方式"><a href="#设置Redis转码方式" class="headerlink" title="设置Redis转码方式"></a>设置Redis转码方式</h2><figure class="highlight java"><table><tr><td class="code"><pre><code class="hljs java"><span class="hljs-meta">@Configuration</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">RedisConfig</span> &#123;<br>    <span class="hljs-meta">@Bean</span><br>    <span class="hljs-keyword">public</span> RedisTemplate&lt;String, Object&gt; <span class="hljs-title function_">redisTemplate</span><span class="hljs-params">(LettuceConnectionFactory lettuceConnectionFactory)</span> &#123;<br>        RedisTemplate&lt;String, Object&gt; redisTemplate = <span class="hljs-keyword">new</span> <span class="hljs-title class_">RedisTemplate</span>&lt;&gt;();<br><br>        redisTemplate.setConnectionFactory(lettuceConnectionFactory);<br>        <span class="hljs-comment">//设置key序列化方式string</span><br>        redisTemplate.setKeySerializer(<span class="hljs-keyword">new</span> <span class="hljs-title class_">StringRedisSerializer</span>());<br>        <span class="hljs-comment">//设置value的序列化方式json，使用GenericJackson2JsonRedisSerializer替换默认序列化</span><br>        redisTemplate.setValueSerializer(<span class="hljs-keyword">new</span> <span class="hljs-title class_">GenericJackson2JsonRedisSerializer</span>());<br>        redisTemplate.setHashKeySerializer(<span class="hljs-keyword">new</span> <span class="hljs-title class_">StringRedisSerializer</span>());<br>        redisTemplate.setHashValueSerializer(<span class="hljs-keyword">new</span> <span class="hljs-title class_">GenericJackson2JsonRedisSerializer</span>());<br><br>        redisTemplate.afterPropertiesSet();<br>        <span class="hljs-keyword">return</span> redisTemplate;<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
-
-<blockquote>
-<p>补充：如果使用GenericJackson2JsonRedisSerializer充当序列化&#x2F;反序列化工具的话<code>redisTemplate.setValueSerializer(new GenericJackson2JsonRedisSerializer());</code>，请保证各组件内类名一致（包含包路径）。</p>
-</blockquote>
-<h2 id="创建实体类"><a href="#创建实体类" class="headerlink" title="创建实体类"></a>创建实体类</h2><p>Redis中value对应的实体。</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><code class="hljs java"><span class="hljs-meta">@Data</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">InterfaceAccess</span> <span class="hljs-keyword">implements</span> <span class="hljs-title class_">Serializable</span> &#123;<br>    <span class="hljs-keyword">private</span> String accesskey;<br>    <span class="hljs-keyword">private</span> Integer verifyType;<br>    <span class="hljs-keyword">private</span> String secretkey;<br>    <span class="hljs-keyword">private</span> BigDecimal remainingAmount;<br>    <span class="hljs-keyword">private</span> Integer remainingTimes;<br>    <span class="hljs-keyword">private</span> Long interfaceId;<br>    <span class="hljs-keyword">private</span> Long userid;<br>    <span class="hljs-keyword">private</span> Integer callTimes;<br>    <span class="hljs-keyword">private</span> Integer failedCallTimes;<br>    <span class="hljs-keyword">private</span> Date createTime;<br>    <span class="hljs-keyword">private</span> Date updateTime;<br>    <span class="hljs-keyword">private</span> Integer isDeleted;<br>    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-type">long</span> <span class="hljs-variable">serialVersionUID</span> <span class="hljs-operator">=</span> <span class="hljs-number">1L</span>;<br>&#125;<br></code></pre></td></tr></table></figure>
-
-<h2 id="设计Redis服务接口并实现"><a href="#设计Redis服务接口并实现" class="headerlink" title="设计Redis服务接口并实现"></a>设计Redis服务接口并实现</h2><figure class="highlight java"><table><tr><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">interface</span> <span class="hljs-title class_">RedisService</span> &#123;<br>    <span class="hljs-type">String</span> <span class="hljs-variable">ACCESS_PREFIX</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;InterfaceAccess_&quot;</span>;<br>    <span class="hljs-keyword">void</span> <span class="hljs-title function_">updateInterfaceAccess</span><span class="hljs-params">(InterfaceAccess interfaceAccess)</span>;<br>    <span class="hljs-keyword">void</span> <span class="hljs-title function_">deleteInterfaceAccess</span><span class="hljs-params">(InterfaceAccess interfaceAccess)</span>;<br>&#125;<br><br><span class="hljs-meta">@Service</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">RedisServiceImpl</span> <span class="hljs-keyword">implements</span> <span class="hljs-title class_">RedisService</span> &#123;<br>    <span class="hljs-meta">@Resource</span><br>    <span class="hljs-keyword">private</span> RedisTemplate&lt;String, InterfaceAccess&gt; redisTemplate;<br><br>    <span class="hljs-meta">@Override</span><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">updateInterfaceAccess</span><span class="hljs-params">(InterfaceAccess interfaceAccess)</span> &#123;<br>        redisTemplate.opsForValue().set(RedisService.ACCESS_PREFIX + interfaceAccess.getAccesskey(), interfaceAccess, <span class="hljs-number">2</span>, TimeUnit.MINUTES);<br>    &#125;<br><br>    <span class="hljs-meta">@Override</span><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">deleteInterfaceAccess</span><span class="hljs-params">(InterfaceAccess interfaceAccess)</span> &#123;<br>        redisTemplate.delete(RedisService.ACCESS_PREFIX + interfaceAccess.getAccesskey());<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
-
-<h2 id="创建CanalMessageHandler类"><a href="#创建CanalMessageHandler类" class="headerlink" title="创建CanalMessageHandler类"></a>创建CanalMessageHandler类</h2><p>使用ApplicationRunner接口实现容器启动后开始监听。</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><code class="hljs java"><span class="hljs-meta">@Slf4j</span><br><span class="hljs-meta">@Component</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">CanalMessageHandler</span> <span class="hljs-keyword">implements</span> <span class="hljs-title class_">ApplicationRunner</span> &#123;<br>    <span class="hljs-meta">@Resource</span><br>    <span class="hljs-keyword">private</span> CanalConnector connector;<br><br>    <span class="hljs-meta">@Resource</span><br>    <span class="hljs-keyword">private</span> RedisService redisService;<br><br>    <span class="hljs-meta">@Override</span><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">run</span><span class="hljs-params">(ApplicationArguments args)</span> &#123;<br>        <span class="hljs-type">int</span> <span class="hljs-variable">batchSize</span> <span class="hljs-operator">=</span> <span class="hljs-number">1000</span>;<br>        <span class="hljs-comment">//空闲空转计数器</span><br>        <span class="hljs-type">int</span> <span class="hljs-variable">emptyCount</span> <span class="hljs-operator">=</span> <span class="hljs-number">0</span>;<br>        <span class="hljs-keyword">try</span> &#123;<br>            connector.connect();<br>            <span class="hljs-comment">// 监听api_open_platform数据库下的interface_access表</span><br>            connector.subscribe(<span class="hljs-string">&quot;api_open_platform.interface_access&quot;</span>);<br>            <span class="hljs-comment">// 回滚到未进行 ack 的地方，下次fetch的时候，可以从最后一个没有 ack 的地方开始拿</span><br>            connector.rollback();<br>            <span class="hljs-comment">// 如果3600s内没有监听到更改，则报错并停止运行</span><br>            <span class="hljs-type">int</span> <span class="hljs-variable">totalEmptyCount</span> <span class="hljs-operator">=</span> <span class="hljs-number">3600</span>;<br>            <span class="hljs-keyword">while</span> (emptyCount &lt; totalEmptyCount) &#123;<br>                System.out.println(<span class="hljs-string">&quot;正在监听canal Server: &quot;</span> + System.currentTimeMillis());<br>                <span class="hljs-type">Message</span> <span class="hljs-variable">message</span> <span class="hljs-operator">=</span> connector.getWithoutAck(batchSize); <span class="hljs-comment">// 获取指定数量的数据</span><br>                <span class="hljs-type">long</span> <span class="hljs-variable">batchId</span> <span class="hljs-operator">=</span> message.getId();<br>                <span class="hljs-type">int</span> <span class="hljs-variable">size</span> <span class="hljs-operator">=</span> message.getEntries().size();<br>                <span class="hljs-keyword">if</span> (batchId == -<span class="hljs-number">1</span> || size == <span class="hljs-number">0</span>) &#123;<br>                    emptyCount++;<br>                    <span class="hljs-keyword">try</span> &#123;<br>                        TimeUnit.SECONDS.sleep(<span class="hljs-number">1</span>);<br>                    &#125; <span class="hljs-keyword">catch</span> (InterruptedException e) &#123;<br>                        e.printStackTrace();<br>                    &#125;<br>                &#125; <span class="hljs-keyword">else</span> &#123;<br>                    <span class="hljs-comment">//计数器重新置零</span><br>                    emptyCount = <span class="hljs-number">0</span>;<br>                    handlerMessage(message.getEntries());<br>                &#125;<br>                connector.ack(batchId); <span class="hljs-comment">// 提交确认</span><br>                <span class="hljs-comment">// connector.rollback(batchId); // 处理失败, 回滚数据</span><br>            &#125;<br>            log.error(<span class="hljs-string">&quot;已经监听了&quot;</span> + totalEmptyCount + <span class="hljs-string">&quot;秒，无任何消息，请检查canal是否正常运行或连接是否成功......&quot;</span>);<br>        &#125; <span class="hljs-keyword">finally</span> &#123;<br>            connector.disconnect();<br>        &#125;<br>    &#125;<br><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">handlerMessage</span><span class="hljs-params">(List&lt;Entry&gt; entrys)</span> &#123;<br>        <span class="hljs-comment">//...</span><br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
-
-<h2 id="实现handlerMessage方法"><a href="#实现handlerMessage方法" class="headerlink" title="实现handlerMessage方法"></a>实现handlerMessage方法</h2><p>对消息进行处理，并通过调用<code>RedisService</code>的方法同步到redis。</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">handlerMessage</span><span class="hljs-params">(List&lt;Entry&gt; entrys)</span> &#123;<br>    <span class="hljs-type">ObjectMapper</span> <span class="hljs-variable">objectMapper</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">ObjectMapper</span>();<br>    <span class="hljs-type">SimpleDateFormat</span> <span class="hljs-variable">sdf</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">SimpleDateFormat</span>(<span class="hljs-string">&quot;yyyy-MM-dd HH:mm:ss&quot;</span>);<br>    <span class="hljs-keyword">for</span> (Entry entry : entrys) &#123;<br>        <span class="hljs-comment">//如果不是ROWDATA，则忽略</span><br>        <span class="hljs-keyword">if</span> (entry.getEntryType() != EntryType.ROWDATA) &#123;<br>            <span class="hljs-keyword">continue</span>;<br>        &#125;<br>        <span class="hljs-type">RowChange</span> <span class="hljs-variable">rowchange</span> <span class="hljs-operator">=</span> <span class="hljs-literal">null</span>;<br>        <span class="hljs-keyword">try</span> &#123;<br>            <span class="hljs-comment">//获取变更的row数据</span><br>            rowchange = CanalEntry.RowChange.parseFrom(entry.getStoreValue());<br>        &#125; <span class="hljs-keyword">catch</span> (Exception e) &#123;<br>            log.error(<span class="hljs-string">&quot;解析Entry获得RowChange失败：&quot;</span> + entry, e);<br>            <span class="hljs-keyword">return</span>;<br>        &#125;<br>        <span class="hljs-comment">//获取变动类型</span><br>        <span class="hljs-type">EventType</span> <span class="hljs-variable">eventType</span> <span class="hljs-operator">=</span> rowchange.getEventType();<br>        log.info(String.format(<span class="hljs-string">&quot;================binlog[%s:%s] , name[%s,%s] , eventType : %s&quot;</span>,<br>                entry.getHeader().getLogfileName(), entry.getHeader().getLogfileOffset(),<br>                entry.getHeader().getSchemaName(), entry.getHeader().getTableName(), eventType));<br><br>        <span class="hljs-keyword">for</span> (RowData rowData : rowchange.getRowDatasList()) &#123;<br>            <span class="hljs-comment">//由于使用逻辑删除，delete实现方式为将is_deleted属性设置为1，所以删除逻辑写在update中</span><br>            <span class="hljs-keyword">if</span> (eventType == EventType.UPDATE) &#123;<br>                <span class="hljs-comment">//可使用该方式查看各个index对应的列名是什么</span><br>                <span class="hljs-comment">//rowData.getAfterColumnsList().stream().forEach(column -&gt; &#123;</span><br>                <span class="hljs-comment">//    System.out.println(column.getName());</span><br>                <span class="hljs-comment">//&#125;);</span><br>                <span class="hljs-type">InterfaceAccess</span> <span class="hljs-variable">interfaceAccess</span> <span class="hljs-operator">=</span> parseRowDateIntoInterfaceAccess(rowData);<br>                <span class="hljs-keyword">if</span> (interfaceAccess.getIsDeleted() == <span class="hljs-number">1</span>) &#123;<br>                    <span class="hljs-comment">//说明已经删除，需要同步删除</span><br>                    redisService.deleteInterfaceAccess(interfaceAccess);<br>                &#125; <span class="hljs-keyword">else</span> &#123;<br>                    <span class="hljs-comment">//说明未删除，需要同步更新</span><br>                    redisService.updateInterfaceAccess(interfaceAccess);<br>                &#125;<br>            &#125;<br>        &#125;<br>    &#125;<br>&#125;<br><br><span class="hljs-keyword">private</span> InterfaceAccess <span class="hljs-title function_">parseRowDateIntoInterfaceAccess</span><span class="hljs-params">(RowData rowData)</span> &#123;<br>    <span class="hljs-type">SimpleDateFormat</span> <span class="hljs-variable">sdf</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">SimpleDateFormat</span>(<span class="hljs-string">&quot;yyyy-MM-dd HH:mm:ss&quot;</span>);<br>    <span class="hljs-type">InterfaceAccess</span> <span class="hljs-variable">interfaceAccess</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">InterfaceAccess</span>();<br>    <span class="hljs-type">String</span> <span class="hljs-variable">accesskey</span> <span class="hljs-operator">=</span> rowData.getAfterColumns(<span class="hljs-number">0</span>).getValue();<br>    <span class="hljs-type">Integer</span> <span class="hljs-variable">verifyType</span> <span class="hljs-operator">=</span> Integer.parseInt(rowData.getAfterColumns(<span class="hljs-number">1</span>).getValue());<br>    <span class="hljs-comment">//允许为空的参数如果为空，则column.getValue().equals(&quot;&quot;)</span><br>    <span class="hljs-type">String</span> <span class="hljs-variable">secretkey</span> <span class="hljs-operator">=</span> rowData.getAfterColumns(<span class="hljs-number">2</span>).getValue().equals(<span class="hljs-string">&quot;&quot;</span>) ? <span class="hljs-literal">null</span> : rowData.getAfterColumns(<span class="hljs-number">2</span>).getValue();<br>    <span class="hljs-type">BigDecimal</span> <span class="hljs-variable">remainingAmount</span> <span class="hljs-operator">=</span> <span class="hljs-literal">null</span>;<br>    <span class="hljs-keyword">if</span> (!rowData.getAfterColumns(<span class="hljs-number">3</span>).getValue().equals(<span class="hljs-string">&quot;&quot;</span>)) &#123;<br>        remainingAmount = <span class="hljs-keyword">new</span> <span class="hljs-title class_">BigDecimal</span>(rowData.getAfterColumns(<span class="hljs-number">3</span>).getValue());<br>    &#125;<br>    <span class="hljs-type">Integer</span> <span class="hljs-variable">remainingTimes</span> <span class="hljs-operator">=</span> <span class="hljs-literal">null</span>;<br>    <span class="hljs-keyword">if</span> (!rowData.getAfterColumns(<span class="hljs-number">4</span>).getValue().equals(<span class="hljs-string">&quot;&quot;</span>)) &#123;<br>        remainingTimes = Integer.parseInt(rowData.getAfterColumns(<span class="hljs-number">4</span>).getValue());<br>    &#125;<br>    <span class="hljs-type">Long</span> <span class="hljs-variable">interfaceId</span> <span class="hljs-operator">=</span> Long.parseLong(rowData.getAfterColumns(<span class="hljs-number">5</span>).getValue());<br>    <span class="hljs-type">Long</span> <span class="hljs-variable">userid</span> <span class="hljs-operator">=</span> Long.parseLong(rowData.getAfterColumns(<span class="hljs-number">6</span>).getValue());<br>    <span class="hljs-type">Integer</span> <span class="hljs-variable">callTimes</span> <span class="hljs-operator">=</span> Integer.parseInt(rowData.getAfterColumns(<span class="hljs-number">7</span>).getValue());<br>    <span class="hljs-type">Integer</span> <span class="hljs-variable">failedCallTimes</span> <span class="hljs-operator">=</span> Integer.parseInt(rowData.getAfterColumns(<span class="hljs-number">8</span>).getValue());<br>    <span class="hljs-type">Date</span> <span class="hljs-variable">createTime</span> <span class="hljs-operator">=</span> <span class="hljs-literal">null</span>;<br>    <span class="hljs-type">Date</span> <span class="hljs-variable">updateTime</span> <span class="hljs-operator">=</span> <span class="hljs-literal">null</span>;<br>    <span class="hljs-keyword">try</span> &#123;<br>        createTime = sdf.parse(rowData.getAfterColumns(<span class="hljs-number">9</span>).getValue());<br>        updateTime = sdf.parse(rowData.getAfterColumns(<span class="hljs-number">10</span>).getValue());<br>    &#125; <span class="hljs-keyword">catch</span> (ParseException e) &#123;<br>        log.error(<span class="hljs-string">&quot;解析日期失败：&quot;</span>, e);<br>    &#125;<br>    <span class="hljs-type">Integer</span> <span class="hljs-variable">isDeleted</span> <span class="hljs-operator">=</span> Integer.parseInt(rowData.getAfterColumns(<span class="hljs-number">11</span>).getValue());<br>    interfaceAccess.setAccesskey(accesskey);<br>    interfaceAccess.setVerifyType(verifyType);<br>    interfaceAccess.setSecretkey(secretkey);<br>    interfaceAccess.setRemainingAmount(remainingAmount);<br>    interfaceAccess.setRemainingTimes(remainingTimes);<br>    interfaceAccess.setInterfaceId(interfaceId);<br>    interfaceAccess.setUserid(userid);<br>    interfaceAccess.setCallTimes(callTimes);<br>    interfaceAccess.setFailedCallTimes(failedCallTimes);<br>    interfaceAccess.setCreateTime(createTime);<br>    interfaceAccess.setUpdateTime(updateTime);<br>    interfaceAccess.setIsDeleted(isDeleted);<br>    <span class="hljs-keyword">return</span> interfaceAccess;<br>&#125;<br></code></pre></td></tr></table></figure>
-
-<h2 id="效果"><a href="#效果" class="headerlink" title="效果"></a>效果</h2><h3 id="1-数据库更新后："><a href="#1-数据库更新后：" class="headerlink" title="1. 数据库更新后："></a>1. 数据库更新后：</h3><p>标准输出：</p>
-<blockquote>
-<p>正在监听canal Server: 1709812780346<br>2024-03-07 19:59:40.394  INFO 26712 — [           main] c.c.a.canal.handler.CanalMessageHandler  : &#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;binlog[mysql-bin.000354:6832] , name[api_open_platform,interface_access] , eventType : UPDATE<br>2024-03-07 19:59:40.425  INFO 26712 — [           main] c.c.a.canal.handler.CanalMessageHandler  : 在redis中同步f607abdc-c80e-4255-81d3-37ea6fe355b4<br>正在监听canal Server: 1709812780425<br>正在监听canal Server: 1709812781481</p>
-</blockquote>
-<p>查询redis：<br><img src="/2024/03/06/backend/middleware/canal/canal_MySQL&Redis/redis-update.png"></p>
-<h3 id="2-数据库删除后"><a href="#2-数据库删除后" class="headerlink" title="2. 数据库删除后"></a>2. 数据库删除后</h3><p>标准输出：</p>
-<blockquote>
-<p>正在监听canal Server: 1709812979293<br>正在监听canal Server: 1709812980340<br>2024-03-07 20:03:00.383  INFO 26712 — [           main] c.c.a.canal.handler.CanalMessageHandler  : &#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;binlog[mysql-bin.000354:7413] , name[api_open_platform,interface_access] , eventType : UPDATE<br>2024-03-07 20:03:00.384  INFO 26712 — [           main] c.c.a.canal.handler.CanalMessageHandler  : 从redis中删除f607abdc-c80e-4255-81d3-37ea6fe355b4<br>正在监听canal Server: 1709812980384</p>
-</blockquote>
-<p>查询redis：<br><img src="/2024/03/06/backend/middleware/canal/canal_MySQL&Redis/redis-delete.png"></p>
-]]></content>
-      <categories>
-        <category>分布式</category>
-        <category>中间件</category>
-        <category>canal</category>
-      </categories>
-      <tags>
-        <tag>canal</tag>
-        <tag>双写一致性</tag>
-        <tag>redis</tag>
       </tags>
   </entry>
   <entry>
@@ -2204,45 +2362,6 @@ newProxyInstance方法的三个参数：</li>
         <tag>消息队列</tag>
         <tag>RocketMQ</tag>
         <tag>Springboot</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>消息队列：3.领域模型</title>
-    <url>/2024/03/13/backend/middleware/messagequeue/rocket-domainmodel/</url>
-    <content><![CDATA[
-
-	<div class="row">
-    <embed src="RocketMQNote.pdf" width="100%" height="550" type="application/pdf">
-	</div>
-
-
-
-<blockquote>
-<p>本文之前使用LaTeX书写，现直接使用PDF发布。</p>
-</blockquote>
-]]></content>
-      <categories>
-        <category>分布式</category>
-        <category>中间件</category>
-        <category>消息队列</category>
-      </categories>
-      <tags>
-        <tag>消息队列</tag>
-        <tag>RocketMQ</tag>
-        <tag>Producer</tag>
-        <tag>NameSrv</tag>
-        <tag>Broker</tag>
-        <tag>Comsumer</tag>
-        <tag>Producer group</tag>
-        <tag>Comsumer group</tag>
-        <tag>Broker cluster</tag>
-        <tag>Topic</tag>
-        <tag>MessageQueue</tag>
-        <tag>Subscription</tag>
-        <tag>同步RPC调用模型</tag>
-        <tag>异步通信模型</tag>
-        <tag>点对点模型</tag>
-        <tag>发布订阅模型</tag>
       </tags>
   </entry>
   <entry>
@@ -2478,39 +2597,18 @@ newProxyInstance方法的三个参数：</li>
       </tags>
   </entry>
   <entry>
-    <title>消息队列：5.发布订阅模式</title>
-    <url>/2024/03/13/backend/middleware/messagequeue/rocket-publishsubscribe/</url>
-    <content><![CDATA[<p>本文将讲解消息队列的两种实现模式：队列模式、发布订阅模式。</p>
-<h1 id="队列模式"><a href="#队列模式" class="headerlink" title="队列模式"></a>队列模式</h1><p>作为一种数据结构，队列的特性是<strong>先进先出</strong>。<br>使用队列来存储消息时，生产者发送的消息会被放入到一个队列，然后由消费者们竞争着消费队列的信息。</p>
+    <title>消息队列：3.领域模型</title>
+    <url>/2024/03/13/backend/middleware/messagequeue/rocket-domainmodel/</url>
+    <content><![CDATA[
+
+	<div class="row">
+    <embed src="RocketMQNote.pdf" width="100%" height="550" type="application/pdf">
+	</div>
+
+
+
 <blockquote>
-<p>竞争意味着每条消息只会被一个消费者消费。</p>
-</blockquote>
-<p>在存储消息时，如果我们使用数据结构-队列对消息进行存储，就会存在一个问题：队列具有先进先出的特性，当读到后一个消息时，前一个消息就会被丢失，进而其他消费者就无法访问该消息。（即消费者之间的竞争关系导致无法合适地共享信息）</p>
-<p><img src="/2024/03/13/backend/middleware/messagequeue/rocket-publishsubscribe/%E9%98%9F%E5%88%97%E6%A8%A1%E5%BC%8F.svg"></p>
-<p>发布-订阅模式是为解决单个队列无法满足同时提供给多个消费者相同消息的需求的。</p>
-<h1 id="发布订阅模式"><a href="#发布订阅模式" class="headerlink" title="发布订阅模式"></a>发布订阅模式</h1><h2 id="支持共享"><a href="#支持共享" class="headerlink" title="支持共享"></a>支持共享</h2><p>发布-订阅模式的目的：<strong>每个消费者都能选择想要消费某个队列，消费其中指定某个位置的消息。</strong><br>发布-订阅模式中我们需要引入两个概念——Topic、offset：</p>
-<ul>
-<li>Topic：主题，用于区别不同的队列。<ul>
-<li>举例：生产者1负责生产订单记录，生产者2负责生产发货记录，消费者1负责处理订单记录，消费者2负责处理发货记录。那么自然不能只使用一个队列存储所有信息让消费者自己选择自己需要的信息，这应该是消息队列的责任。所用我们引入主题的概念，用以区别不同的队列，生产者1的消息发送、存储到订单主题的主题队列，生产者2的消息发送、存储到发货主题的主题队列；消费者1只对订单主题感兴趣，消息队列就只给它提供订单主题的主题队列中的信息……</li>
-</ul>
-</li>
-<li>offset：消息位置，用以记录消费者在队列中处理到的信息位置。<ul>
-<li>消费者每次处理一个信息，offset就+1，下一次转发给该消费者就是这个主题中的下一个消息。</li>
-</ul>
-</li>
-</ul>
-<p>示意图：<br><img src="/2024/03/13/backend/middleware/messagequeue/rocket-publishsubscribe/%E5%8F%91%E5%B8%83%E8%AE%A2%E9%98%851.png"></p>
-<h2 id="支持竞争"><a href="#支持竞争" class="headerlink" title="支持竞争"></a>支持竞争</h2><p>发布订阅模式解决了上述将全部消息提供给多个消费者的需求，但是存在一个问题，就是<strong>无法实现原先的竞争关系</strong>：某些消息不需要被同一类的不同消费者重复接收，但是只依赖offset的+1无法解决该问题。<br>可以复用原有队列的数据结构，但是原有队列处理方式还存在一个问题：竞争消费位置——<strong>同一类</strong>消费者无法同时消费多个消息，其必须一个一个地处理消息。<br>而且无论是消息粒度负载均衡策略还是队列粒度负载均衡策略，在消费者上线或下线、服务端扩缩容等场景下，都会触发短暂的重新负载均衡动作。此时可能会存在短暂的负载不一致情况，出现少量消息重复的现象。因此，还需要在下游消费逻辑中保证消息幂等以支持去重功能。<br>为了解决此问题，需要引入一个新机制：<strong>队列</strong>（消息队列-MessageQueue，在Kafka中被称为分区）。</p>
-<p>同一个主题的消息，会被分开存放到不同队列中（主题与队列的关系为一对多），不同消费者可以接收不同队列中的信息，以做到同时消费。<br>示意图：<br><img src="/2024/03/13/backend/middleware/messagequeue/rocket-publishsubscribe/%E5%8F%91%E5%B8%83%E8%AE%A2%E9%98%852.png"></p>
-<p>一个消费者可对应一到多个队列（或分区）。对应多个时需保持多个offset。且要求消费者数量少于队列数量，以避免出现闲置的消费者。</p>
-<p><img src="/2024/03/13/backend/middleware/messagequeue/rocket-publishsubscribe/%E5%8F%91%E5%B8%83%E8%AE%A2%E9%98%853.svg"></p>
-<p>改进后的发布订阅还有一个优点：可以灵活实现<strong>重复消费</strong>或者<strong>跳过部分消息不消费</strong>的功能。</p>
-<ul>
-<li><strong>重复消费</strong>：比如消费者1已经消费到 Topic-A-queue1-20，即第 20 条消息，但是消费者1一不小心把之前消费得到的结果数据弄丢了，如果按照队列模式那就找不到消息了，因为消息已经出队了没了；而在发布-订阅模式中，我们仅需把这个消息位置变更成 Topic-A-queue1-20，这样又可以让消费者1重新消费，只需要简单地改一条数据就能实现这样功能。</li>
-<li><strong>跳过部分消息不消费</strong>：假设 Topic-A-queue1 中第 21-30 这 10 条消息是错误的，我们可以修改当前的消息点位成 Topic-A-queue1-30，这样消费者1就直接跳过了这 10 条错误消息，从第 31 条消息开始消费。</li>
-</ul>
-<blockquote>
-<p>目前讲解的是队列级的负载均衡，即消费者对应到具体队列（每个队列仅支持被一个消费者消费），实际上存在消息级的负载均衡，无需关注消费者和队列的相对数量，能够更均匀地分摊消息。可自行了解。</p>
+<p>本文之前使用LaTeX书写，现直接使用PDF发布。</p>
 </blockquote>
 ]]></content>
       <categories>
@@ -2519,11 +2617,22 @@ newProxyInstance方法的三个参数：</li>
         <category>消息队列</category>
       </categories>
       <tags>
+        <tag>消息队列</tag>
+        <tag>RocketMQ</tag>
+        <tag>Producer</tag>
+        <tag>NameSrv</tag>
+        <tag>Broker</tag>
+        <tag>Comsumer</tag>
+        <tag>Producer group</tag>
+        <tag>Comsumer group</tag>
+        <tag>Broker cluster</tag>
         <tag>Topic</tag>
         <tag>MessageQueue</tag>
-        <tag>队列模式</tag>
-        <tag>发布订阅模式</tag>
-        <tag>offset</tag>
+        <tag>Subscription</tag>
+        <tag>同步RPC调用模型</tag>
+        <tag>异步通信模型</tag>
+        <tag>点对点模型</tag>
+        <tag>发布订阅模型</tag>
       </tags>
   </entry>
   <entry>
@@ -2759,6 +2868,55 @@ newProxyInstance方法的三个参数：</li>
         <tag>事务消息</tag>
         <tag>RMQ_SYS_TRANS_HALF_TOPIC</tag>
         <tag>TransactionMessageCheckService</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>消息队列：5.发布订阅模式</title>
+    <url>/2024/03/13/backend/middleware/messagequeue/rocket-publishsubscribe/</url>
+    <content><![CDATA[<p>本文将讲解消息队列的两种实现模式：队列模式、发布订阅模式。</p>
+<h1 id="队列模式"><a href="#队列模式" class="headerlink" title="队列模式"></a>队列模式</h1><p>作为一种数据结构，队列的特性是<strong>先进先出</strong>。<br>使用队列来存储消息时，生产者发送的消息会被放入到一个队列，然后由消费者们竞争着消费队列的信息。</p>
+<blockquote>
+<p>竞争意味着每条消息只会被一个消费者消费。</p>
+</blockquote>
+<p>在存储消息时，如果我们使用数据结构-队列对消息进行存储，就会存在一个问题：队列具有先进先出的特性，当读到后一个消息时，前一个消息就会被丢失，进而其他消费者就无法访问该消息。（即消费者之间的竞争关系导致无法合适地共享信息）</p>
+<p><img src="/2024/03/13/backend/middleware/messagequeue/rocket-publishsubscribe/%E9%98%9F%E5%88%97%E6%A8%A1%E5%BC%8F.svg"></p>
+<p>发布-订阅模式是为解决单个队列无法满足同时提供给多个消费者相同消息的需求的。</p>
+<h1 id="发布订阅模式"><a href="#发布订阅模式" class="headerlink" title="发布订阅模式"></a>发布订阅模式</h1><h2 id="支持共享"><a href="#支持共享" class="headerlink" title="支持共享"></a>支持共享</h2><p>发布-订阅模式的目的：<strong>每个消费者都能选择想要消费某个队列，消费其中指定某个位置的消息。</strong><br>发布-订阅模式中我们需要引入两个概念——Topic、offset：</p>
+<ul>
+<li>Topic：主题，用于区别不同的队列。<ul>
+<li>举例：生产者1负责生产订单记录，生产者2负责生产发货记录，消费者1负责处理订单记录，消费者2负责处理发货记录。那么自然不能只使用一个队列存储所有信息让消费者自己选择自己需要的信息，这应该是消息队列的责任。所用我们引入主题的概念，用以区别不同的队列，生产者1的消息发送、存储到订单主题的主题队列，生产者2的消息发送、存储到发货主题的主题队列；消费者1只对订单主题感兴趣，消息队列就只给它提供订单主题的主题队列中的信息……</li>
+</ul>
+</li>
+<li>offset：消息位置，用以记录消费者在队列中处理到的信息位置。<ul>
+<li>消费者每次处理一个信息，offset就+1，下一次转发给该消费者就是这个主题中的下一个消息。</li>
+</ul>
+</li>
+</ul>
+<p>示意图：<br><img src="/2024/03/13/backend/middleware/messagequeue/rocket-publishsubscribe/%E5%8F%91%E5%B8%83%E8%AE%A2%E9%98%851.png"></p>
+<h2 id="支持竞争"><a href="#支持竞争" class="headerlink" title="支持竞争"></a>支持竞争</h2><p>发布订阅模式解决了上述将全部消息提供给多个消费者的需求，但是存在一个问题，就是<strong>无法实现原先的竞争关系</strong>：某些消息不需要被同一类的不同消费者重复接收，但是只依赖offset的+1无法解决该问题。<br>可以复用原有队列的数据结构，但是原有队列处理方式还存在一个问题：竞争消费位置——<strong>同一类</strong>消费者无法同时消费多个消息，其必须一个一个地处理消息。<br>而且无论是消息粒度负载均衡策略还是队列粒度负载均衡策略，在消费者上线或下线、服务端扩缩容等场景下，都会触发短暂的重新负载均衡动作。此时可能会存在短暂的负载不一致情况，出现少量消息重复的现象。因此，还需要在下游消费逻辑中保证消息幂等以支持去重功能。<br>为了解决此问题，需要引入一个新机制：<strong>队列</strong>（消息队列-MessageQueue，在Kafka中被称为分区）。</p>
+<p>同一个主题的消息，会被分开存放到不同队列中（主题与队列的关系为一对多），不同消费者可以接收不同队列中的信息，以做到同时消费。<br>示意图：<br><img src="/2024/03/13/backend/middleware/messagequeue/rocket-publishsubscribe/%E5%8F%91%E5%B8%83%E8%AE%A2%E9%98%852.png"></p>
+<p>一个消费者可对应一到多个队列（或分区）。对应多个时需保持多个offset。且要求消费者数量少于队列数量，以避免出现闲置的消费者。</p>
+<p><img src="/2024/03/13/backend/middleware/messagequeue/rocket-publishsubscribe/%E5%8F%91%E5%B8%83%E8%AE%A2%E9%98%853.svg"></p>
+<p>改进后的发布订阅还有一个优点：可以灵活实现<strong>重复消费</strong>或者<strong>跳过部分消息不消费</strong>的功能。</p>
+<ul>
+<li><strong>重复消费</strong>：比如消费者1已经消费到 Topic-A-queue1-20，即第 20 条消息，但是消费者1一不小心把之前消费得到的结果数据弄丢了，如果按照队列模式那就找不到消息了，因为消息已经出队了没了；而在发布-订阅模式中，我们仅需把这个消息位置变更成 Topic-A-queue1-20，这样又可以让消费者1重新消费，只需要简单地改一条数据就能实现这样功能。</li>
+<li><strong>跳过部分消息不消费</strong>：假设 Topic-A-queue1 中第 21-30 这 10 条消息是错误的，我们可以修改当前的消息点位成 Topic-A-queue1-30，这样消费者1就直接跳过了这 10 条错误消息，从第 31 条消息开始消费。</li>
+</ul>
+<blockquote>
+<p>目前讲解的是队列级的负载均衡，即消费者对应到具体队列（每个队列仅支持被一个消费者消费），实际上存在消息级的负载均衡，无需关注消费者和队列的相对数量，能够更均匀地分摊消息。可自行了解。</p>
+</blockquote>
+]]></content>
+      <categories>
+        <category>分布式</category>
+        <category>中间件</category>
+        <category>消息队列</category>
+      </categories>
+      <tags>
+        <tag>Topic</tag>
+        <tag>MessageQueue</tag>
+        <tag>队列模式</tag>
+        <tag>发布订阅模式</tag>
+        <tag>offset</tag>
       </tags>
   </entry>
   <entry>
