@@ -282,49 +282,6 @@
   
   
   <entry>
-    <title>Shell：基础篇</title>
-    <link href="/2024/03/21/backend/language/shell/shell1/"/>
-    <url>/2024/03/21/backend/language/shell/shell1/</url>
-    
-    <content type="html"><![CDATA[<h1 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h1><p>Shell 是计算机操作系统中的一个重要组成部分，尤其在类Unix系统（如Linux、BSD等）以及早期的MS-DOS等系统中扮演着核心角色。</p><p><strong>Shell 是一种命令行界面（CLI）程序，通常被称为命令解释器，它是用户与操作系统内核之间交互的接口或桥梁。</strong></p><blockquote><p>命令行界面（CLI）程序是一种软件应用程序，它专为通过字符界面与用户交互而设计，用户通过键盘输入特定的文本命令及其相关参数来进行操作。在CLI程序中，没有图形元素，如窗口、按钮或菜单，所有的交互完全依赖于文本命令和响应。</p></blockquote><p>具体而言，Shell 主要具有以下几个特点和功能：</p><ul><li><strong>命令解释器</strong>：Shell 接收用户通过键盘输入的命令，解析这些命令并将其转换成内核能理解的操作请求。</li><li><strong>脚本语言</strong>：Shell 不仅允许用户输入单个命令，还支持编写包含一系列命令和控制结构的脚本文件（称为Shell脚本或Shell程序）。这些脚本可以实现自动化任务，简化重复性工作，或是构建复杂的系统管理流程。</li><li>用户交互：Shell 提供了交互式的命令行环境，用户可以在提示符下实时输入和执行命令，获取即时反馈。</li><li>环境配置：Shell 可以设置和管理用户的环境变量，影响程序的行为和系统环境配置。</li><li>I&#x2F;O重定向与管道：Shell 允许用户将命令的标准输入、输出重定向至文件或其他命令，同时支持通过管道（|）连接多个命令，形成数据流式处理。</li><li>命令扩展与别名：Shell 可以为命令添加额外的便利功能，比如命令补全、命令历史记录，以及定义命令别名等。</li></ul><p>流行的Shell有多种，例如<strong>Bash（Bourne-Again SHell）</strong>、sh（Bourne Shell）、csh（C Shell）、zsh（Z Shell）等。其中，bash在大多数Linux发行版中被用作默认的登录Shell。</p><h1 id="运行"><a href="#运行" class="headerlink" title="运行"></a>运行</h1><p>运行 Shell 脚本有多种方法：</p><ol><li><strong>作为可执行程序运行</strong>：<strong>直接执行</strong>，需有执行权限，<ul><li>确保脚本文件的第一行包含了正确的Shebang（#!），例如 #!&#x2F;bin&#x2F;bash 或 #!&#x2F;usr&#x2F;bin&#x2F;env bash，用于指定解释此脚本的Shell版本。</li><li>给脚本添加执行权限：<code>chmod +x script.sh</code></li><li>使用相对路径或绝对路径执行：相对路径<code>./script.sh</code>；绝对路径<code>/path/to/script.sh</code>。</li></ul></li><li><strong>作为解释器参数</strong>：<ul><li>如<code>bash script.sh</code></li><li>即使脚本没有执行权限，也可以通过明确指定解释器来执行</li></ul></li><li>source命令：当希望脚本中的环境变量更改、函数定义等对当前Shell会话生效时，可以使用source命令。<ul><li>如<code>source script.sh</code></li></ul></li></ol><h1 id="语法"><a href="#语法" class="headerlink" title="语法"></a>语法</h1><h2 id="变量"><a href="#变量" class="headerlink" title="变量"></a>变量</h2><p>在Shell中定义变量非常直观且简单，无需事先声明变量类型，<strong>只需给变量分配一个值即可完成定义</strong>。<br>如<code>name=&quot;chilun&quot;</code>，即定义了一个变量name为字符串“chilun”。</p><h3 id="变量命名规则"><a href="#变量命名规则" class="headerlink" title="变量命名规则"></a>变量命名规则</h3><ul><li><strong>只包含字母、数字和下划线</strong>： 变量名可以包含字母（大小写敏感）、数字和下划线 _，不能包含其他特殊字符。</li><li><strong>不能以数字开头</strong>： 变量名不能以数字开头，但可以包含数字。</li><li><strong>避免使用 Shell 关键字</strong>： 不要使用Shell的关键字（例如 if、then、else、fi、for、while 等）作为变量名，以免引起混淆。</li><li>使用大写字母表示常量： 习惯上，常量的变量名通常使用大写字母，例如 PI&#x3D;3.14。</li></ul><h3 id="定义变量"><a href="#定义变量" class="headerlink" title="定义变量"></a>定义变量</h3><ol><li><strong>直接赋值</strong>：通过等号（&#x3D;）来给变量赋值，注意变量名和等号之间不能有空格。<ul><li><code>name=&quot;chilun&quot;</code>：将“chilun”字符串赋给变量 name。</li></ul></li><li><strong>语句赋值</strong>：可使用for循环等语句对变量进行赋值。<ul><li><code>for file in $(ls /etc) </code>：将 &#x2F;etc 目录下的所有文件和目录名逐个赋值给变量 file。</li></ul></li><li><strong>命令赋值</strong>：可使用标准输入读取命令等对变量进行赋值。<ul><li><code>read -p &quot;请输入你的名字: &quot; name</code>：用户输入的名字会被赋值给变量 name。</li></ul></li><li><strong>定义变量</strong>：使用<code>declare</code>或<code>typeset</code>命令定义变量时可以指定变量的类型（如整型、数组等）。<ul><li><code>declare -i age=30</code>：定义一个整数类型的变量age并赋值为30。</li></ul></li><li><strong>计算变量</strong>：使用<code>let</code>命令执行简单的算术运算并赋值给变量。<ul><li><code>let b=a+1</code>：将b赋值为a+1后的整数；如果直接<code>b=a+1</code>，b会被赋值为“a+1”的字符串。</li></ul></li><li><strong>定义环境变量</strong>：使用<code>export</code>命令可以定义环境变量，在子shell进程中变量也能被访问。<ul><li><code>export PATH=$PATH:/usr/local/bin</code>：将新的路径添加到已存在的PATH环境变量中。</li></ul></li><li><strong>删除变量</strong>：使用<code>unset</code>命令删除已定义的变量。<ul><li><code>unset name</code>：删除变量name。</li></ul></li><li><strong>只读变量</strong>：使用<code>readonly</code>命令可以将变量定义为只读变量，只读变量的值不能被改变，不能被删除。<ul><li><code>readonly name</code>：之后再修改就会报错：<code>name: readonly variable</code>。</li></ul></li></ol><h3 id="使用变量"><a href="#使用变量" class="headerlink" title="使用变量"></a>使用变量</h3><p>使用一个定义过的变量，只要在变量名前面加美元符号即可。<br>变量名外面的花括号是可选的，加不加都行，加花括号是为了帮助解释器识别变量的边界（推荐给所有变量加上花括号）。</p><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs shell">name=&quot;chilun&quot;<br>echo $name<br>echo $&#123;name&#125;<br></code></pre></td></tr></table></figure><p>输出为：</p><blockquote><p>chilun<br>chilun</p></blockquote><h3 id="变量类型"><a href="#变量类型" class="headerlink" title="变量类型"></a>变量类型</h3><p>Shell 支持不同类型的变量。</p><h4 id="字符串变量"><a href="#字符串变量" class="headerlink" title="字符串变量"></a>字符串变量</h4><p>在 Shell中，变量通常被视为字符串。<br>在Bash中，所有变量值本质上都是字符串。即使一个变量可用于数值计算，其在内部依旧是以字符串的形式存储的，只是在进行算术运算时进行了相应的转换和处理。<br>可使用单引号或双引号来定义字符串，比如：<code>a=&#39;Hello, World!&#39;</code>或者<code>b=&quot;Hello, World!&quot;</code>。</p><p>当直接赋值一个不包含变量扩展、算术扩展或其他形式扩展的纯文本给一个变量时，Bash也会将这个值当作字符串来处理，如<code>c=hello,World!</code>。<br>（当设置一个变量时，其值默认被视为一个整体，直到遇到第一个未经转义的特殊字符为止。如果<code>c=hello, World!</code>就会报错，因为存在空格，空格是Bash解析命令行参数时的分隔符，会导致Bash会尝试将<code>hello,</code>、<code>World!</code>视为不同的参数。）</p><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs shell"><span class="hljs-meta prompt_">#</span><span class="language-bash">!/bin/bash</span><br>a=&#x27;Hello, World!&#x27;<br>b=&quot;Hello, World!&quot;<br>c=hello,World!<br>echo $&#123;a&#125; $&#123;b&#125; $&#123;c&#125; <br></code></pre></td></tr></table></figure><p>输出结果为：</p><blockquote><p>Hello, World! Hello, World! hello,World!</p></blockquote><h4 id="整数变量"><a href="#整数变量" class="headerlink" title="整数变量"></a>整数变量</h4><p>可以使用 declare 或 typeset 命令来声明整数变量。<br>这样的变量只包含整数值，例如：<code>declare -i a=42</code>。<br>这样的声明告诉Shell将a视为整数，如果尝试将非整数值赋给它，Shell会尝试将其转换为整数。</p><p>示例：</p><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs shell"><span class="hljs-meta prompt_">#</span><span class="language-bash">!/bin/bash</span><br>a=42<br>declare -i b=a+1<br>echo $&#123;b&#125;<br></code></pre></td></tr></table></figure><p>输出为：</p><blockquote><p>43</p></blockquote><p>（如果不声明为整数，b就会被看做是“a+1”的字符串。）</p><h4 id="数组变量"><a href="#数组变量" class="headerlink" title="数组变量"></a>数组变量</h4><p>Shell 支持数组，允许在一个变量中存储多个值。括号用来表示数组，数组元素用”空格”符号分割开。<br>数组可以是<strong>整数索引数组</strong>或<strong>关联数组</strong>：</p><ul><li>整数索引数组：<code>array1=(1 2 3 4 5)</code></li><li>关联数组：<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs shell">declare -A array2<br>array2[&#x27;he&#x27;]=&quot;wor&quot;<br>array2[&#x27;llo,&#x27;]=&quot;ld!&quot;<br></code></pre></td></tr></table></figure></li></ul><p>示例：</p><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs shell">array1=(1 2 3 4 5)<br>echo $&#123;array1[0]&#125; $&#123;array1[1]&#125; $&#123;array1[2]&#125; $&#123;array1[3]&#125; $&#123;array1[4]&#125;<br>declare -A array2<br>array2[&#x27;he&#x27;]=&quot;wor&quot;<br>array2[&#x27;llo,&#x27;]=&quot;ld!&quot;<br>echo $&#123;array2[&#x27;he&#x27;]&#125;$&#123;array2[&#x27;llo,&#x27;]&#125;<br></code></pre></td></tr></table></figure><p>输出为：</p><blockquote><p>1 2 3 4 5<br>world!</p></blockquote><blockquote><p>未完待续……</p></blockquote><h2 id="字符串"><a href="#字符串" class="headerlink" title="字符串"></a>字符串</h2><p>字符串可以用单引号，也可以用双引号，也可以不用引号。</p><h3 id="单引号"><a href="#单引号" class="headerlink" title="单引号"></a>单引号</h3><p>单引号里的任何字符都会原样输出，单引号字符串中的变量是无效的。</p><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs shell"><span class="hljs-meta prompt_">#</span><span class="language-bash">!/bin/bash</span><br>a=chilun<br>echo &#x27;$&#123;a&#125;&#x27;<br></code></pre></td></tr></table></figure><p>输出为：</p><blockquote><p>${a}</p></blockquote><p>由于单引号里的任何字符都会原样输出，所以单引号字符串中无法输出单引号（不支持转义），但可成对出现，作为字符串拼接使用。</p><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs shell"><span class="hljs-meta prompt_">#</span><span class="language-bash">!/bin/bash</span><br>a=chilun<br>echo &#x27;$&#123;a&#125;&#x27;&#x27;$&#123;a&#125;&#x27;<br></code></pre></td></tr></table></figure><p>输出为：</p><blockquote><p>${a}${a}</p></blockquote><h3 id="双引号"><a href="#双引号" class="headerlink" title="双引号"></a>双引号</h3><p>双引号字符串支持变量展开和转义字符。</p><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs shell"><span class="hljs-meta prompt_">#</span><span class="language-bash">!/bin/bash</span><br>a=chilun<br>echo &quot;$&#123;a&#125;&quot;&quot;\$&#123;a&#125;&quot;<br></code></pre></td></tr></table></figure><p>输出为：</p><blockquote><p>chilun${a}</p></blockquote><h3 id="字符串操作"><a href="#字符串操作" class="headerlink" title="字符串操作"></a>字符串操作</h3><h4 id="获得长度"><a href="#获得长度" class="headerlink" title="获得长度"></a>获得长度</h4><p>使用&#96;$</p>]]></content>
-    
-    
-    <categories>
-      
-      <category>后端开发</category>
-      
-      <category>语言</category>
-      
-      <category>shell</category>
-      
-    </categories>
-    
-    
-    <tags>
-      
-      <tag>Linux</tag>
-      
-      <tag>Shell</tag>
-      
-      <tag>CLI</tag>
-      
-      <tag>Bash</tag>
-      
-      <tag>Bourne-Again SHell</tag>
-      
-      <tag>变量</tag>
-      
-      <tag>字符串</tag>
-      
-      <tag>数组</tag>
-      
-    </tags>
-    
-  </entry>
-  
-  
-  
-  <entry>
     <title>MySQL：索引</title>
     <link href="/2024/03/20/backend/database/mysql/mysql_index/"/>
     <url>/2024/03/20/backend/database/mysql/mysql_index/</url>
@@ -839,35 +796,6 @@
   
   
   <entry>
-    <title>微服务：认识篇</title>
-    <link href="/2024/03/13/backend/microservice/microservice-introduce/"/>
-    <url>/2024/03/13/backend/microservice/microservice-introduce/</url>
-    
-    <content type="html"><![CDATA[<p>本文将从时代背景、发展过程、微服务特点出发，对微服务整体构建一个大致的理解：</p><h2 id="时代背景"><a href="#时代背景" class="headerlink" title="时代背景"></a>时代背景</h2><ol><li><p>解决<strong>复杂性</strong>的需求——传统的单体应用架构将所有的功能和模块集中在一个单独的应用程序中，导致应用程序开发、部署和维护变得困难，并且不利于快速迭代和扩展。</p></li><li><p>对<strong>高可用性和扩展性</strong>的需求（如高并发和大规模用户访问）——用户对于应用程序的高可用性和即时响应的期望越来越高，而单体应用架构难以实现高可用性和弹性扩展（一个组件的故障可能会影响整个应用程序的可用性，并且扩展整个应用程序可能会面临技术和性能上的限制）。</p></li><li><p>快速迭代和团队协作的需求（可包含于1.1）——传统的单体应用架构可能不利于快速迭代，因为一个小的更改可能需要重新构建整个应用程序并进行全面的测试和部署，而且微服务为人员的分工提供了便捷，可以更好地支持快速迭代和敏捷开发。</p><blockquote><p>来自《凤凰架构》：譬如，制约软件质量与业务能力提升的最大因素是人而非硬件。多数企业即使有钱也很难招到大量的靠谱的开发者。此时，无论是引入外包团队，抑或是让少量技术专家带着大量普通水平的开发者去共同完成一个大型系统就成为了必然的选择。在单体架构下，没有什么有效阻断错误传播的手段，系统中“整体”与“部分”的关系没有物理的划分，系统质量只能靠研发与项目管理措施来尽可能地保障，少量的技术专家很难阻止大量螺丝钉式的程序员或者不熟悉原有技术架构的外包人员在某个不起眼的地方犯错并产生全局性的影响，并不容易做出整体可靠的大型系统。</p></blockquote></li><li><p><strong>新技术云计算</strong>和<strong>分布式架构</strong>的支持——云计算的兴起为分布式架构提供了理想的基础设施。云计算提供了弹性的计算资源和可扩展的基础设施，使得构建分布式系统和服务变得更加容易。</p></li></ol><h2 id="发展过程："><a href="#发展过程：" class="headerlink" title="发展过程："></a>发展过程：</h2><ol><li>早期阶段：<ol><li>SOA的出现：在这个阶段，服务导向架构（SOA）的概念开始引起关注。SOA提倡将应用程序拆分为一组可重用的服务，通过标准化的接口进行通信。这为后来微服务架构的发展奠定了基础。</li></ol></li><li>兴起阶段：<ol><li>架构模式的探索：微服务架构作为一种新兴的架构风格（更灵活、可维护和可扩展）开始受到关注。</li><li>云计算和虚拟化技术的发展：云计算和虚拟化技术的兴起为微服务架构的发展提供了理想的基础设施。这些技术为构建分布式系统和部署微服务提供了更好的支持。</li></ol></li><li>推广阶段：<ol><li>微服务的推广：微服务架构开始广泛被采用并得到推广。越来越多的组织开始采用微服务架构，以应对复杂性增加、快速迭代和团队协作的挑战。</li><li>开源和商业化工具的涌现：随着微服务的普及，大量的开源和商业化工具、框架和平台涌现，用于辅助微服务架构的开发、部署和管理。这些工具提供了服务注册与发现、负载均衡、容器化和编排、监控和日志等功能，为微服务架构提供了更好的支持。</li><li>实践经验的积累：随着实际应用的增多，对于微服务架构的实践经验也在不断积累。开发人员和组织逐渐摸索出一些最佳实践、设计模式和解决方案，以应对微服务架构中的挑战和复杂性。</li></ol></li><li>演进阶段（将来）：微服务架构是一个动态的领域，仍在不断演进和发展中。它的发展历史仍在进行中，将随着技术的进步和业务需求的变化而不断推进。因此，微服务架构的未来发展将会受到更多新技术、实践经验和业务需求的影响。</li></ol><h2 id="微服务特点："><a href="#微服务特点：" class="headerlink" title="微服务特点："></a>微服务特点：</h2><table><thead><tr><th>不同点</th><th>微服务架构</th><th>单体架构</th></tr></thead><tbody><tr><td>团队规模</td><td>微服务架构可以将传统模式下的单个应用拆分为多个独立的服务，每个微服务都可以单独开发、部署和维护。<strong>每个服务从设计、开发到维护所需的团队规模小，团队管理成本小。</strong></td><td>单体架构的应用程序通常需要一个大型团队，围绕一个庞大的应用程序工作，团队管理的成本大。</td></tr><tr><td>项目结构（部署方式）</td><td>微服务架构中<strong>每个服务都可以独立开发、部署和维护</strong>，也可以独立于其他服务进行扩展。如果部署得当，基于微服务的架构可以帮助企业提高应用程序的部署效率。</td><td>采用单体架构的应用程序的每一次功能更改或 bug 修复都必须对整个应用程序重新进行部署（所有的业务逻辑都集中在同一个工程中）。</td></tr><tr><td>开发模式</td><td>在采用微服务架构的应用程序中，<strong>不同模块可以使用不同的技术或语言进行开发，开发模式更加灵活</strong>。</td><td>在采用单体架构的应用程序中，所有模块使用的技术和语言必须相同，开发模式受限。</td></tr><tr><td>故障隔离</td><td>在微服务架构中，<strong>故障被隔离在单个服务中</strong>，避免系统的整体崩溃。</td><td>在单体架构中，当一个组件出现故障时，故障很可能会在进程中蔓延，导致系统全局不可用。</td></tr></tbody></table><p>优点：</p><ul><li><strong>松耦合</strong>：微服务架构通过将应用程序拆分为多个独立的服务来实现松耦合。每个服务都是自治的，可以独立开发、部署、扩展和维护。这种松耦合性使团队能够独立开发和部署不同的服务，降低了开发的复杂性，并且更容易实现敏捷开发和持续交付。</li><li><strong>可伸缩性（扩展性）</strong>：由于微服务架构中的每个服务都是独立的，可以根据需求对每个服务进行单独的扩展。这意味着可以根据流量和负载的变化，只需对需要扩展的服务进行扩展，而无需扩展整个应用程序。这种可伸缩性使系统能够更好地应对高流量和大规模的并发请求。</li><li><strong>技术多样性</strong>：微服务架构允许使用不同的编程语言、框架和技术栈来构建不同的服务。这使得团队可以选择最适合其需求和技术能力的工具和技术，从而实现更好的灵活性和创新性。</li></ul><p>缺点：</p><ul><li><strong>分布式系统复杂性</strong>：微服务架构引入了分布式系统的复杂性。服务之间的通信和协调需要考虑网络延迟、服务发现、故障处理等因素。这增加了系统的复杂性，并需要适当的工具和技术来管理分布式环境。</li><li><strong>运维复杂性</strong>：由于微服务架构中存在大量的服务实例和组件，运维和监控这些服务变得更加复杂。需要适当的工具和流程来管理和监控每个服务的性能、可用性和健康状态。</li><li><strong>分布式事务管理</strong>：微服务架构中的服务可能需要进行跨服务的事务操作。由于每个服务都是自治的，保持一致的事务管理变得复杂。需要使用一些机制（如分布式事务或补偿性事务）来管理分布式事务的一致性和可靠性。<br>此外，微服务还有其他一些特点，比如可以与容器（Docker）配合使用，可以进行链路追踪等，但是我们主要的目的，还是为了解决复杂性（实现独立开发、部署和维护，保证敏捷开发和持续交付）和提高可用性和扩展性（故障隔离、对服务进行扩展、可使用多种技术和语言），所以仅列出上述优缺点和特点。</li></ul><h2 id="与SOA的区别："><a href="#与SOA的区别：" class="headerlink" title="与SOA的区别："></a>与SOA的区别：</h2><p>微服务 VS SOA：</p><ul><li>相同：面向服务；</li><li>不同：强约束 VS 软指导；强一致 VS 自由；规范标准 VS 实践标准。<br>微服务丢掉了 SOA 的强标准，换来了自由。自由的代价是工程师需根据业务情况选择适合的技术，过程中可能会犯错。微服务带来自由，也带来迷茫。微服务只是一种思想，它丢掉了 SOA 的包袱，却没带来什么具体的东西。RPC 等分布式的问题重新出现，交由社区解决；一时间，百花齐放，百家争鸣。</li></ul><blockquote><p>引自《凤凰架构》：<br>SOA 在 21 世纪最初的十年里曾经盛行一时，有 IBM 等一众行业巨头厂商为其呐喊冲锋，吸引了不少软件开发商、尤其是企业级软件的开发商的跟随，最终却还是偃旗息鼓，沉寂了下去。在稍后的远程服务调用一节，笔者会提到 SOAP 协议被逐渐边缘化的本质原因：过于严格的规范定义带来过度的复杂性。而构建在 SOAP 基础之上的 ESB、BPM、SCA、SDO 等诸多上层建筑，进一步加剧了这种复杂性。开发信息系统毕竟不是作八股文章，过于精密的流程和理论也需要懂得复杂概念的专业人员才能够驾驭。SOA 诞生的那一天起，就已经注定了它只能是少数系统阳春白雪式的精致奢侈品，它可以实现多个异构大型系统之间的复杂集成交互，却很难作为一种具有广泛普适性的软件架构风格来推广。SOA 最终没有获得成功的致命伤与当年的EJB (opens new window)如出一辙，尽管有 Sun Microsystems 和 IBM 等一众巨头在背后力挺，EJB 仍然败于以 Spring、Hibernate 为代表的“草根框架”，可见一旦脱离人民群众，终究会淹没在群众的海洋之中，连信息技术也不曾例外过。</p></blockquote>]]></content>
-    
-    
-    <categories>
-      
-      <category>分布式</category>
-      
-      <category>微服务</category>
-      
-    </categories>
-    
-    
-    <tags>
-      
-      <tag>微服务</tag>
-      
-      <tag>SOA</tag>
-      
-    </tags>
-    
-  </entry>
-  
-  
-  
-  <entry>
     <title>ubuntu：初始化云服务器</title>
     <link href="/2024/03/12/practice/initUbuntu/"/>
     <url>/2024/03/12/practice/initUbuntu/</url>
@@ -1063,7 +991,7 @@
   
   
   <entry>
-    <title>分类</title>
+    <title>标签</title>
     <link href="/"/>
     <url>/</url>
     
@@ -1074,7 +1002,7 @@
   
   
   <entry>
-    <title>标签</title>
+    <title>分类</title>
     <link href="/"/>
     <url>/</url>
     
