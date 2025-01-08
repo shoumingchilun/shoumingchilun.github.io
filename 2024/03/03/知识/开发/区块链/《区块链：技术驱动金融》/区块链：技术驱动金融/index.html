@@ -1,0 +1,1084 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/images/apple-touch-icon.png">
+  <link rel="icon" href="/images/favicon-32x32.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+  
+  <meta name="theme-color" content="#161f24">
+  <meta name="author" content="寿命齿轮">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="本文将介绍一些区块链领域的技术概念，充当一份技术目录以供备用。 哈希函数特性哈希函数具有以下特性：  碰撞阻力（Collision Resistance）：避免存在x，y，使H(x)&#x3D;H(y) 对于任意两个不同的输入x和y，找到满足H(x) &#x3D; H(y)的x和y在计算上应该是非常困难的。理想的哈希函数应保证对于所有可能的输入，其输出的哈希值都各不相同，但实际上因为输出空间有限而">
+<meta property="og:type" content="article">
+<meta property="og:title" content="《区块链：技术驱动金融》摘录（概念目录）">
+<meta property="og:url" content="http://shoumingchilun.github.io/2024/03/03/%E7%9F%A5%E8%AF%86/%E5%BC%80%E5%8F%91/%E5%8C%BA%E5%9D%97%E9%93%BE/%E3%80%8A%E5%8C%BA%E5%9D%97%E9%93%BE%EF%BC%9A%E6%8A%80%E6%9C%AF%E9%A9%B1%E5%8A%A8%E9%87%91%E8%9E%8D%E3%80%8B/%E5%8C%BA%E5%9D%97%E9%93%BE%EF%BC%9A%E6%8A%80%E6%9C%AF%E9%A9%B1%E5%8A%A8%E9%87%91%E8%9E%8D/">
+<meta property="og:site_name" content="Chilun&#39;s Blogs">
+<meta property="og:description" content="本文将介绍一些区块链领域的技术概念，充当一份技术目录以供备用。 哈希函数特性哈希函数具有以下特性：  碰撞阻力（Collision Resistance）：避免存在x，y，使H(x)&#x3D;H(y) 对于任意两个不同的输入x和y，找到满足H(x) &#x3D; H(y)的x和y在计算上应该是非常困难的。理想的哈希函数应保证对于所有可能的输入，其输出的哈希值都各不相同，但实际上因为输出空间有限而">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://shoumingchilun.github.io/2024/03/03/%E7%9F%A5%E8%AF%86/%E5%BC%80%E5%8F%91/%E5%8C%BA%E5%9D%97%E9%93%BE/%E3%80%8A%E5%8C%BA%E5%9D%97%E9%93%BE%EF%BC%9A%E6%8A%80%E6%9C%AF%E9%A9%B1%E5%8A%A8%E9%87%91%E8%9E%8D%E3%80%8B/%E5%8C%BA%E5%9D%97%E9%93%BE%EF%BC%9A%E6%8A%80%E6%9C%AF%E9%A9%B1%E5%8A%A8%E9%87%91%E8%9E%8D/%E5%93%88%E5%B8%8C%E6%8C%87%E9%92%88_%E5%8C%BA%E5%9D%97%E9%93%BE.png">
+<meta property="og:image" content="http://shoumingchilun.github.io/2024/03/03/%E7%9F%A5%E8%AF%86/%E5%BC%80%E5%8F%91/%E5%8C%BA%E5%9D%97%E9%93%BE/%E3%80%8A%E5%8C%BA%E5%9D%97%E9%93%BE%EF%BC%9A%E6%8A%80%E6%9C%AF%E9%A9%B1%E5%8A%A8%E9%87%91%E8%9E%8D%E3%80%8B/%E5%8C%BA%E5%9D%97%E9%93%BE%EF%BC%9A%E6%8A%80%E6%9C%AF%E9%A9%B1%E5%8A%A8%E9%87%91%E8%9E%8D/%E5%93%88%E5%B8%8C%E6%8C%87%E9%92%88_%E6%A2%85%E5%85%8B%E5%B0%94%E6%A0%91.png">
+<meta property="og:image" content="http://shoumingchilun.github.io/2024/03/03/%E7%9F%A5%E8%AF%86/%E5%BC%80%E5%8F%91/%E5%8C%BA%E5%9D%97%E9%93%BE/%E3%80%8A%E5%8C%BA%E5%9D%97%E9%93%BE%EF%BC%9A%E6%8A%80%E6%9C%AF%E9%A9%B1%E5%8A%A8%E9%87%91%E8%9E%8D%E3%80%8B/%E5%8C%BA%E5%9D%97%E9%93%BE%EF%BC%9A%E6%8A%80%E6%9C%AF%E9%A9%B1%E5%8A%A8%E9%87%91%E8%9E%8D/%E8%89%AF%E6%80%A7%E5%BE%AA%E7%8E%AF.png">
+<meta property="og:image" content="http://shoumingchilun.github.io/2024/03/03/%E7%9F%A5%E8%AF%86/%E5%BC%80%E5%8F%91/%E5%8C%BA%E5%9D%97%E9%93%BE/%E3%80%8A%E5%8C%BA%E5%9D%97%E9%93%BE%EF%BC%9A%E6%8A%80%E6%9C%AF%E9%A9%B1%E5%8A%A8%E9%87%91%E8%9E%8D%E3%80%8B/%E5%8C%BA%E5%9D%97%E9%93%BE%EF%BC%9A%E6%8A%80%E6%9C%AF%E9%A9%B1%E5%8A%A8%E9%87%91%E8%9E%8D/%E4%BA%A4%E6%98%93%E7%A8%8B%E5%BA%8F%E6%AE%B5.jpg">
+<meta property="og:image" content="http://shoumingchilun.github.io/2024/03/03/%E7%9F%A5%E8%AF%86/%E5%BC%80%E5%8F%91/%E5%8C%BA%E5%9D%97%E9%93%BE/%E3%80%8A%E5%8C%BA%E5%9D%97%E9%93%BE%EF%BC%9A%E6%8A%80%E6%9C%AF%E9%A9%B1%E5%8A%A8%E9%87%91%E8%9E%8D%E3%80%8B/%E5%8C%BA%E5%9D%97%E9%93%BE%EF%BC%9A%E6%8A%80%E6%9C%AF%E9%A9%B1%E5%8A%A8%E9%87%91%E8%9E%8D/%E5%A0%86%E6%A0%88%E7%8A%B6%E6%80%81.jpg">
+<meta property="og:image" content="http://shoumingchilun.github.io/2024/03/03/%E7%9F%A5%E8%AF%86/%E5%BC%80%E5%8F%91/%E5%8C%BA%E5%9D%97%E9%93%BE/%E3%80%8A%E5%8C%BA%E5%9D%97%E9%93%BE%EF%BC%9A%E6%8A%80%E6%9C%AF%E9%A9%B1%E5%8A%A8%E9%87%91%E8%9E%8D%E3%80%8B/%E5%8C%BA%E5%9D%97%E9%93%BE%EF%BC%9A%E6%8A%80%E6%9C%AF%E9%A9%B1%E5%8A%A8%E9%87%91%E8%9E%8D/%E5%AF%BB%E6%89%BE%E6%9C%89%E6%95%88%E5%8C%BA%E5%9D%97.jpg">
+<meta property="article:published_time" content="2024-03-03T05:59:50.000Z">
+<meta property="article:modified_time" content="2025-01-08T15:12:36.056Z">
+<meta property="article:author" content="寿命齿轮">
+<meta property="article:tag" content="区块链">
+<meta property="article:tag" content="哈希">
+<meta property="article:tag" content="去中心化">
+<meta property="article:tag" content="分布式共识">
+<meta property="article:tag" content="比特币">
+<meta property="article:tag" content="工作量证明">
+<meta property="article:tag" content="零币">
+<meta property="article:tag" content="虚拟挖矿">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="http://shoumingchilun.github.io/2024/03/03/%E7%9F%A5%E8%AF%86/%E5%BC%80%E5%8F%91/%E5%8C%BA%E5%9D%97%E9%93%BE/%E3%80%8A%E5%8C%BA%E5%9D%97%E9%93%BE%EF%BC%9A%E6%8A%80%E6%9C%AF%E9%A9%B1%E5%8A%A8%E9%87%91%E8%9E%8D%E3%80%8B/%E5%8C%BA%E5%9D%97%E9%93%BE%EF%BC%9A%E6%8A%80%E6%9C%AF%E9%A9%B1%E5%8A%A8%E9%87%91%E8%9E%8D/%E5%93%88%E5%B8%8C%E6%8C%87%E9%92%88_%E5%8C%BA%E5%9D%97%E9%93%BE.png">
+  
+  
+  
+  <title>《区块链：技术驱动金融》摘录（概念目录） - Chilun&#39;s Blogs</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+  
+<link rel="stylesheet" href="/css/iconfont_csdn/iconfont.css">
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"shoumingchilun.github.io","root":"/","version":"1.9.7","typing":{"enable":true,"typeSpeed":80,"cursorChar":"'","loop":false,"scope":["home"]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"left","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 65vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>Chilun&#39;s Blogs</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/images/headpage.jpg') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle">《区块链：技术驱动金融》摘录（概念目录）</span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2024-03-03 13:59" pubdate>
+          2024年3月3日 下午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          9.1k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          77 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="padding-left: 2rem; margin-right: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">《区块链：技术驱动金融》摘录（概念目录）</h1>
+            
+              <p id="updated-time" class="note note-info" style="display: none">
+                
+                  
+                    本文最后更新于 2025-01-08T23:12:36+08:00
+                  
+                  
+
+                
+              </p>
+            
+            
+              <div class="markdown-body">
+                
+                <p>本文将介绍一些区块链领域的技术概念，充当一份技术目录以供备用。</p>
+<h1 id="哈希函数"><a href="#哈希函数" class="headerlink" title="哈希函数"></a>哈希函数</h1><h2 id="特性"><a href="#特性" class="headerlink" title="特性"></a>特性</h2><p>哈希函数具有以下特性：</p>
+<ul>
+<li><strong>碰撞阻力（Collision Resistance）</strong>：避免存在x，y，使H(x)&#x3D;H(y)<ul>
+<li>对于任意两个不同的输入x和y，找到满足H(x) &#x3D; H(y)的x和y在计算上应该是非常困难的。理想的哈希函数应保证对于所有可能的输入，其输出的哈希值都各不相同，但实际上因为输出空间有限而输入空间无限，理论上总是存在碰撞的可能，但在实际应用中，一个好的哈希函数设计应当使寻找碰撞的概率变得极低。</li>
+<li>特性应用：<strong>信息摘要（Message Digests）</strong>——在数据完整性校验中，哈希函数被用来生成一段数据的“数字指纹”，如MD5或SHA系列算法。当文件传输后，接收方可以通过重新计算哈希值并与发送方提供的摘要对比，确认数据在传输过程中是否被篡改。若摘要匹配，则说明数据未变；如果不匹配，则可能存在数据损坏或被恶意篡改。</li>
+</ul>
+</li>
+<li><strong>隐秘性（Pre-image Resistance &#x2F; One-wayness）</strong>：y&#x3D;H(x)，不可通过y推出x<ul>
+<li>隐秘性是指给定一个哈希值y，找到任何原输入x使得y &#x3D; H(x)在计算上是不可能或极其困难的。这体现了哈希函数的单向性，即从输出反推输入几乎不可能。</li>
+<li>特性应用：<strong>承诺（Commitment Schemes）</strong> ——在密码学中，哈希函数可用于构建承诺方案，一方可以在不暴露具体值的情况下对某个秘密值做出承诺，并在以后揭示该值时证明承诺的有效性。例如，在零知识证明中，一个参与者可以提前提交一个哈希值作为承诺，后续再公开原始数据，其他人可以通过计算哈希验证其一致性，但在此之前无法猜出原始数据。</li>
+</ul>
+</li>
+<li><strong>谜题友好（Puzzle-Friendliness 或 Puzzle-freeness）</strong>：使H(k||x)&#x3D;y成立的x无法在比2^n小很多时间内找到<ul>
+<li>（该特性主要应用于比特币挖矿中）</li>
+<li>谜题友好通常指的是哈希函数在特定条件下能够生成难以预先计算但易于验证结果的问题，即所谓的“工作量证明（Proof of Work, PoW）”。这种情况下，要求找到一个输入x（通常带有额外的随机数k）使得H(k || x) &#x3D; y成立的x在计算资源受限的情况下（比如在比穷举搜索所需时间小很多的时间内）是难以找到的。</li>
+<li>特性应用：<strong>搜索谜题（Cryptographic Puzzles or Hashcash）</strong>——在比特币挖矿中，矿工竞相解决一个基于哈希难题的PoW问题，寻找一个nonce（k）使得区块头的哈希值小于某个目标阈值。这一特性确保了挖矿过程需要大量计算资源投入，从而达到区块链系统的去中心化共识机制的安全性。只有成功解决谜题的矿工才能添加新区块并获得奖励。</li>
+</ul>
+</li>
+</ul>
+<blockquote>
+<p>谜题友好可以通俗地理解为——我很难找到符合要求的hash输入来发布一个区块并获得奖励（需要大量枚举），但是我可以很方便地验证一个新发布区块对应的hash是否是合理的，并以此判定对方是否应该获得奖励。</p>
+</blockquote>
+<p>目前主流使用的哈希函数：<strong>SHA-256</strong>。</p>
+<h2 id="哈希指针"><a href="#哈希指针" class="headerlink" title="哈希指针"></a>哈希指针</h2><p><strong>概念：哈希指针是一种数据结构。</strong><br>简单来说，哈希指针是一个指向数据存储位置及其位置数据的哈希值的指针。一个普通的指针可以告诉你数据存储的位置，哈希指针不但可以告诉你数据存储的位置，并且还可以给你一种方式，让你<strong>验证数据没有被篡改过</strong>。</p>
+<p><strong>常用应用：</strong></p>
+<ul>
+<li><strong>区块链</strong>：在区块链中，每个区块包含了区块头和区块体两部分。区块头包含了一个哈希指针，它指向的是前一个区块的哈希值。这样形成的链式结构确保了区块之间的<strong>顺序性和历史不可篡改性</strong>。<strong>如果有人试图修改某个过去的区块数据，那么该区块的哈希值会变化，并因此导致后续所有区块的哈希值都需要相应改变，因为它们都包含了前一个区块的哈希指针。</strong>这要求攻击者必须重新计算整个链条的哈希值，而这在比特币等具有足够工作量证明机制的区块链中几乎是不可能的。<br><img src="/2024/03/03/%E7%9F%A5%E8%AF%86/%E5%BC%80%E5%8F%91/%E5%8C%BA%E5%9D%97%E9%93%BE/%E3%80%8A%E5%8C%BA%E5%9D%97%E9%93%BE%EF%BC%9A%E6%8A%80%E6%9C%AF%E9%A9%B1%E5%8A%A8%E9%87%91%E8%9E%8D%E3%80%8B/%E5%8C%BA%E5%9D%97%E9%93%BE%EF%BC%9A%E6%8A%80%E6%9C%AF%E9%A9%B1%E5%8A%A8%E9%87%91%E8%9E%8D/%E5%93%88%E5%B8%8C%E6%8C%87%E9%92%88_%E5%8C%BA%E5%9D%97%E9%93%BE.png" srcset="/img/loading.gif" lazyload></li>
+<li><strong>梅克尔树</strong>：当任意一笔交易数据发生变化时，该交易所在叶子节点的哈希值会变，进而影响到整棵树的根哈希值。由于区块头包含了这一梅克尔根，所以<strong>任何对交易数据的篡改都会立刻反映在区块哈希值的变化</strong>上，从而<strong>保护了整个区块链账本的完整性和一致性</strong>。另外梅克尔树还应用在轻客户端验证等场景中。<br><img src="/2024/03/03/%E7%9F%A5%E8%AF%86/%E5%BC%80%E5%8F%91/%E5%8C%BA%E5%9D%97%E9%93%BE/%E3%80%8A%E5%8C%BA%E5%9D%97%E9%93%BE%EF%BC%9A%E6%8A%80%E6%9C%AF%E9%A9%B1%E5%8A%A8%E9%87%91%E8%9E%8D%E3%80%8B/%E5%8C%BA%E5%9D%97%E9%93%BE%EF%BC%9A%E6%8A%80%E6%9C%AF%E9%A9%B1%E5%8A%A8%E9%87%91%E8%9E%8D/%E5%93%88%E5%B8%8C%E6%8C%87%E9%92%88_%E6%A2%85%E5%85%8B%E5%B0%94%E6%A0%91.png" srcset="/img/loading.gif" lazyload></li>
+</ul>
+<h1 id="数字签名"><a href="#数字签名" class="headerlink" title="数字签名"></a>数字签名</h1><p>数字签名方案由以下三个算法构成:</p>
+<ol>
+<li>$(sk,pk):&#x3D;generateKeys(keysize)$<br><code>generateKeys</code>方法把<code>keysize</code>作为输入，来产生一对公钥和私钥。私钥<code>sk</code>被安全保存，并用来签名一段消息；公钥<code>pk</code>是人人都可以找到的，拿到它，就可以用来验证你的签名。</li>
+<li>$sig:&#x3D;sign(sk,message)$<br>签名过程是把一段消息和私钥作为一个输入，对于消息输出是签名。</li>
+<li>$isValid:&#x3D;verify(pk,message, sig)$<br>验证过程是通过把一段消息和签名消息与公钥作为输入，如果返回的结果是真，证明签名属实；如果返回的结果为假，证明签名消息为假。</li>
+</ol>
+<p>我们要求以下两个性质有效:</p>
+<ul>
+<li>有效签名可以通过验证，即<br>$$verify(pk,message,sign(sk,message))&#x3D;&#x3D;true$$</li>
+<li>签名不可伪造</li>
+</ul>
+<p>解释：</p>
+<ul>
+<li>发送方（签名者）拥有一个公钥和一个私钥。<strong>公钥任何人都可以知道，私钥则保密不公开。</strong></li>
+<li>当发送方要签署一个文档时，首先使用单向散列函数（如SHA-256）将文档转换成固定长度的<strong>摘要</strong>。</li>
+<li>发送方接着<strong>使用自己的私钥对该摘要进行加密</strong>，生成的密文就是<strong>数字签名</strong>。</li>
+<li>接收方收到原始文档和数字签名后，<strong>使用发送方的公钥来解密签名</strong>，得到摘要A。</li>
+<li>同时，接收方也会计算接收到的文档本身的散列值，得到另一个摘要B。</li>
+<li>如果摘要A与摘要B匹配，则说明文档在传输过程中<strong>未被篡改</strong>，并且确实是<strong>由拥有对应私钥的人签署</strong>的。</li>
+</ul>
+<p>流程：</p>
+<ol>
+<li>对消息生成一个唯一且不变的摘要。</li>
+<li>使用私钥对摘要进行加密形成签名。</li>
+<li>收件人使用公钥解密签名并重新计算消息摘要。</li>
+<li>比较两次计算出的摘要，如果相同，则确认签名有效，消息未被篡改且确信来自于拥有相应私钥的发送方。</li>
+</ol>
+<h1 id="去中心化"><a href="#去中心化" class="headerlink" title="去中心化"></a>去中心化</h1><p><strong>去中心化</strong>：去中心化是一种网络架构或系统<strong>设计原则</strong>，其中权力、功能和数据不在单一的中心点或权威机构手中，而是分散在网络中的各个节点之间。<strong>在去中心化的系统中，每个节点都可以作为网络的一部分参与到数据的处理、存储和验证过程中，而不是依赖单一的中心服务器。</strong>去中心化的目的是为了提高系统的鲁棒性、透明度和防篡改能力，减少单点故障的可能性，并增强用户的数据自主权和隐私保护。</p>
+<p><strong>分布式共识</strong>： 分布式共识则是去中心化系统中用于<strong>保证所有参与节点对于系统状态达成一致同意的关键机制</strong>。在区块链技术中，分布式共识算法确保了<strong>即便在网络中存在不可靠或者恶意的节点，其余的节点依然可以通过特定的规则和算法就交易的有效性、区块的顺序以及其他关键状态达成一致意见。</strong>这种共识机制是去中心化系统能够正常运作并保持数据完整性的基石。</p>
+<p>一个去中心化网络，通常需要借助分布式共识机制来确保网络中所有参与者能基于同样的规则正确地更新和验证系统状态，共同维护一个可靠的、无需信任中介的公共账本。</p>
+<h2 id="分布式共识协议"><a href="#分布式共识协议" class="headerlink" title="分布式共识协议"></a>分布式共识协议</h2><p>在一个<strong>分布式共识协议</strong>中，特别是在面对有潜在故障或恶意节点的环境（比如拜占庭将军问题的场景），有两个核心属性是用来保证系统正确性和安全性的：</p>
+<ul>
+<li><strong>输入值的中止须经所有诚实节点来确定</strong>： 这意味着在分布式系统中的决策过程不是任意节点单方面决定的，即使是有故障或恶意节点试图干扰系统，最终是否接受一个特定的输入值作为共识结果，必须经过所有“诚实”（也称为“正确”或“非拜占庭”）节点的确认或认可。换句话说，<strong>只有当大多数（通常是超过半数）诚实节点达成一致同意的情况下，一个输入值才能被认为是被系统接受了</strong>，并且这个共识过程将在有限时间内结束，即达成可终止性。</li>
+<li><strong>这个输入值必须由诚实节点来生成</strong>： 这条属性指出，最终被选为共识输出的那个输入值，应当来源于系统中诚实节点的提议或计算。在实际的分布式共识算法中，这可能意味着<strong>诚实节点提交的提案将优先被处理，或者通过某种机制确保即使在恶意节点的存在下，最终被采纳的也是诚实节点提供的有效信息</strong>。这样设计的目的在于防止恶意节点通过伪造信息影响系统共识结果的真实性。</li>
+</ul>
+<p>这两个属性结合在一起，旨在构建一个即使在部分节点出现故障或有意作恶情况下，仍能确保所有诚实节点对某一特定状态达成一致的分布式系统。这样的系统能够在各种不利条件下保持稳定运行，并确保其记录的数据或状态更新是可靠和安全的。在区块链技术中，这类分布式共识协议尤为重要，例如PoW（工作量证明）、PoS（权益证明）以及BFT（拜占庭容错）类算法都是用来实现这一目标的不同方式。</p>
+<h2 id="比特币共识算法"><a href="#比特币共识算法" class="headerlink" title="比特币共识算法"></a>比特币共识算法</h2><p>这个算法的简化假设是，可以随意选择一个节点，这些节点都不会受到女巫攻击的影响。</p>
+<blockquote>
+<p>女巫攻击（Sybil Attack）是一种在网络环境中，特别是点对点（P2P）网络和区块链系统中常见的安全威胁。这种攻击方式是指攻击者通过创建并控制多个虚假的身份、账号或节点，假装成多个独立的网络参与者，以期获得对该网络的不当影响力和控制权。在实际中，女巫攻击等安全问题会通过经济成本（如挖矿成本）和其他网络层的防御措施得以缓解。</p>
+</blockquote>
+<p>实际版：</p>
+<ol>
+<li><strong>交易传播</strong>：每当有新的比特币交易产生时，这笔交易会被立即广播给比特币网络中的所有节点。这些节点相当于网络中的各个参与者，负责接收、验证和传递交易信息。</li>
+<li><strong>交易打包</strong>：每个节点在接收到新的交易后，会将这些交易放入一个新的区块中等待验证和确认。一个区块内包含了多笔交易记录。</li>
+<li><strong>区块提议</strong>：在比特币的实际共识机制——工作量证明（Proof of Work，PoW）中，节点通过竞争的方式尝试解决一个复杂的数学难题来争取新区块的生成权。这里的简化版本假设每个回合有一个随机节点（实际上是在PoW中通过计算能力竞争获胜的节点）有权提出一个新区块。</li>
+<li><strong>区块验证</strong>：当某个节点广播它所提议的新区块时，网络中的其他节点会对区块内的所有交易进行合法性检查，包括但不限于检查交易是否有正确的数字签名、交易资金来源是否有效、交易金额是否足够等等。只有当区块中的所有交易都被认为是正当合法的，其他节点才会接受这个新区块。</li>
+<li><strong>链接区块与共识</strong>：一旦节点确认新区块合法，它们会将此区块的哈希值加入到自己即将创建的新区块的前一块哈希列表中，形成了区块链的链式结构。这意味着节点通过对新区块的引用（即在其后的区块中包含前一块的哈希值）表达对之前区块内容的认可和接受。</li>
+</ol>
+<p>简化版：</p>
+<ol>
+<li>新的交易被广播到所有节点上。</li>
+<li>每个节点都将新的交易放进一个区块。</li>
+<li>在每个回合，一个随机的节点可以广播它的区块。</li>
+<li>其他节点可以选择接受这个区块，前提是如果区块里的交易都是正当的（有真的签名）。</li>
+<li>节点们可以把以上区块的哈希值放进自己的区块里，以此来表示它们对那个新区块的认可。<blockquote>
+<p>简化版描述忽略了比特币实际采用的工作量证明（PoW）中“挖矿”的竞争过程。</p>
+</blockquote>
+</li>
+</ol>
+<h1 id="奖励机制与工作量证明"><a href="#奖励机制与工作量证明" class="headerlink" title="奖励机制与工作量证明"></a>奖励机制与工作量证明</h1><h2 id="奖励机制"><a href="#奖励机制" class="headerlink" title="奖励机制"></a>奖励机制</h2><p>比特币的奖励机制是鼓励矿工积极参与网络安全维护和交易验证的关键部分。每当一个矿工成功解决了一个区块的工作量证明难题，并且网络中的其他节点验证了该区块的有效性后，该矿工便可以将新区块链接到区块链上，并获取以下两个类型的奖励：</p>
+<ul>
+<li><strong>区块奖励</strong>：最初4年每个区块50个比特币，每4年减半（210000个区块）。</li>
+<li><strong>交易费</strong>：交易输出值小于输入值，差值作为交易费给予区块创造者。</li>
+</ul>
+<p>只要挖矿奖励&gt;挖矿成本，矿工就能赚钱。<br>挖矿奖励&#x3D;区块奖励+交易费<br>挖矿成本&#x3D;硬件成本+运营成本</p>
+<h2 id="工作量证明"><a href="#工作量证明" class="headerlink" title="工作量证明"></a>工作量证明</h2><p>在比特币网络中，工作量证明是一种共识机制，用于决定谁有权将新的区块添加到区块链上，并因此获得新区块产生的新币奖励以及交易费。PoW要求网络中的参与者（通常称为矿工）使用特殊的硬件设备执行复杂数学运算，即散列运算，以寻找满足特定条件的随机数（Nonce）。这个条件表现为找到一个Nonce使得区块头的哈希值小于或等于某个目标值，这个过程也被称为“挖矿”。</p>
+<p>矿工们不断地尝试不同的Nonce，竞争成为第一个解决这一难题的人。由于哈希函数的性质——单向不可预测和难以逆推，唯一有效的方法是通过暴力尝试来找到正确的Nonce。这意味着较大的计算力意味着更高的概率能够快速找到正确答案。对于某个特定的矿工，发现下一区块的平均时间&#x3D;10分钟&#x2F;占全部计算能力的比例。</p>
+<p>哈希函数解密的特点：</p>
+<ul>
+<li><strong>难于计算</strong>：有一定难度，计算量超大</li>
+<li><strong>可参数化成本：难度可调整</strong>，保证区块产生时间间隔为10分钟左右，每2016个区块调整一次</li>
+<li><strong>易于证明</strong>：计算结果易于检验</li>
+</ul>
+<h2 id="良性循环"><a href="#良性循环" class="headerlink" title="良性循环"></a>良性循环</h2><p>另一个微妙的概念是<strong>自举过程（bootstrapping）</strong>。<br>比特币系统里三个不同的想法——区块链的安全性、挖矿生态系统的健康程度，以及货币的价值在相互作用。<br>我们显然希望区块链安全，这样比特币才能成为一种可行的货币。想要区块链安全，就要保证黑客不能倾覆共识过程。这反过来意味着，一个黑客不能够制造一大堆挖矿节点来占据50%以上的新区块生成。<br>但如何实现这一点呢？前提条件是有一个健康的挖矿生态系统，其中大部分节点是诚实的、遵守协议的。但健康的挖矿生态系统的前提条件又是什么呢——我们什么时候可以保证大多数矿工会把大多数计算能力运用到解哈希谜题的竞争中呢？好吧，只有在比特币价位高时他们才会这么做，因为他们收到的奖励是比特币而他们的花费都是美元。所以币的价值越高，矿工就越有动力这么做。<br>那如何保障币的价值又高又稳定呢？只有用户普遍相信区块链的安全性才会发生。如果他们认为网络随时会被攻击者颠覆，那比特币作为货币将一文不值。所以你可以看到区块链的安全性、挖矿生态系统的健康程度和货币的价值这三者之间相互依赖、相互作用的关系。</p>
+<p><img src="/2024/03/03/%E7%9F%A5%E8%AF%86/%E5%BC%80%E5%8F%91/%E5%8C%BA%E5%9D%97%E9%93%BE/%E3%80%8A%E5%8C%BA%E5%9D%97%E9%93%BE%EF%BC%9A%E6%8A%80%E6%9C%AF%E9%A9%B1%E5%8A%A8%E9%87%91%E8%9E%8D%E3%80%8B/%E5%8C%BA%E5%9D%97%E9%93%BE%EF%BC%9A%E6%8A%80%E6%9C%AF%E9%A9%B1%E5%8A%A8%E9%87%91%E8%9E%8D/%E8%89%AF%E6%80%A7%E5%BE%AA%E7%8E%AF.png" srcset="/img/loading.gif" lazyload></p>
+<p>因为这三者之间的循环依赖关系，其中一个的存在可以用另一个的存在推测出来。在比特币初创之时，这三者都不存在。除了中本聪自己，没有人在运行挖矿软件。比特币作为货币没有什么价值。事实上，因为没有很多人挖矿区块链也很不安全，任何人都可以轻易颠覆这个过程。</p>
+<h1 id="交易"><a href="#交易" class="headerlink" title="交易"></a>交易</h1><p>在比特币中，一笔<strong>交易（Transaction）</strong>代表了一次价值转移的行为，即将一定数量的比特币从一个或多个地址转移到另一个或多个地址的过程。<strong>比特币交易是在去中心化的比特币网络中被创建、验证并最终记录在区块链上的数据结构单元。</strong></p>
+<h2 id="交易程序段"><a href="#交易程序段" class="headerlink" title="交易程序段"></a>交易程序段</h2><p><img src="/2024/03/03/%E7%9F%A5%E8%AF%86/%E5%BC%80%E5%8F%91/%E5%8C%BA%E5%9D%97%E9%93%BE/%E3%80%8A%E5%8C%BA%E5%9D%97%E9%93%BE%EF%BC%9A%E6%8A%80%E6%9C%AF%E9%A9%B1%E5%8A%A8%E9%87%91%E8%9E%8D%E3%80%8B/%E5%8C%BA%E5%9D%97%E9%93%BE%EF%BC%9A%E6%8A%80%E6%9C%AF%E9%A9%B1%E5%8A%A8%E9%87%91%E8%9E%8D/%E4%BA%A4%E6%98%93%E7%A8%8B%E5%BA%8F%E6%AE%B5.jpg" srcset="/img/loading.gif" lazyload></p>
+<ul>
+<li><strong>元数据</strong>：存放一些内部处理的信息——交易的规模、输入的数量、输出的数量，还有此笔交易的哈希值，也就是这个交易独一无二的ID。我们可以用哈希指针指向这个ID。最后还有一个**锁定时间(lock_time)**（定义了交易最早可以被加入区块链的时间或区块高度，它可以防止交易过早被确认。）。</li>
+<li><strong>输入</strong>：所有输入排成一个序列，每个输入的格式都是一样的。输入需要明确说明之前一笔交易的某个输出，因此它包括之前那笔交易的哈希值，使其成为指向那个特定交易的哈希指针。这个输入部分同时包括之前交易输出的索引和一个签名:我们必须有签名来证明我们有资格去支配这笔比特币。</li>
+<li><strong>输出</strong>：所有输出也排成一个序列。每个输出的内容分成两部分。所有输出的金额之和必须小于或等于输入的金额之和。当输出的总金额小于输入总金额时，输出的总金额与输人的总金额的差额部分，就作为交易费支付给为这笔交易记账的矿工。</li>
+</ul>
+<h2 id="交易过程"><a href="#交易过程" class="headerlink" title="交易过程"></a>交易过程</h2><ul>
+<li><strong>交易广播</strong>：当一个用户发起一笔比特币交易时，该交易会被广播到整个比特币网络。</li>
+<li><strong>交易验证</strong>：<ul>
+<li><strong>格式验证</strong>：每个节点接收到交易后，首先会检查交易数据结构的完整性，包括交易版本、输入数量和输出数量、交易金额是否为正数、交易签名是否存在且有效等。</li>
+<li><strong>UTXO验证</strong>：然后，节点会查询本地的未花费交易输出（UTXO）数据库，验证交易的输入是否来自于有效的、未被花费过的交易输出，并确认交易发出者有足够的余额进行支付。</li>
+<li><strong>脚本验证</strong>：比特币使用一种基于堆栈的非图灵完备脚本语言，对交易输入所引用的UTXO上的解锁脚本（ScriptSig）和UTXO本身锁定脚本（ScriptPubKey）进行执行，只有当脚本执行结果为真时，才能证明交易发起者有权花费这笔UTXO。</li>
+</ul>
+</li>
+<li><strong>区块构建与挖矿</strong>：验证成功的交易将被节点打包进新的区块中，尝试通过工作量证明机制（Proof of Work）解决一个复杂的数学难题，成功解题的矿工将新区块链接到区块链上。</li>
+<li><strong>区块链同步与确认</strong>：其他节点在接收到新区块后，会对区块中的所有交易再次进行上述验证，验证通过后将新区块添加至本地的区块链副本中，从而实现全网交易的一致性确认。</li>
+</ul>
+<h2 id="交易脚步验证过程中的堆栈状态"><a href="#交易脚步验证过程中的堆栈状态" class="headerlink" title="交易脚步验证过程中的堆栈状态"></a>交易脚步验证过程中的堆栈状态</h2><p>比特币交易的脚本验证过程涉及两个关键部分：<code>scriptSig</code> 和 <code>scriptPubKey</code>：</p>
+<ul>
+<li><strong>scriptSig (交易输入脚本)<strong>：scriptSig 是存储在比特币交易的输入部分的数据结构，它主要用于</strong>解锁之前交易的输出（即UTXO，Unspent Transaction Output）</strong>。当一个用户想要花费一个UTXO时，必须提供足够的证据来证明自己对该UTXO有合法的使用权。这种证据通常就是一个数字签名（由私钥生成），以及与之相关的公钥或其他数据。在比特币交易中，scriptSig 包含了解锁UTXO所需的信息，比如在最常见的一种交易类型P2PKH中，scriptSig包含的是交易发起者的数字签名和其对应的公钥。</li>
+<li><strong>scriptPubKey (交易输出脚本&#x2F;锁定脚本)</strong>:scriptPubKey 存储在比特币交易的输出部分，它定义了<strong>如何花费这个输出，或者说定义了谁有权利花费这个输出</strong>。每个UTXO都有一个与其关联的scriptPubKey，只有当提供的scriptSig能成功执行并通过scriptPubKey设定的条件时，这笔UTXO才能被花费。同样以P2PKH为例，scriptPubKey通常包含一个OP_DUP、OP_HASH160、公钥哈希和OP_EQUALVERIFY、OP_CHECKSIG等一串操作码，以及一个公钥哈希值。这意味着只有提供与该哈希值相对应的公钥及其正确签名的人才能解锁并花费这笔资金。<blockquote>
+<p><strong>UTXO</strong>：Unspent Transaction Output，在比特币和其他采用UTXO模型的加密货币系统中扮演着核心角色。UTXO是一种会计模式，用于跟踪和管理数字货币的所有权和价值转移。<br>在一个基于UTXO的系统中：<br>每一笔交易都有输出（outputs），这些输出包含了特定数量的数字货币，并且与一组规则（scriptPubKey）相关联，规定了谁能花费这些数字货币。<br>当用户发起一笔新的交易时，需要引用过去未被花费的交易输出作为新交易的输入（inputs）。这些未花费的交易输出就是UTXOs。<br>在花费UTXO时，发送方必须提供匹配的证明（scriptSig）来解锁UTXO，从而将其转移到新的所有者。<br>交易完成后，原始的UTXO会被标记为已花费，同时创建出新的UTXO给接收方。这样，数字货币的流动就像一系列的硬币从一个人转移到另一个人，每笔交易都会更新整个网络上的UTXO集合。<br>通过这种方式，UTXO模型确保了交易历史的透明性和安全性，并且能够防止双花问题的发生。整个比特币账本可以看作是UTXO的全局数据库，记录着所有现存、可花费的UTXO的状态。</p>
+</blockquote>
+</li>
+</ul>
+<p>在比特币交易中，每个输入包含两个内容：一个来自<strong>输出（scriptPubKey）</strong>，另一个是交易的<strong>签名（scriptSig）</strong>。当验证一个输入时，这两个脚本被组合在一起，并按照从左到右的顺序执行<strong>操作码（OP_CODEs）</strong>。</p>
+<figure class="highlight vbnet"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs vbnet"><span class="hljs-symbol">scriptSig:</span> [signature] [<span class="hljs-keyword">public</span> <span class="hljs-keyword">key</span>]<br><span class="hljs-symbol">scriptPubKey:</span> OP_DUP OP_HASH160 [pubkey hash] OP_EQUALVERIFY OP_CHECKSIG<br><br>执行过程：<br><span class="hljs-number">1</span>. 先执行scriptSig的内容，[signature] 和 [<span class="hljs-keyword">public</span> <span class="hljs-keyword">key</span>] 分别压入堆栈。<br><span class="hljs-number">2</span>. 然后执行scriptPubKey，按顺序执行各个操作码：<br>   a. OP_DUP：复制堆栈顶的<span class="hljs-keyword">public</span> <span class="hljs-keyword">key</span>，堆栈变为 [signature, <span class="hljs-keyword">public</span> <span class="hljs-keyword">key</span>, <span class="hljs-keyword">public</span> <span class="hljs-keyword">key</span>]。<br>   b. OP_HASH160：计算<span class="hljs-keyword">public</span> <span class="hljs-keyword">key</span>的hash160值并压入堆栈，堆栈变为 [signature, <span class="hljs-keyword">public</span> <span class="hljs-keyword">key</span>, pubkey_hash160]。<br>   c. [pubkey hash] 由scriptPubKey推入堆栈，堆栈变为 [signature, <span class="hljs-keyword">public</span> <span class="hljs-keyword">key</span>, pubkey_hash160, pubkey_hash160_from_scriptPubKey]。<br>   d. OP_EQUALVERIFY：比较两个连续的pubkey_hash160是否相等，若相等则删除这两个项，堆栈变为 [signature]。<br>   e. OP_CHECKSIG：验证signature是否对应于<span class="hljs-keyword">public</span> <span class="hljs-keyword">key</span>对交易的有效签名，如果签名有效，堆栈剩下真值，否则脚本执行失败。<br><br>如果到最后堆栈中只剩下了真值（或空堆栈，取决于具体的脚本约定），则交易被认为通过了脚本验证。<br></code></pre></td></tr></table></figure>
+<p><img src="/2024/03/03/%E7%9F%A5%E8%AF%86/%E5%BC%80%E5%8F%91/%E5%8C%BA%E5%9D%97%E9%93%BE/%E3%80%8A%E5%8C%BA%E5%9D%97%E9%93%BE%EF%BC%9A%E6%8A%80%E6%9C%AF%E9%A9%B1%E5%8A%A8%E9%87%91%E8%9E%8D%E3%80%8B/%E5%8C%BA%E5%9D%97%E9%93%BE%EF%BC%9A%E6%8A%80%E6%9C%AF%E9%A9%B1%E5%8A%A8%E9%87%91%E8%9E%8D/%E5%A0%86%E6%A0%88%E7%8A%B6%E6%80%81.jpg" srcset="/img/loading.gif" lazyload></p>
+<h2 id="MULTISIG（多重签名）"><a href="#MULTISIG（多重签名）" class="headerlink" title="MULTISIG（多重签名）"></a>MULTISIG（多重签名）</h2><p>比特币的<strong>多重签名（Multisig）</strong>是指一种安全机制，它允许一个比特币交易在获得预先设定的多个密钥持有人的签名之后才能被确认和执行。多重签名技术增强了交易的安全性和资金管理灵活性，因为它要求多个独立实体共同授权才能动用资金。</p>
+<p>在比特币的多重签名方案中，可以设置一个M-of-N的条件，这里的N代表参与交易的总签名数，而M则代表至少需要多少个签名使得交易生效。例如，2-of-3多重签名意味着三个不同的密钥持有者中有任意两个的签名就足以批准交易。</p>
+<p>实施多重签名的具体流程包括：</p>
+<ol>
+<li>创建多重签名地址：首先，多个密钥持有者共同协商并创建一个多重签名地址。这个地址不是普通的公钥哈希地址，而是与一个特殊的锁定脚本（scriptPubKey）关联，该脚本描述了多重签名的规则（例如，“需要2个签名才能花费”）。</li>
+<li>设置交易条件：当资金存入到这个多重签名地址时，实际上是以满足多重签名规则的形式锁定这些资金。</li>
+<li>提取资金：当要从这个地址支出资金时，交易的输入部分（scriptSig）除了包含常规的解锁信息外，还需要附加足够数量的有效签名（达到M的数量），这些签名分别对应于N个密钥持有者中的部分或全部。</li>
+<li>验证交易：网络中的每个节点在验证交易时，会检查交易输入中的多重签名数据是否符合该地址对应的多重签名条件，只有当验证通过后，这笔交易才会被接受并最终打包进区块确认。</li>
+</ol>
+<blockquote>
+<p>比如：爱丽丝使用多重签名给鲍勃付款。爱丽丝并不直接付款给鲍勃，而是发起一个多重签名的交易，并规定：三个人中有两人签名之后，资金才能被支取。这三个人是爱丽丝、鲍勃与第三方仲裁员朱迪。朱迪负责调解可能发生的纠纷。因此，爱丽丝发起了一个2&#x2F;3的多重签名交易来付款，这个交易规定三个人中有两人签名之后，资金才能被支取这个交易被纳入区块链后，资金被第三方监管，这三个人中的任意两个人可以决定资金的去向。现在，鲍勃觉得可以给爱丽丝发货了，通常情况下，如果爱丽丝和鲍勃都是有诚信的，鲍勃会按照爱丽丝要求发货，爱丽丝收货之后和鲍勃共同签名，把资金转给鲍勃。由于三个人中有两人签名即可完成支付，此时由于没有任何争议，朱迪根本不需要参与；然而，如果出现纠纷，朱迪可以作为调解人，并根据实际情况加入进来，与爱丽丝或鲍勃之一共同签名以解决问题。和爱丽丝直接付款给鲍勃相比，第三方支付交易并不会更复杂，都只需在区块链里增加一笔交易即可。</p>
+</blockquote>
+<p>多重签名在实践中可以应用于多种场景，比如增加冷钱包的安全性（需要多人协作解锁）、提升企业内部财务管理的权限控制，或是增强联合投资账户的资金保护等。</p>
+<h2 id="高效小额支付"><a href="#高效小额支付" class="headerlink" title="高效小额支付"></a>高效小额支付</h2><p>支付通道（Payment Channels）是一种在区块链之外进行交易的方法，它允许参与者在没有直接将每笔交易写入区块链的情况下进行多次交易。支付通道的目的是提高交易速度、降低交易成本，并减轻区块链网络的负担。<br>举例：<br>我们希望可以把每分钟的费用累积起来，最后一次性支付。为了实现这种想法，爱丽丝先发起一个MULTISIG交易，把可能花费的最大金额转到MULTISIG地址，但这个交易需要爱丽丝与鲍勃两个人的签名才能生效。爱丽丝在使用流量的时候，每隔一分钟就签名一次，向鲍勃支付这分钟所产生的流量费用，然后把剩余的钱转给自己，每分钟重复一次，直到挂机为止。请注意，这些交易只有爱丽丝的签名，还没有鲍勃的签名，因此，交易还没被放进区块链里。爱丽丝挂机之后，会告诉鲍勃“我用好了，你可以切断我的服务了”，此时，爱丽丝将不再支付费用，鲍勃也将切断服务，然后在爱丽丝发送的最后一个交易里签名，把它放入区块链里。<br>随着每个交易付给鲍勃的币越来越多，爱丽丝的币就会越来越少。最后一个交易会一次性向鲍勃支付所有的流量费，然后把剩余的币还给爱丽丝。整个过程中，爱丽丝单独签名的交易不会进入区块链(上面没有鲍勃的签名)，最后它们都会被丢弃掉。</p>
+<h2 id="币基交易"><a href="#币基交易" class="headerlink" title="币基交易"></a>币基交易</h2><p>每个区块的梅克尔树上都有一个有意思的交易，叫作币基交易。这类似于财奴币里的造币交易。这个交易创造新的比特币，它看上去像是个普通的交易，但有几点不同:</p>
+<ol>
+<li>它永远只有一个单一的输入与单一的输出。</li>
+<li>这个交易并不消费之前交易输出的比特币，因此，没有指针指向“上一交易”</li>
+<li>这个输出值目前大约是25个币多一点点。这个输出值就是矿工的挖矿收它由两部分组成：一部分是奖励的25个比特币（奖励在每生产210000个区块（大概4年）后减半），另一部分是所有交易的交易手续费。</li>
+<li>还有一个特别的地方就是“币基”参数，矿工可以放任何值进去。</li>
+</ol>
+<h1 id="网络"><a href="#网络" class="headerlink" title="网络"></a>网络</h1><h2 id="1-新节点加入："><a href="#1-新节点加入：" class="headerlink" title="1. 新节点加入："></a>1. 新节点加入：</h2><p>启动一个新节点，向一个已知的节点发送消息，查询是否有其他节点，重复此过程多次，选择与哪些节点相连，加入完成。</p>
+<h2 id="2-接受新交易信息："><a href="#2-接受新交易信息：" class="headerlink" title="2. 接受新交易信息："></a>2. 接受新交易信息：</h2><p>节点接受到交易信息后将其加入到交易池，并传播到与其相连的节点，若交易池中已存在此交易，则停止传播，确保泛洪协议的自动停止。<br>（注：每个交易唯一的哈希值，所以查询是否存在效率较高）</p>
+<h2 id="3-核验新交易信息："><a href="#3-核验新交易信息：" class="headerlink" title="3. 核验新交易信息："></a>3. 核验新交易信息：</h2><ul>
+<li>检验交易有效，确保脚本返回值为真</li>
+<li>检查是否存在双重交易</li>
+<li>检验交易信息是否已经存在</li>
+<li>接受交易的脚本必须为白名单上的脚本<br>（注：竞态条件：又称紊乱情况，指双重支付中哪个交易被存入区块链，会由下一个创建区块的节点强制决定）</li>
+</ul>
+<h2 id="4-传播区块"><a href="#4-传播区块" class="headerlink" title="4. 传播区块"></a>4. 传播区块</h2><p>核验一个区块要比核验一个交易复杂得多。除了确认区块头部，确定里点还必须确认区块里的每个交易。最面的哈希值是在可以接受的范围内，节后，一个节点往外传播的区块必须是最长的一条区块链上新加人的区块（“最长的区块链”取决于节点对区块链当前状态的认识）。只有这样才可一样，节点同样可以执行它自己的逻以防止区块链分叉。但就像传播交易时以选择传递在共识链上更早加入的区辑：它可以选择传递无效的区块，也可成一个分叉，不过这种情况是协议可以承受的。<br>（注：竞态条件：两个有效区块同时被挖到，哪个区块被纳入长期共识链取决于其他节点选择在哪个节点上扩展区块链）</p>
+<h2 id="轻量节点："><a href="#轻量节点：" class="headerlink" title="轻量节点："></a>轻量节点：</h2><p>也称简单付款验证客户端，或SPV节点。SPV节点只会验证和他们相关的交易信息，只存储他们关心、需要核验的部分交易；SPV节点的区块头部大小只有区块链的千分之一，只有几十MB。</p>
+<h1 id="限制与优化"><a href="#限制与优化" class="headerlink" title="限制与优化"></a>限制与优化</h1><h2 id="比特币的限制"><a href="#比特币的限制" class="headerlink" title="比特币的限制"></a>比特币的限制</h2><p>限制：</p>
+<ul>
+<li>每秒处理交易数只有7</li>
+<li>未来比特币使用的密码算法可能被破解</li>
+</ul>
+<h2 id="如何优化比特币协议"><a href="#如何优化比特币协议" class="headerlink" title="如何优化比特币协议"></a>如何优化比特币协议</h2><ul>
+<li>硬分叉：引入新的特性，使前一版本的协议失效，会使老节点认定最长的区块链分支是无效的，认为其他分支才是最长有效的，这会使原有的链分叉，老节点会永远排除在另一条链中。</li>
+<li>软分叉：引入新的特性，使现有的核验规则更严格，老节点依旧会接受所有区块，但老节点创建的一些区块被认为是无效的，这会促使老节点更新协议。</li>
+</ul>
+<h1 id="挖矿"><a href="#挖矿" class="headerlink" title="挖矿"></a>挖矿</h1><h2 id="挖矿的步骤"><a href="#挖矿的步骤" class="headerlink" title="挖矿的步骤"></a>挖矿的步骤</h2><ul>
+<li>监听交易广播</li>
+<li>监听区块链，即同步其他节点的区块链历史记录，并监听、检验广播到网络中的新区块，</li>
+<li>组装备选区块，即将监听到的合法的交易组合放入到新区块中备用</li>
+<li>找到使备选区块合法的有效随机数</li>
+<li>希望自己的区块被全网接受，因为有可能出现竞态条件</li>
+<li>获得利润</li>
+</ul>
+<h2 id="如何寻找有效区块"><a href="#如何寻找有效区块" class="headerlink" title="如何寻找有效区块"></a>如何寻找有效区块</h2><p><img src="/2024/03/03/%E7%9F%A5%E8%AF%86/%E5%BC%80%E5%8F%91/%E5%8C%BA%E5%9D%97%E9%93%BE/%E3%80%8A%E5%8C%BA%E5%9D%97%E9%93%BE%EF%BC%9A%E6%8A%80%E6%9C%AF%E9%A9%B1%E5%8A%A8%E9%87%91%E8%9E%8D%E3%80%8B/%E5%8C%BA%E5%9D%97%E9%93%BE%EF%BC%9A%E6%8A%80%E6%9C%AF%E9%A9%B1%E5%8A%A8%E9%87%91%E8%9E%8D/%E5%AF%BB%E6%89%BE%E6%9C%89%E6%95%88%E5%8C%BA%E5%9D%97.jpg" srcset="/img/loading.gif" lazyload></p>
+<p>一个区块内，可变内容为头部随机数（nonce）和币基随机数（币基交易中可放入任何值），但由于币基随机数变动后计算量更大（需要额外计算梅克尔树），所以优先变动头部随机数。</p>
+<blockquote>
+<p>To be continue……</p>
+</blockquote>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/Web3/" class="category-chain-item">Web3</a>
+  
+  
+    <span>></span>
+    
+  <a href="/categories/Web3/%E5%8C%BA%E5%9D%97%E9%93%BE/" class="category-chain-item">区块链</a>
+  
+  
+    <span>></span>
+    
+  <a href="/categories/Web3/%E5%8C%BA%E5%9D%97%E9%93%BE/%E9%98%85%E8%AF%BB%E6%91%98%E5%BD%95/" class="category-chain-item">阅读摘录</a>
+  
+  
+
+  
+
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/%E5%8C%BA%E5%9D%97%E9%93%BE/" class="print-no-link">#区块链</a>
+      
+        <a href="/tags/%E5%93%88%E5%B8%8C/" class="print-no-link">#哈希</a>
+      
+        <a href="/tags/%E5%8E%BB%E4%B8%AD%E5%BF%83%E5%8C%96/" class="print-no-link">#去中心化</a>
+      
+        <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E5%85%B1%E8%AF%86/" class="print-no-link">#分布式共识</a>
+      
+        <a href="/tags/%E6%AF%94%E7%89%B9%E5%B8%81/" class="print-no-link">#比特币</a>
+      
+        <a href="/tags/%E5%B7%A5%E4%BD%9C%E9%87%8F%E8%AF%81%E6%98%8E/" class="print-no-link">#工作量证明</a>
+      
+        <a href="/tags/%E9%9B%B6%E5%B8%81/" class="print-no-link">#零币</a>
+      
+        <a href="/tags/%E8%99%9A%E6%8B%9F%E6%8C%96%E7%9F%BF/" class="print-no-link">#虚拟挖矿</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>《区块链：技术驱动金融》摘录（概念目录）</div>
+      <div>http://shoumingchilun.github.io/2024/03/03/知识/开发/区块链/《区块链：技术驱动金融》/区块链：技术驱动金融/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>寿命齿轮</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2024年3月3日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by-nc-sa/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-by"></i>
+                  </span>
+                </a>
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by-nc-sa/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="NC - 非商业性使用">
+                    <i class="iconfont icon-nc"></i>
+                  </span>
+                </a>
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by-nc-sa/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="SA - 相同方式共享">
+                    <i class="iconfont icon-sa"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar category-bar" style="margin-left: -1rem">
+    
+
+
+
+
+
+<div class="category-list">
+  
+  
+    
+    
+    
+    <div class="category row nomargin-x">
+      <a class="category-item 
+          list-group-item category-item-action col-10 col-md-11 col-xm-11" title="Web3"
+        id="heading-02aefbb89630e9ba0442fa3a01aaa2ed" role="tab" data-toggle="collapse" href="#collapse-02aefbb89630e9ba0442fa3a01aaa2ed"
+        aria-expanded="true"
+      >
+        Web3
+        <span class="list-group-count">(1)</span>
+        <i class="iconfont icon-arrowright"></i>
+      </a>
+      
+      <div class="category-collapse collapse show" id="collapse-02aefbb89630e9ba0442fa3a01aaa2ed"
+           role="tabpanel" aria-labelledby="heading-02aefbb89630e9ba0442fa3a01aaa2ed">
+        
+        
+          
+          
+  <div class="category-post-list">
+    
+    
+  </div>
+
+          
+  
+    
+    
+    
+    <div class="category-sub row nomargin-x">
+      <a class="category-subitem 
+          list-group-item category-item-action col-10 col-md-11 col-xm-11" title="区块链"
+        id="heading-75d8fafb0706c9381d4c91e3b184f19d" role="tab" data-toggle="collapse" href="#collapse-75d8fafb0706c9381d4c91e3b184f19d"
+        aria-expanded="true"
+      >
+        区块链
+        <span class="list-group-count">(1)</span>
+        <i class="iconfont icon-arrowright"></i>
+      </a>
+      
+      <div class="category-collapse collapse show" id="collapse-75d8fafb0706c9381d4c91e3b184f19d"
+           role="tabpanel" aria-labelledby="heading-75d8fafb0706c9381d4c91e3b184f19d">
+        
+        
+          
+          
+  <div class="category-post-list">
+    
+    
+  </div>
+
+          
+  
+    
+    
+    
+    <div class="category-sub row nomargin-x">
+      <a class="category-subitem 
+          list-group-item category-item-action col-10 col-md-11 col-xm-11" title="阅读摘录"
+        id="heading-07658e9fcb30cae671750ed8fad1b493" role="tab" data-toggle="collapse" href="#collapse-07658e9fcb30cae671750ed8fad1b493"
+        aria-expanded="true"
+      >
+        阅读摘录
+        <span class="list-group-count">(1)</span>
+        <i class="iconfont icon-arrowright"></i>
+      </a>
+      
+      <div class="category-collapse collapse show" id="collapse-07658e9fcb30cae671750ed8fad1b493"
+           role="tabpanel" aria-labelledby="heading-07658e9fcb30cae671750ed8fad1b493">
+        
+        
+          
+  <div class="category-post-list">
+    
+    
+      
+      
+        <a href="/2024/03/03/%E7%9F%A5%E8%AF%86/%E5%BC%80%E5%8F%91/%E5%8C%BA%E5%9D%97%E9%93%BE/%E3%80%8A%E5%8C%BA%E5%9D%97%E9%93%BE%EF%BC%9A%E6%8A%80%E6%9C%AF%E9%A9%B1%E5%8A%A8%E9%87%91%E8%9E%8D%E3%80%8B/%E5%8C%BA%E5%9D%97%E9%93%BE%EF%BC%9A%E6%8A%80%E6%9C%AF%E9%A9%B1%E5%8A%A8%E9%87%91%E8%9E%8D/" title="《区块链：技术驱动金融》摘录（概念目录）"
+           class="list-group-item list-group-item-action
+           active">
+          <span class="category-post">《区块链：技术驱动金融》摘录（概念目录）</span>
+        </a>
+      
+    
+  </div>
+
+        
+      </div>
+    </div>
+  
+        
+      </div>
+    </div>
+  
+        
+      </div>
+    </div>
+  
+</div>
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+  
+  
+
+
+
+
+
+  <script>
+  Fluid.utils.createScript('https://lib.baomitu.com/mermaid/8.14.0/mermaid.min.js', function() {
+    mermaid.initialize({"theme":"default"});
+
+    Fluid.utils.listenDOMLoaded(function() {
+      Fluid.events.registerRefreshCallback(function() {
+        if ('mermaid' in window) {
+          mermaid.init();
+        }
+      });
+    });
+  });
+</script>
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <span><a href="https://hexo.io" target="_blank" rel="nofollow noopener">Hexo</a>-<a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener">Fluid</a></span> <i class="iconfont icon-love"></i> 寿命齿轮 
+    </div>
+  
+  
+  
+    <!-- 备案信息 ICP for China -->
+    <div class="beian">
+  <span>
+    <a href="http://beian.miit.gov.cn/" target="_blank" rel="nofollow noopener">
+      浙ICP备2024070074号
+    </a>
+  </span>
+  
+</div>
+<div>
+  <a target="_blank" rel="noopener" href="https://www.upyun.com/?utm_source=lianmeng&utm_medium=referral">本网站由
+    <img src="/images/%E5%8F%88%E6%8B%8D%E4%BA%91.png" srcset="/img/loading.gif" lazyload  height="30" alt="又拍云"/>提供CDN加速/云存储服务</a>
+</div>
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  var relativeDate = function() {
+    var updatedTime = document.getElementById('updated-time');
+    if (updatedTime) {
+      var text = updatedTime.textContent;
+      var reg = /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:Z|[+-]\d{2}:\d{2})/;
+      var matchs = text.match(reg);
+      if (matchs) {
+        var relativeTime = moment(matchs[0]).fromNow();
+        updatedTime.textContent = text.replace(reg, relativeTime);
+      }
+      updatedTime.style.display = '';
+    }
+  };
+  Fluid.utils.createScript('https://lib.baomitu.com/moment.js/2.29.4/moment.min.js', function() {
+    if (!'zh-cn'.startsWith('en')) {
+      Fluid.utils.createScript('https://lib.baomitu.com/moment.js/2.29.4/locale/zh-cn.min.js', function() {
+        relativeDate();
+      });
+    } else {
+      relativeDate();
+    }
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  
+      <script>
+        if (!window.MathJax) {
+          window.MathJax = {
+            tex    : {
+              inlineMath: { '[+]': [['$', '$']] }
+            },
+            loader : {
+              load: ['ui/lazy']
+            },
+            options: {
+              renderActions: {
+                insertedScript: [200, () => {
+                  document.querySelectorAll('mjx-container').forEach(node => {
+                    let target = node.parentNode;
+                    if (target.nodeName.toLowerCase() === 'li') {
+                      target.parentNode.classList.add('has-jax');
+                    }
+                  });
+                }, '', false]
+              }
+            }
+          };
+        } else {
+          MathJax.startup.document.state(0);
+          MathJax.texReset();
+          MathJax.typeset();
+          MathJax.typesetPromise();
+        }
+
+        Fluid.events.registerRefreshCallback(function() {
+          if ('MathJax' in window && MathJax.startup.document && typeof MathJax.startup.document.state === 'function') {
+            MathJax.startup.document.state(0);
+            MathJax.texReset();
+            MathJax.typeset();
+            MathJax.typesetPromise();
+          }
+        });
+      </script>
+    
+
+  <script  src="https://lib.baomitu.com/mathjax/3.2.2/es5/tex-mml-chtml.js" ></script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>
